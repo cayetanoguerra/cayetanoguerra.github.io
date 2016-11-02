@@ -269,6 +269,7 @@ Full-Width Styles
   max-width: 640px;
   padding: 20px 10px;
   margin: 0 auto;
+  background: url('../images/blacktocat.png')
 }
 
 #forkme_banner {
