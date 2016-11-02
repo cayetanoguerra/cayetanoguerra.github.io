@@ -269,7 +269,6 @@ Full-Width Styles
   max-width: 640px;
   padding: 20px 10px;
   margin: 0 auto;
-  background: url('../images/blacktocat.png')
 }
 
 #forkme_banner {
@@ -294,6 +293,7 @@ Full-Width Styles
   background: -ms-linear-gradient(top, #373737, #212121);
   background: -o-linear-gradient(top, #373737, #212121);
   background: linear-gradient(top, #373737, #212121);
+  background: url('../images/5b4ky6pb-1446529318.jpg') 20%;
 }
 
 #header_wrap .inner {
