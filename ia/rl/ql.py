@@ -59,15 +59,15 @@ def getRndState():
     return random.randint(0, height * width - 1)
 
 
-Rewards[4 * width + 3] = -10000
-Rewards[4 * width + 2] = -10000
-Rewards[4 * width + 1] = -10000
-Rewards[4 * width + 0] = -10000
+Rewards[4 * width + 3] = 50
+Rewards[4 * width + 2] = 50
+Rewards[4 * width + 1] = 50
+Rewards[4 * width + 0] = 50
 
-Rewards[9 * width + 4] = -10000
-Rewards[9 * width + 3] = -10000
-Rewards[9 * width + 2] = -10000
-Rewards[9 * width + 1] = -10000
+Rewards[9 * width + 4] = 50
+Rewards[9 * width + 3] = 50
+Rewards[9 * width + 2] = 50
+Rewards[9 * width + 1] = 50
 
 Rewards[3 * width + 3] = 100
 final_state = getState(3, 3)
@@ -81,7 +81,7 @@ def qlearning(s1, a, s2):
 
 
 # Episodes
-for i in xrange(100):
+for i in xrange(1000):
     state = getRndState()
     while state != final_state:
         action = getRndAction(state)
