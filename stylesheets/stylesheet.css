@@ -301,7 +301,7 @@ Full-Width Styles
   background: -ms-linear-gradient(top, #373737, #212121);
   background: -o-linear-gradient(top, #373737, #212121);
   background: linear-gradient(top, #373737, #212121);
-  background: url('../images/5b4ky6pb-1446529318.jpg') 20%;
+  background: url('../images/AI-code-stock-712_1.jpg') 20%;
 }
 
 #header_wrap .inner {
@@ -309,11 +309,13 @@ Full-Width Styles
 }
 
 #project_title {
-  margin: 0;
+  margin: 0px;
+  padding-left: 15px;
   color: #fff;
   font-size: 42px;
   font-weight: 700;
   text-shadow: #111 0px 0px 10px;
+  background-color: black;
 }
 
 #project_tagline {
