@@ -84,6 +84,7 @@
     (retract ?i)
 )
 
+
 (defrule call_person_telephone_location
     (declare (salience 5))
     (person_to_call ?n ?s)
