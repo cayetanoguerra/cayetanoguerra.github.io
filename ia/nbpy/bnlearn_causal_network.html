@@ -58,8 +58,8 @@
         
 
         // parsing and collecting nodes and edges from the python
-        nodes = new vis.DataSet([{"color": "#1f456e", "id": "Cloudy", "label": "Cloudy", "shape": "dot", "size": 10}, {"color": "#1f456e", "id": "Rain", "label": "Rain", "shape": "dot", "size": 10}, {"color": "#1f456e", "id": "Wet_Grass", "label": "Wet_Grass", "shape": "dot", "size": 10}, {"color": "#1f456e", "id": "Sprinkler", "label": "Sprinkler", "shape": "dot", "size": 10}]);
-        edges = new vis.DataSet([{"arrows": "to", "color": "#000000", "from": "Cloudy", "to": "Rain", "weight": 1}, {"arrows": "to", "color": "#000000", "from": "Rain", "to": "Wet_Grass", "weight": 1}, {"arrows": "to", "color": "#000000", "from": "Sprinkler", "to": "Cloudy", "weight": 1}, {"arrows": "to", "color": "#000000", "from": "Sprinkler", "to": "Wet_Grass", "weight": 1}]);
+        nodes = new vis.DataSet([{"color": "#1f456e", "id": "Alarm", "label": "Alarm", "shape": "dot", "size": 10}, {"color": "#1f456e", "id": "Juan", "label": "Juan", "shape": "dot", "size": 10}, {"color": "#1f456e", "id": "Mar\u00eda", "label": "Mar\u00eda", "shape": "dot", "size": 10}, {"color": "#1f456e", "id": "Earthquake", "label": "Earthquake", "shape": "dot", "size": 10}, {"color": "#1f456e", "id": "Robbery", "label": "Robbery", "shape": "dot", "size": 10}]);
+        edges = new vis.DataSet([{"arrows": "to", "color": "#000000", "from": "Alarm", "to": "Juan", "weight": 1}, {"arrows": "to", "color": "#000000", "from": "Alarm", "to": "Mar\u00eda", "weight": 1}, {"arrows": "to", "color": "#000000", "from": "Earthquake", "to": "Alarm", "weight": 1}, {"arrows": "to", "color": "#000000", "from": "Robbery", "to": "Alarm", "weight": 1}]);
 
         // adding nodes and edges to the graph
         data = {nodes: nodes, edges: edges};
