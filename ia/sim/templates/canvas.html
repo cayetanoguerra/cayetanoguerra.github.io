@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    
+    <link rel="stylesheet" href="static/styles.css">
+    <link rel="stylesheet" href="static/neural.css">
+    
+    <title>Zoom and anti-aliasing | Canvas pixel manipulation</title>
+  </head>
+  <body>
+
+    <h1 class="center">Neurona artificial</h1>
+
+    <div>
+        <div class="container">
+            <div style="">
+                <img src="static/neuron.svg">
+                <div id="w0" class="top-left" style="top:90px; left: 225px;"></div>            
+                <div id="w1" class="top-left" style="top:15px; left: 130px;"></div>            
+                <div id="w2" class="top-left" style="top:170px; left: 130px;"></div>
+
+                <div id="x1" class="top-left" style="top:8px; left: 28px;"></div>
+                <div id="x2" class="top-left" style="top:168px; left: 28px;"></div>
+
+                <div id="y_hat" class="top-left" style="top:91px; left: 469px;"></div>
+                <div id="logit" class="top-left" style="top:39px; left: 321px;"></div>
+            </div>
+            <div>
+                <canvas id="canvas_sigmoid" width="450" height="200" style="background-color:#ffffff; cursor:crosshair;"></canvas>
+            </div>
+        </div>
+        <div>
+            <canvas id="canvas" width="500" height="427" style="background-color:#f0f0f0; cursor:crosshair;"></canvas>
+            <p></p>
+            <input type="radio" id="clase_0" name="class_selector" value="clase_0" checked="checked">
+            <label for="html">Clase 0 (azul)</label><br>
+            <input type="radio" id="clase_1" name="class_selector" value="clase_1">
+            <label for="html">Clase 1 (roja)</label><br>
+            <button id="train" onclick="training_on_off();">Comenzar entrenamiento</button>
+            <button id="train" onclick="delete_all();">Borrar todo</button>
+        </div>
+    </div>
+		
+    <script src="static/nn4t.js"></script>
+    <script src="static/panel.js"></script>
+        
+  </body>
+</html>

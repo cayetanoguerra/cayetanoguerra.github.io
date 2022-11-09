@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+
+    <head>
+        <title>NEURAL</title>
+        <meta charset="UTF-8" />
+        <link rel="stylesheet" href="static/neural.css">
+    </head>
+
+    <body>
+        <div>
+            <div>
+                <h1 class="center">Red neuronal</h1>
+            </div>            
+            <label for="cars">Capas ocultas:</label>
+            <select name="hidden_layer_1" id="id_hidden_layer_1" onchange="change_viz_network()">
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5" selected>5</option>
+                <option value="6">6</option>
+                <option value="7">7</option>
+            </select>
+
+            <select name="hidden_layer_2" id="id_hidden_layer_2" onchange="change_viz_network()">
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5" selected>5</option>
+                <option value="6">6</option>
+                <option value="7">7</option>
+            </select>
+
+            <div>
+                <div style="float: left; border:3px solid #f0f0f0">
+                    <canvas id="id_net" width="400" height="350" style="background-color:#ffffff; cursor:crosshair;"></canvas>
+                </div>
+                <div style="border:3px solid #f0f0f0">
+                    <canvas id="id_canvas" width="250" height="250" style="background-color:#f0f0f0; cursor:crosshair;"></canvas>
+                </div>
+            </div>
+
+            <input type="radio" id="clase_0" name="class_selector" value="clase_0" checked="checked" onclick="output_panel.set_class(0);">
+            <label for="html">Clase 0 (roja)</label><br>
+            <input type="radio" id="clase_1" name="class_selector" value="clase_1" onclick="output_panel.set_class(1);">
+            <label for="html">Clase 1 (azul)</label><br>
+
+            <button id="id_training" onclick="training_on_off();">Start training</button>
+            <button id="id_training" onclick="change_viz_network();">Reset training</button>
+        </div>
+
+        <script src="static/neural.js"></script>
+        <script src="static/output.js"></script>
+        <script src="static/netpaint.js"></script>
+        <script src="static/control.js"></script>
+    </body>
+</html>
+

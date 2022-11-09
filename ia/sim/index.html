@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta content="text/html; charset=windows-1252" http-equiv="Content-Type">
+<script src="https://unpkg.com/brain.js"></script>
+
+<!-- Load the Paper.js library -->
+<script type="text/javascript" src="js/paper.js"></script>
+
+<script type="text/paperscript" src="js/script.js" canvas="myCanvas"></script>
+	
+
+
+
+</head>
+
+<body>
+<h1>Deep Learning with brain.js</h1>
+<div id="demo"></div>
+
+<script>
+// Create a Neural Network
+const network = new brain.NeuralNetwork();
+
+var data = [
+  {input:[0,0], output:{zero:1}},
+  {input:[0,1], output:{one:1}},
+  {input:[1,0], output:{one:1}},
+  {input:[1,1], output:{zero:1}},
+]
+
+
+// Train the Network with 4 input objects
+network.train(data,
+{
+    iterations: 1
+});
+
+// What is the expected output of [1,0]?
+let result = network.run([1,0]);
+
+// Display the probability for "zero" and "one"
+document.getElementById("demo").innerHTML =
+"one: " + result["one"] + "<br>" + "zero: " + result["zero"];
+</script>
+
+<canvas id="myCanvas" resize></canvas>
+
+</body>
+</html>
