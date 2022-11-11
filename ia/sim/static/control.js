@@ -38,14 +38,25 @@ function training_on_off()
 {
     if (training) {
         training = false;
-        document.getElementById("id_training").innerHTML = "Start training";
+        document.getElementById("id_training").innerHTML = "Comenzar entrenamiento";
         clearInterval(timeoutID);
     }
     else{
         training = true;
-        document.getElementById("id_training").innerHTML = "Stop training";
+        document.getElementById("id_training").innerHTML = "Parar entrenamiento";
         timeoutID = setInterval(drawing, 100);
     }
+}
+
+function clean_points()
+{
+    data_x = [];
+    data_y = [];
+    output_panel = new OutputPanel(data_x, data_y, "id_canvas");
+    output_panel.draw();
+    output_panel.draw_points();
+    training = true;
+    training_on_off();
 }
 
 function change_viz_network()

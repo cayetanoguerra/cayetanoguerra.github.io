@@ -25,27 +25,10 @@ class LossPanel
 
     draw_numbered_scale()
     {
-        this.ctx.save();
-        this.ctx.fillStyle = "#000000";
-        this.ctx.font = "12px Arial";
-        this.ctx.textAlign = "center";
-        this.ctx.textBaseline = "middle";
-        this.ctx.fillText("0", 0, this.canvas.height);
-        this.ctx.fillText("1", 0, 0);
-        this.ctx.restore();
     }
 
     draw_axis()
     {
-        this.ctx.save();
-        this.ctx.strokeStyle = "#000000";
-        this.ctx.beginPath();
-        this.ctx.moveTo(0, 0);
-        this.ctx.lineTo(0, this.canvas.height);
-        this.ctx.lineTo(this.canvas.width, this.canvas.height);
-        this.ctx.stroke();
-        this.ctx.closePath();
-        this.ctx.restore();
     }
         
     draw()
@@ -68,7 +51,7 @@ class LossPanel
         var last_x = this._loss_values.length - 1;
         var last_y = this.canvas.height - (this._loss_values[this._loss_values.length - 1] / this.max_loss) * this.canvas.height * 0.75 - 10;
         this.ctx.stroke();
-        // Draw a small blue circle at the end of the line
+        // Draw a small gray circle at the end of the line
         this.ctx.beginPath();
         this.ctx.fillStyle = "#a0a0a0";
         this.ctx.arc(last_x, last_y, 4, 1, Math.PI*2, false);
