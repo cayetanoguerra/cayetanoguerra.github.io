@@ -104,8 +104,6 @@ class net_viz {
     }
 }
 
-//var M = new net_viz([2, 5, 4, 1]);
-//M.draw();
 
 
 

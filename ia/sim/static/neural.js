@@ -1,5 +1,3 @@
-console.log("NEURAL.JS LOADED");
-
 // Neural net layer
 
 function sigmoid(x) {
@@ -66,6 +64,7 @@ class neuralnet {
         this.layers = layers;
         this.learning_rate = learning_rate;
         this.output = [];
+        this.loss = 0;
     }
 
     forward(input) {
@@ -82,9 +81,12 @@ class neuralnet {
         this.forward(input);
 
         // Output layer
+        this.loss = 0;
         for (var i = 0; i < this.output.length; i++) {
+            this.loss += Math.pow(this.output[i] - target[i], 2);
             delta[i] = 2 * (target[i] - this.output[i]) * sigmoid_derivative(this.output[i]);
         }
+        this.loss /= this.output.length;
 
         for (var i = this.layers.length - 1; i >= 0; i--) {            
             var weights = this.layers[i].get_weights();

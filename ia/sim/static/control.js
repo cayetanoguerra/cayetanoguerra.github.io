@@ -17,7 +17,7 @@ function create_viz_network(layers)
     }    
 
     // var net = new neuralnet([new layer(2,7), new layer(7,7), new layer(7,1)], 0.1);
-    var net = new neuralnet(model, 0.1);
+    var net = new neuralnet(model, document.getElementById("id_learning_rate").value);
 
     var M = new net_viz(layers);
     M.draw();
@@ -30,6 +30,8 @@ function drawing()
     net.fit(data_x, data_y, 10);
     output_panel.draw();
     output_panel.draw_points();
+    loss_panel.update(net.loss);
+    loss_panel.draw();
 }
 
 function training_on_off()
@@ -51,15 +53,16 @@ function change_viz_network()
     
     var value1 = document.getElementById("id_hidden_layer_1").value;
     var value2 = document.getElementById("id_hidden_layer_2").value;
-    console.log(value1);
-    console.log(value2);
     net = create_viz_network([2, value1, value2, 1]);
 
     output_panel = new OutputPanel(data_x, data_y, "id_canvas");
     output_panel.draw();
     output_panel.draw_points();
+
+    loss_panel = new LossPanel("id_loss");
 }
 
 var net = create_viz_network([2, 5, 5, 1]);
 var output_panel = new OutputPanel(data_x, data_y, "id_canvas");
+var loss_panel = new LossPanel("id_loss");
 output_panel.draw()

@@ -5,55 +5,89 @@
         <title>NEURAL</title>
         <meta charset="UTF-8" />
         <link rel="stylesheet" href="static/neural.css">
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css" rel="stylesheet">
     </head>
 
     <body>
-        <div>
-            <div>
-                <h1 class="center">Red neuronal</h1>
-            </div>            
-            <label for="cars">Capas ocultas:</label>
-            <select name="hidden_layer_1" id="id_hidden_layer_1" onchange="change_viz_network()">
-                <option value="1">1</option>
-                <option value="2">2</option>
-                <option value="3">3</option>
-                <option value="4">4</option>
-                <option value="5" selected>5</option>
-                <option value="6">6</option>
-                <option value="7">7</option>
-            </select>
 
-            <select name="hidden_layer_2" id="id_hidden_layer_2" onchange="change_viz_network()">
-                <option value="1">1</option>
-                <option value="2">2</option>
-                <option value="3">3</option>
-                <option value="4">4</option>
-                <option value="5" selected>5</option>
-                <option value="6">6</option>
-                <option value="7">7</option>
-            </select>
-
-            <div>
-                <div style="float: left; border:3px solid #f0f0f0">
-                    <canvas id="id_net" width="400" height="350" style="background-color:#ffffff; cursor:crosshair;"></canvas>
-                </div>
-                <div style="border:3px solid #f0f0f0">
-                    <canvas id="id_canvas" width="250" height="250" style="background-color:#f0f0f0; cursor:crosshair;"></canvas>
+        <div class="container-fluid mt-3">            
+            <div class="row">
+                <div class="col p-12" align="right">
+                    <img src="static/einginfor_h_c.svg" width="30%">
                 </div>
             </div>
 
-            <input type="radio" id="clase_0" name="class_selector" value="clase_0" checked="checked" onclick="output_panel.set_class(0);">
-            <label for="html">Clase 0 (roja)</label><br>
-            <input type="radio" id="clase_1" name="class_selector" value="clase_1" onclick="output_panel.set_class(1);">
-            <label for="html">Clase 1 (azul)</label><br>
+            <h1>Red neuronal binaria</h1>
+            <p>Esta red posee dos entradas y una única neurona a la salida que puede tomar valores entre 0 y 1. Es posible configurar dos capas ocultas con hasta 7 neuronas por capa. </p>
+            
+            <div class="row" style="background-color:#f1f1f1">
+                <div class="col p-3" align="center">
+                    <label for="cars">Capas ocultas:</label>
+                    <select name="hidden_layer_1" id="id_hidden_layer_1" onchange="change_viz_network()">
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5" selected>5</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                    </select>
 
-            <button id="id_training" onclick="training_on_off();">Start training</button>
-            <button id="id_training" onclick="change_viz_network();">Reset training</button>
+                    <select name="hidden_layer_2" id="id_hidden_layer_2" onchange="change_viz_network()">
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5" selected>5</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                    </select>
+                </div>
+                <div class="col p-3" align="center">
+                    Tasa de aprendizaje: <input type="text" id="id_learning_rate" class="form-control-md w-25" value="0.5" onchange="change_viz_network()">
+                </div>
+                    
+                <div class="col p-3" align="center"></div>
+            </div>  
+
+            <div class="row">
+                <div class="col-md-4 my-auto" align="right">
+                    <canvas id="id_net" width="400" height="350" style="background-color:#ffffff; cursor:crosshair;"></canvas>
+                </div>
+                <div class="col-md-3 my-auto" style="align: center">
+                    <canvas id="id_canvas" width="250" height="250" style="border-style: solid; border-color:#7e7e7e; background-color:#717171; cursor:crosshair;"></canvas>
+                    <br>
+                    <input type="radio" id="clase_0" name="class_selector" value="clase_0" checked="checked" onclick="output_panel.set_class(0);">
+                    <label for="clase_0">Clase 0 (roja)</label><br>
+                    <input type="radio" id="clase_1" name="class_selector" value="clase_1" onclick="output_panel.set_class(1);">
+                    <label for="clase_1">Clase 1 (azul)</label><br>
+                </div>
+                <div class="col-md-5">
+                    <canvas id="id_loss" width="450" height="250" style="cursor:crosshair;"></canvas>
+                    <br>
+                    Función de pérdida
+                </div>
+            </div>
+
+            <div class="row" style="background-color:#f1f1f1">
+                <div class="col p-3" align="center"></div>
+                <div class="col p-3" align="center">
+                    <div class="btn-group" role="group" aria-label="Basic checkbox toggle button group">
+                        <button type="button" class="btn btn-outline-primary" id="id_training" onclick="training_on_off();">Start training</button>
+                        <button type="button" class="btn btn-outline-primary" id="id_training" onclick="change_viz_network();">Reset training</button>
+                    </div>
+                </div>
+                <div class="col p-3" align="center"></div>
+            </div> 
+
+
         </div>
+
 
         <script src="static/neural.js"></script>
         <script src="static/output.js"></script>
         <script src="static/netpaint.js"></script>
+        <script src="static/loss.js"></script>
         <script src="static/control.js"></script>
     </body>
 </html>
