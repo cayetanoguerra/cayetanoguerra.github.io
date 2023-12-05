@@ -1,0 +1,100 @@
+"El equipo nacional de fútbol ganó su partido de clasificación para el mundial con un marcador de 3-1.", 0
+"La nueva reforma educativa ha sido aprobada por el gobierno, buscando mejorar la calidad en las escuelas públicas.", 2
+"El famoso festival de cine de Madrid ha anunciado su selección oficial de películas para este año.", 1
+"La selección femenina de baloncesto se alzó con el campeonato europeo tras una emocionante final.", 0
+"El parlamento ha iniciado debates sobre posibles cambios en la legislación ambiental.", 2
+"Se inauguró en Barcelona una exposición dedicada a la obra del pintor surrealista Salvador Dalí.", 1
+"El tenista Carlos Alcaraz se convierte en el número uno del mundo tras su última victoria en París.", 0
+"La presidenta anunció un nuevo plan de infraestructuras que promete modernizar las carreteras del país.", 2
+"El nuevo museo de arte contemporáneo abrirá sus puertas este fin de semana en Valencia.", 1
+"Histórica medalla de oro para el equipo de natación en el campeonato mundial celebrado en Tokio.", 0
+"El club de balonmano local logra una victoria sorprendente contra el equipo líder de la liga.", 0
+"Inaugurada la nueva biblioteca pública en el centro de la ciudad con una colección de más de 20,000 libros.", 1
+"Gobierno anuncia aumento en el presupuesto de salud para el próximo año fiscal.", 2
+"El corredor de maratón español bate el récord nacional en una carrera emocionante en Berlín.", 0
+"La nueva película del director español Pedro Almodóvar recibe críticas positivas en su estreno mundial.", 1
+"El Congreso debate una nueva ley sobre el cambio climático y la reducción de emisiones de carbono.", 2
+"El equipo de voleibol femenino gana el campeonato nacional después de una temporada invicta.", 0
+"La exposición de arte moderno 'Visiones del Futuro' atrae a miles de visitantes en su primera semana.", 1
+"Reforma laboral propuesta por el gobierno busca mejorar las condiciones de trabajo en el sector tecnológico.", 2
+"Celebrado el torneo anual de ajedrez juvenil con participantes de todo el país.", 0
+"Joven promesa del tenis nacional gana su primer torneo ATP en Estados Unidos.", 0
+"El festival de jazz de la ciudad cierra con un récord de asistencia y actuaciones memorables.", 1
+"El parlamento aprueba una nueva ley de transparencia gubernamental para combatir la corrupción.", 2
+"La selección nacional de rugby se clasifica para la copa mundial después de una emocionante victoria.", 0
+"Estreno mundial de la obra de teatro 'Luces de la Ciudad' recibe ovaciones en el teatro nacional.", 1
+"Debate en el senado sobre la reforma del sistema de pensiones genera opiniones divididas.", 2
+"Gran remontada del equipo de baloncesto local en el último cuarto asegura su paso a la final.", 0
+"Anuncian la apertura de una nueva galería de arte contemporáneo en el corazón de la capital.", 1
+"Propuesta de ley para la protección de parques nacionales recibe amplio apoyo en la cámara baja.", 2
+"El campeonato de surf internacional atrae a competidores de todo el mundo a las costas del país.", 0
+"La carrera de ciclismo de montaña en los Pirineos se salda con una victoria inesperada de un corredor local.", 0
+"El museo de arte moderno celebra su décimo aniversario con una exposición especial de artistas emergentes.", 1
+"El gobierno anuncia un plan de inversión en energías renovables para los próximos cinco años.", 2
+"El equipo de fútbol sala femenino se corona campeón en el torneo internacional celebrado en Lisboa.", 0
+"La ópera de Sevilla estrena una nueva versión de 'Carmen' con un enfoque contemporáneo.", 1
+"Reforma educativa propuesta busca integrar la enseñanza de la programación desde la escuela primaria.", 2
+"El piloto de Fórmula 1 español logra un podio histórico en el Gran Premio de Mónaco.", 0
+"Un festival literario internacional reúne a autores y lectores en una serie de charlas y talleres.", 1
+"La nueva legislación sobre el uso de drones busca regular su aplicación en actividades comerciales y de ocio.", 2
+"Victoria histórica para el equipo de balonmano en el campeonato europeo, superando a todos los favoritos.", 0
+"La selección nacional de baloncesto clasifica para los Juegos Olímpicos tras una impresionante racha de victorias.", 0
+"El famoso escritor español lanza su nueva novela, ambientada en la España del siglo XX.", 1
+"El parlamento debate un nuevo proyecto de ley para mejorar el sistema de transporte público.", 2
+"El joven atleta rompe el récord nacional en salto de longitud en el campeonato nacional.", 0
+"El festival de arte callejero este año incluye artistas de más de 10 países diferentes.", 1
+"El gobierno anuncia un nuevo paquete de medidas para apoyar a las pequeñas empresas.", 2
+"El club de fútbol local celebra su centenario con una serie de eventos y partidos conmemorativos.", 0
+"Estreno de una exposición sobre la historia del cine español en el museo nacional.", 1
+"Debate en el congreso sobre la implementación de nuevas políticas de bienestar social.", 2
+"La nadadora establece un nuevo récord mundial en los 200 metros mariposa.", 0
+"El nuevo documental sobre la vida del pintor Picasso se estrena en el festival de cine.", 1
+"Anuncian reformas en la legislación laboral para mejorar las condiciones de los trabajadores.", 2
+"El equipo de hockey sobre hielo gana el campeonato nacional en un emocionante partido final.", 0
+"Inauguran un nuevo teatro en la ciudad con una performance de danza contemporánea.", 1
+"El ministerio de educación lanza un programa de becas para estudios en el extranjero.", 2
+"Triunfo histórico en el torneo de golf internacional por parte de un jugador español novato.", 0
+"La nueva serie de televisión sobre la historia de la música flamenca recibe críticas positivas.", 1
+"Proponen una nueva ley para la protección de datos y la privacidad en internet.", 2
+"El equipo femenino de voleibol gana el campeonato europeo después de un juego reñido.", 0
+"Anuncian la creación de un nuevo festival de poesía que se celebrará anualmente en la capital.", 1
+"El piloto español gana el campeonato mundial de rally en una carrera emocionante en Argentina.", 0
+"La feria del libro de este año contará con la participación de autores de renombre internacional.", 1
+"El gobierno anuncia un aumento significativo en la inversión en infraestructuras sanitarias.", 2
+"La gimnasta adolescente sorprende al mundo con una rutina perfecta en el campeonato mundial.", 0
+"La nueva exposición de arte abstracto abre sus puertas en el museo de arte contemporáneo.", 1
+"Se aprueba una nueva ley de comercio exterior para fomentar las exportaciones nacionales.", 2
+"El equipo de fútbol femenino gana el torneo internacional con una actuación estelar.", 0
+"Reconocido director de teatro estrena su última obra basada en una historia real.", 1
+"El senado discute una propuesta para mejorar la red de seguridad social para los desempleados.", 2
+"Espectacular victoria en el campeonato de boxeo peso pluma, con un nocaut en el primer asalto.", 0
+"El festival de música clásica de este año presenta una serie de jóvenes talentos prometedores.", 1
+"La nueva reforma fiscal busca equilibrar el presupuesto y reducir la deuda pública.", 2
+"Campeona de tenis defiende su título en un partido reñido en el abierto de Francia.", 0
+"La galería de arte urbano celebra su quinto aniversario con una exposición especial.", 1
+"El congreso debate un nuevo proyecto de ley sobre energía sostenible y cambio climático.", 2
+"El equipo nacional de natación sincronizada gana el oro en el campeonato europeo.", 0
+"Inauguran la semana de la moda con diseñadores emergentes presentando sus colecciones.", 1
+"El gobierno lanza un nuevo plan para la digitalización de los servicios públicos.", 2
+"Victoria aplastante del equipo de baloncesto en el torneo internacional juvenil.", 0
+"El museo nacional de historia anuncia una nueva exhibición sobre la era medieval.", 1
+"El equipo de remo nacional gana la medalla de oro en el campeonato mundial en Italia.", 0
+"Anuncian la apertura de un nuevo centro cultural dedicado al arte y la historia latinoamericana.", 1
+"El parlamento aprueba una legislación histórica sobre igualdad de género en el trabajo.", 2
+"Jugador de balonmano es nombrado el mejor deportista del año tras una temporada excepcional.", 0
+"El festival internacional de cine independiente celebra su 20º aniversario con una programación especial.", 1
+"El gobierno lanza una iniciativa para promover las energías renovables en zonas rurales.", 2
+"La corredora de maratón bate el récord nacional y se clasifica para los Juegos Olímpicos.", 0
+"La nueva exposición de fotografía documental explora la vida en las ciudades del siglo XXI.", 1
+"Se aprueba una nueva ley para mejorar el acceso a la educación superior para estudiantes de bajos ingresos.", 2
+"El equipo juvenil de fútbol sorprende y gana el torneo internacional contra todos los pronósticos.", 0
+"El renombrado músico de jazz lanza un álbum con colaboraciones de artistas de todo el mundo.", 1
+"Debate en el congreso sobre una nueva ley de protección de los derechos digitales de los ciudadanos.", 2
+"La nadadora establece un nuevo récord mundial en los 100 metros estilo libre.", 0
+"Se inaugura una nueva biblioteca en la ciudad con una vasta colección de literatura clásica.", 1
+"El ministerio de asuntos exteriores anuncia un nuevo programa de intercambio cultural internacional.", 2
+"El joven piloto de carreras gana su primer campeonato nacional en una final emocionante.", 0
+"Un famoso director de orquesta recibe un premio por su contribución a la música clásica.", 1
+"El gobierno anuncia un plan para mejorar la infraestructura de internet en áreas rurales.", 2
+"Equipo de balonmano logra un triunfo histórico en el campeonato europeo.", 0
+"La feria del libro de este año incluirá un foro especial sobre literatura y tecnología.", 1
