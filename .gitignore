@@ -9,3 +9,5 @@ ia/nbpy/nlp/Tema-05/data/europarl/europarl-v7.es-en.es
 *.pth
 
 /Adevinta-NLP/Tema-TEMP/*
+
+/Adevinta-NLP/PyTorch/data/*
