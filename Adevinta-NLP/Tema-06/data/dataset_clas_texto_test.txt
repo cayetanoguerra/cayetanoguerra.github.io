@@ -1,0 +1,20 @@
+"La selección de fútbol sub-21 se corona campeona en el torneo europeo juvenil.", 0
+"Gran inauguración de la exposición de arte contemporáneo dedicada a los nuevos talentos iberoamericanos.", 1
+"El congreso debate una nueva ley de reforma educativa centrada en la tecnología y la innovación.", 2
+"La ciclista nacional se lleva el oro en el campeonato mundial de ciclismo en pista.", 0
+"El festival de teatro de calle este año se enfoca en obras que exploran temas de sostenibilidad.", 1
+"El gobierno lanza un plan de ayuda económica para el sector de las artes afectado por la pandemia.", 2
+"El equipo de baloncesto universitario gana el campeonato nacional después de una temporada invicta.", 0
+"Se inaugura el festival anual de cine documental, con énfasis en temas ambientales y sociales.", 1
+"Anuncian nuevos subsidios para proyectos de investigación en energías limpias.", 2
+"El joven boxeador gana el título mundial en su categoría con una victoria por K.O.", 0
+"La nueva exposición en el museo de historia natural explora la biodiversidad del Amazonas.", 1
+"Aprueban una nueva legislación para fortalecer la privacidad y seguridad en internet.", 2
+"El equipo de rugby femenino celebra su primera victoria en el torneo internacional.", 0
+"Anuncian los ganadores del premio nacional de literatura, con una notable diversidad de géneros.", 1
+"El parlamento discute una nueva reforma en el sistema de salud pública.", 2
+"El nadador establece un nuevo récord nacional en los 200 metros estilo espalda.", 0
+"Se celebra el 50º aniversario de la orquesta sinfónica nacional con un concierto especial.", 1
+"El gobierno introduce un nuevo plan de becas para estudiantes en áreas de ciencia y tecnología.", 2
+"Victoria sorpresiva del equipo de hockey sobre césped en el campeonato internacional.", 0
+"El festival de música barroca de este año incluye una serie de masterclasses y conferencias.", 1

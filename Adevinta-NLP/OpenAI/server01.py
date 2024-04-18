@@ -22,12 +22,12 @@ def index():
 
         return Response('ok', status=200)
     else:
-        return "<h1>Benvinguts!</h1>"
+        return "<h1>Bienvenido!</h1>"
 
 
 @app.route("/setwebhook/")
 def setwebhook():
-    s = requests.get("https://api.telegram.org/bot7081322194:AAE4pXi1gl6w6TAwUPSTa94mKvHqXvyjfa8/setWebhook?url=https://6e49-88-25-81-68.ngrok-free.app")
+    s = requests.get("https://api.telegram.org/bot7081322194:AAE4pXi1gl6w6TAwUPSTa94mKvHqXvyjfa8/setWebhook?url=https://5648-88-25-81-68.ngrok-free.app")
   
     if s.ok:
         return "Success"
