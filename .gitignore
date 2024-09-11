@@ -11,3 +11,19 @@ ia/nbpy/nlp/Tema-05/data/europarl/europarl-v7.es-en.es
 /Adevinta-NLP/Tema-TEMP/*
 
 /Adevinta-NLP/PyTorch/data/*
+Adevinta-NLP/Tema-04/data/europarl/europarl-v7.es-en.en
+Adevinta-NLP/Tema-04/data/europarl/europarl-v7.es-en.es
+Adevinta-NLP/Tema-06/modelo_entrenado.zip
+Adevinta-NLP/Tema-06/modelo_entrenado/adapter_config.json
+Adevinta-NLP/Tema-06/modelo_entrenado/adapter_model.safetensors
+Adevinta-NLP/Tema-06/modelo_entrenado/added_tokens.json
+Adevinta-NLP/Tema-06/modelo_entrenado/config.json
+Adevinta-NLP/Tema-06/modelo_entrenado/generation_config.json
+Adevinta-NLP/Tema-06/modelo_entrenado/merges.txt
+Adevinta-NLP/Tema-06/modelo_entrenado/model.safetensors
+Adevinta-NLP/Tema-06/modelo_entrenado/README.md
+Adevinta-NLP/Tema-06/modelo_entrenado/special_tokens_map.json
+Adevinta-NLP/Tema-06/modelo_entrenado/tokenizer.json
+Adevinta-NLP/Tema-06/modelo_entrenado/tokenizer_config.json
+Adevinta-NLP/Tema-06/modelo_entrenado/vocab.json
+Adevinta-NLP/Tema-06/models/mistral-7b-instruct-v0.2.Q4_K_S.gguf
