@@ -1,0 +1,20 @@
+Epoch 1, Loss: 0.9412195682525635
+Accuracy: 0.699999988079071
+Epoch 101, Loss: 0.15377657115459442
+Accuracy: 1.0
+Epoch 201, Loss: 0.06324946135282516
+Accuracy: 1.0
+Epoch 301, Loss: 0.052345216274261475
+Accuracy: 1.0
+Epoch 401, Loss: 0.049102235585451126
+Accuracy: 1.0
+Epoch 501, Loss: 0.04782259836792946
+Accuracy: 1.0
+Epoch 601, Loss: 0.04725353792309761
+Accuracy: 1.0
+Epoch 701, Loss: 0.04698393493890762
+Accuracy: 1.0
+Epoch 801, Loss: 0.046850789338350296
+Accuracy: 1.0
+Epoch 901, Loss: 0.04677990451455116
+Accuracy: 1.0

@@ -1,0 +1,303 @@
+2024-04-23 00:16:58,322 INFO    StreamThr :93036 [internal.py:wandb_internal():86] W&B internal server running at pid: 93036, started at: 2024-04-23 00:16:58.321789
+2024-04-23 00:16:58,323 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: status
+2024-04-23 00:16:58,333 INFO    WriterThread:93036 [datastore.py:open_for_write():85] open: /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-06/wandb/run-20240423_001658-ewywm7ru/run-ewywm7ru.wandb
+2024-04-23 00:16:58,333 DEBUG   SenderThread:93036 [sender.py:send():382] send: header
+2024-04-23 00:16:58,417 DEBUG   SenderThread:93036 [sender.py:send():382] send: run
+2024-04-23 00:16:58,937 INFO    SenderThread:93036 [dir_watcher.py:__init__():211] watching files in: /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-06/wandb/run-20240423_001658-ewywm7ru/files
+2024-04-23 00:16:58,937 INFO    SenderThread:93036 [sender.py:_start_run_threads():1136] run started: ewywm7ru with start time 1713827818.322952
+2024-04-23 00:16:58,945 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: check_version
+2024-04-23 00:16:58,945 DEBUG   SenderThread:93036 [sender.py:send_request():409] send_request: check_version
+2024-04-23 00:16:59,158 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: run_start
+2024-04-23 00:16:59,168 DEBUG   HandlerThread:93036 [system_info.py:__init__():32] System info init
+2024-04-23 00:16:59,168 DEBUG   HandlerThread:93036 [system_info.py:__init__():47] System info init done
+2024-04-23 00:16:59,168 INFO    HandlerThread:93036 [system_monitor.py:start():194] Starting system monitor
+2024-04-23 00:16:59,168 INFO    SystemMonitor:93036 [system_monitor.py:_start():158] Starting system asset monitoring threads
+2024-04-23 00:16:59,169 INFO    HandlerThread:93036 [system_monitor.py:probe():214] Collecting system info
+2024-04-23 00:16:59,169 INFO    SystemMonitor:93036 [interfaces.py:start():190] Started cpu monitoring
+2024-04-23 00:16:59,170 DEBUG   HandlerThread:93036 [system_info.py:probe():196] Probing system
+2024-04-23 00:16:59,170 INFO    SystemMonitor:93036 [interfaces.py:start():190] Started disk monitoring
+2024-04-23 00:16:59,171 INFO    SystemMonitor:93036 [interfaces.py:start():190] Started gpuapple monitoring
+2024-04-23 00:16:59,174 INFO    SystemMonitor:93036 [interfaces.py:start():190] Started memory monitoring
+2024-04-23 00:16:59,175 INFO    SystemMonitor:93036 [interfaces.py:start():190] Started network monitoring
+2024-04-23 00:16:59,180 DEBUG   HandlerThread:93036 [system_info.py:_probe_git():181] Probing git
+2024-04-23 00:16:59,203 DEBUG   HandlerThread:93036 [system_info.py:_probe_git():189] Probing git done
+2024-04-23 00:16:59,203 DEBUG   HandlerThread:93036 [system_info.py:probe():244] Probing system done
+2024-04-23 00:16:59,203 DEBUG   HandlerThread:93036 [system_monitor.py:probe():223] {'os': 'macOS-14.2.1-arm64-arm-64bit', 'python': '3.10.7', 'heartbeatAt': '2024-04-22T23:16:59.170157', 'startedAt': '2024-04-22T23:16:58.312384', 'docker': None, 'cuda': None, 'args': (), 'state': 'running', 'program': '<python with no main file>', 'codePathLocal': None, 'git': {'remote': 'https://github.com/cayetanoguerra/cayetanoguerra.github.io.git', 'commit': '44b731d5c25c5672c39b96df593c453efc9fc157'}, 'email': 'cayetanoguerra@gmail.com', 'root': '/Users/cayetano/Propio/Docencia/cayetanoguerra.github.io', 'host': 'MacBook-Pro-de-Cayetano-M1.local', 'username': 'cayetano', 'executable': '/Users/cayetano/Propio/Notebooks/Machine Learning/RL/env/bin/python', 'cpu_count': 10, 'cpu_count_logical': 10, 'disk': {'/': {'total': 926.3517189025879, 'used': 13.368278503417969}}, 'gpuapple': {'type': 'arm', 'vendor': 'Apple'}, 'memory': {'total': 16.0}}
+2024-04-23 00:16:59,203 INFO    HandlerThread:93036 [system_monitor.py:probe():224] Finished collecting system info
+2024-04-23 00:16:59,203 INFO    HandlerThread:93036 [system_monitor.py:probe():227] Publishing system info
+2024-04-23 00:16:59,203 DEBUG   HandlerThread:93036 [system_info.py:_save_pip():52] Saving list of pip packages installed into the current environment
+2024-04-23 00:16:59,204 DEBUG   HandlerThread:93036 [system_info.py:_save_pip():68] Saving pip packages done
+2024-04-23 00:16:59,204 INFO    HandlerThread:93036 [system_monitor.py:probe():229] Finished publishing system info
+2024-04-23 00:16:59,208 DEBUG   SenderThread:93036 [sender.py:send():382] send: files
+2024-04-23 00:16:59,208 INFO    SenderThread:93036 [sender.py:_save_file():1392] saving file wandb-metadata.json with policy now
+2024-04-23 00:16:59,218 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: internal_messages
+2024-04-23 00:16:59,218 DEBUG   SenderThread:93036 [sender.py:send():382] send: telemetry
+2024-04-23 00:16:59,218 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: stop_status
+2024-04-23 00:16:59,218 DEBUG   SenderThread:93036 [sender.py:send_request():409] send_request: stop_status
+2024-04-23 00:16:59,616 DEBUG   SenderThread:93036 [sender.py:send():382] send: config
+2024-04-23 00:16:59,617 DEBUG   SenderThread:93036 [sender.py:send():382] send: metric
+2024-04-23 00:16:59,617 DEBUG   SenderThread:93036 [sender.py:send():382] send: telemetry
+2024-04-23 00:16:59,617 DEBUG   SenderThread:93036 [sender.py:send():382] send: metric
+2024-04-23 00:16:59,617 WARNING SenderThread:93036 [sender.py:send_metric():1343] Seen metric with glob (shouldn't happen)
+2024-04-23 00:16:59,617 DEBUG   SenderThread:93036 [sender.py:send():382] send: telemetry
+2024-04-23 00:16:59,939 INFO    Thread-12 :93036 [dir_watcher.py:_on_file_created():271] file/dir created: /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-06/wandb/run-20240423_001658-ewywm7ru/files/output.log
+2024-04-23 00:16:59,940 INFO    Thread-12 :93036 [dir_watcher.py:_on_file_created():271] file/dir created: /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-06/wandb/run-20240423_001658-ewywm7ru/files/requirements.txt
+2024-04-23 00:16:59,940 INFO    Thread-12 :93036 [dir_watcher.py:_on_file_created():271] file/dir created: /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-06/wandb/run-20240423_001658-ewywm7ru/files/wandb-metadata.json
+2024-04-23 00:17:00,052 INFO    wandb-upload_0:93036 [upload_job.py:push():131] Uploaded file /var/folders/gm/03tk2cn52jzgnlz4qchk9s9m0000gn/T/tmpwjgftux0wandb/6zwnvu51-wandb-metadata.json
+2024-04-23 00:17:01,949 INFO    Thread-12 :93036 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-06/wandb/run-20240423_001658-ewywm7ru/files/output.log
+2024-04-23 00:17:03,430 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-23 00:17:03,431 DEBUG   SenderThread:93036 [sender.py:send():382] send: metric
+2024-04-23 00:17:03,431 DEBUG   SenderThread:93036 [sender.py:send():382] send: metric
+2024-04-23 00:17:03,431 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: status_report
+2024-04-23 00:17:03,431 DEBUG   SenderThread:93036 [sender.py:send():382] send: metric
+2024-04-23 00:17:03,431 DEBUG   SenderThread:93036 [sender.py:send():382] send: history
+2024-04-23 00:17:03,431 DEBUG   SenderThread:93036 [sender.py:send_request():409] send_request: summary_record
+2024-04-23 00:17:03,432 INFO    SenderThread:93036 [sender.py:_save_file():1392] saving file wandb-summary.json with policy end
+2024-04-23 00:17:03,959 INFO    Thread-12 :93036 [dir_watcher.py:_on_file_created():271] file/dir created: /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-06/wandb/run-20240423_001658-ewywm7ru/files/wandb-summary.json
+2024-04-23 00:17:05,965 INFO    Thread-12 :93036 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-06/wandb/run-20240423_001658-ewywm7ru/files/output.log
+2024-04-23 00:17:06,680 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-23 00:17:06,680 DEBUG   SenderThread:93036 [sender.py:send():382] send: history
+2024-04-23 00:17:06,680 DEBUG   SenderThread:93036 [sender.py:send_request():409] send_request: summary_record
+2024-04-23 00:17:06,681 INFO    SenderThread:93036 [sender.py:_save_file():1392] saving file wandb-summary.json with policy end
+2024-04-23 00:17:06,970 INFO    Thread-12 :93036 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-06/wandb/run-20240423_001658-ewywm7ru/files/wandb-summary.json
+2024-04-23 00:17:07,971 INFO    Thread-12 :93036 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-06/wandb/run-20240423_001658-ewywm7ru/files/output.log
+2024-04-23 00:17:08,686 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: status_report
+2024-04-23 00:17:09,934 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-23 00:17:09,935 DEBUG   SenderThread:93036 [sender.py:send():382] send: history
+2024-04-23 00:17:09,935 DEBUG   SenderThread:93036 [sender.py:send_request():409] send_request: summary_record
+2024-04-23 00:17:09,936 INFO    SenderThread:93036 [sender.py:_save_file():1392] saving file wandb-summary.json with policy end
+2024-04-23 00:17:09,982 INFO    Thread-12 :93036 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-06/wandb/run-20240423_001658-ewywm7ru/files/wandb-summary.json
+2024-04-23 00:17:11,992 INFO    Thread-12 :93036 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-06/wandb/run-20240423_001658-ewywm7ru/files/output.log
+2024-04-23 00:17:13,221 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-23 00:17:13,221 DEBUG   SenderThread:93036 [sender.py:send():382] send: history
+2024-04-23 00:17:13,221 DEBUG   SenderThread:93036 [sender.py:send_request():409] send_request: summary_record
+2024-04-23 00:17:13,223 INFO    SenderThread:93036 [sender.py:_save_file():1392] saving file wandb-summary.json with policy end
+2024-04-23 00:17:14,003 INFO    Thread-12 :93036 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-06/wandb/run-20240423_001658-ewywm7ru/files/wandb-summary.json
+2024-04-23 00:17:14,219 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: internal_messages
+2024-04-23 00:17:14,222 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: stop_status
+2024-04-23 00:17:14,223 DEBUG   SenderThread:93036 [sender.py:send_request():409] send_request: stop_status
+2024-04-23 00:17:14,224 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: status_report
+2024-04-23 00:17:16,009 INFO    Thread-12 :93036 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-06/wandb/run-20240423_001658-ewywm7ru/files/output.log
+2024-04-23 00:17:16,444 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-23 00:17:16,445 DEBUG   SenderThread:93036 [sender.py:send():382] send: history
+2024-04-23 00:17:16,445 DEBUG   SenderThread:93036 [sender.py:send_request():409] send_request: summary_record
+2024-04-23 00:17:16,445 INFO    SenderThread:93036 [sender.py:_save_file():1392] saving file wandb-summary.json with policy end
+2024-04-23 00:17:17,015 INFO    Thread-12 :93036 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-06/wandb/run-20240423_001658-ewywm7ru/files/wandb-summary.json
+2024-04-23 00:17:18,018 INFO    Thread-12 :93036 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-06/wandb/run-20240423_001658-ewywm7ru/files/output.log
+2024-04-23 00:17:19,451 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: status_report
+2024-04-23 00:17:19,713 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-23 00:17:19,714 DEBUG   SenderThread:93036 [sender.py:send():382] send: history
+2024-04-23 00:17:19,714 DEBUG   SenderThread:93036 [sender.py:send_request():409] send_request: summary_record
+2024-04-23 00:17:19,714 INFO    SenderThread:93036 [sender.py:_save_file():1392] saving file wandb-summary.json with policy end
+2024-04-23 00:17:20,039 INFO    Thread-12 :93036 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-06/wandb/run-20240423_001658-ewywm7ru/files/wandb-summary.json
+2024-04-23 00:17:22,048 INFO    Thread-12 :93036 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-06/wandb/run-20240423_001658-ewywm7ru/files/output.log
+2024-04-23 00:17:23,011 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-23 00:17:23,013 DEBUG   SenderThread:93036 [sender.py:send():382] send: history
+2024-04-23 00:17:23,013 DEBUG   SenderThread:93036 [sender.py:send_request():409] send_request: summary_record
+2024-04-23 00:17:23,014 INFO    SenderThread:93036 [sender.py:_save_file():1392] saving file wandb-summary.json with policy end
+2024-04-23 00:17:23,050 INFO    Thread-12 :93036 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-06/wandb/run-20240423_001658-ewywm7ru/files/wandb-summary.json
+2024-04-23 00:17:24,055 INFO    Thread-12 :93036 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-06/wandb/run-20240423_001658-ewywm7ru/files/output.log
+2024-04-23 00:17:25,023 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: status_report
+2024-04-23 00:17:26,250 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-23 00:17:26,251 DEBUG   SenderThread:93036 [sender.py:send():382] send: history
+2024-04-23 00:17:26,251 DEBUG   SenderThread:93036 [sender.py:send_request():409] send_request: summary_record
+2024-04-23 00:17:26,251 INFO    SenderThread:93036 [sender.py:_save_file():1392] saving file wandb-summary.json with policy end
+2024-04-23 00:17:27,071 INFO    Thread-12 :93036 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-06/wandb/run-20240423_001658-ewywm7ru/files/wandb-summary.json
+2024-04-23 00:17:28,076 INFO    Thread-12 :93036 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-06/wandb/run-20240423_001658-ewywm7ru/files/output.log
+2024-04-23 00:17:29,223 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: internal_messages
+2024-04-23 00:17:29,224 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: stop_status
+2024-04-23 00:17:29,224 DEBUG   SenderThread:93036 [sender.py:send_request():409] send_request: stop_status
+2024-04-23 00:17:29,471 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-23 00:17:29,471 DEBUG   SenderThread:93036 [sender.py:send():382] send: history
+2024-04-23 00:17:29,471 DEBUG   SenderThread:93036 [sender.py:send_request():409] send_request: summary_record
+2024-04-23 00:17:29,472 INFO    SenderThread:93036 [sender.py:_save_file():1392] saving file wandb-summary.json with policy end
+2024-04-23 00:17:30,083 INFO    Thread-12 :93036 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-06/wandb/run-20240423_001658-ewywm7ru/files/wandb-summary.json
+2024-04-23 00:17:30,479 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: status_report
+2024-04-23 00:17:31,087 INFO    Thread-12 :93036 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-06/wandb/run-20240423_001658-ewywm7ru/files/config.yaml
+2024-04-23 00:17:32,093 INFO    Thread-12 :93036 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-06/wandb/run-20240423_001658-ewywm7ru/files/output.log
+2024-04-23 00:17:32,721 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-23 00:17:32,722 DEBUG   SenderThread:93036 [sender.py:send():382] send: history
+2024-04-23 00:17:32,722 DEBUG   SenderThread:93036 [sender.py:send_request():409] send_request: summary_record
+2024-04-23 00:17:32,722 INFO    SenderThread:93036 [sender.py:_save_file():1392] saving file wandb-summary.json with policy end
+2024-04-23 00:17:33,094 INFO    Thread-12 :93036 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-06/wandb/run-20240423_001658-ewywm7ru/files/wandb-summary.json
+2024-04-23 00:17:34,095 INFO    Thread-12 :93036 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-06/wandb/run-20240423_001658-ewywm7ru/files/output.log
+2024-04-23 00:17:35,736 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: status_report
+2024-04-23 00:17:36,005 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-23 00:17:36,005 DEBUG   SenderThread:93036 [sender.py:send():382] send: history
+2024-04-23 00:17:36,006 DEBUG   SenderThread:93036 [sender.py:send_request():409] send_request: summary_record
+2024-04-23 00:17:36,007 INFO    SenderThread:93036 [sender.py:_save_file():1392] saving file wandb-summary.json with policy end
+2024-04-23 00:17:36,105 INFO    Thread-12 :93036 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-06/wandb/run-20240423_001658-ewywm7ru/files/wandb-summary.json
+2024-04-23 00:17:38,115 INFO    Thread-12 :93036 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-06/wandb/run-20240423_001658-ewywm7ru/files/output.log
+2024-04-23 00:17:39,231 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-23 00:17:39,232 DEBUG   SenderThread:93036 [sender.py:send():382] send: history
+2024-04-23 00:17:39,232 DEBUG   SenderThread:93036 [sender.py:send_request():409] send_request: summary_record
+2024-04-23 00:17:39,233 INFO    SenderThread:93036 [sender.py:_save_file():1392] saving file wandb-summary.json with policy end
+2024-04-23 00:17:40,126 INFO    Thread-12 :93036 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-06/wandb/run-20240423_001658-ewywm7ru/files/wandb-summary.json
+2024-04-23 00:17:41,238 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: status_report
+2024-04-23 00:17:42,133 INFO    Thread-12 :93036 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-06/wandb/run-20240423_001658-ewywm7ru/files/output.log
+2024-04-23 00:17:42,449 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-23 00:17:42,450 DEBUG   SenderThread:93036 [sender.py:send():382] send: history
+2024-04-23 00:17:42,450 DEBUG   SenderThread:93036 [sender.py:send_request():409] send_request: summary_record
+2024-04-23 00:17:42,450 INFO    SenderThread:93036 [sender.py:_save_file():1392] saving file wandb-summary.json with policy end
+2024-04-23 00:17:43,135 INFO    Thread-12 :93036 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-06/wandb/run-20240423_001658-ewywm7ru/files/wandb-summary.json
+2024-04-23 00:17:44,140 INFO    Thread-12 :93036 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-06/wandb/run-20240423_001658-ewywm7ru/files/output.log
+2024-04-23 00:17:44,228 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: stop_status
+2024-04-23 00:17:44,228 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: internal_messages
+2024-04-23 00:17:44,228 DEBUG   SenderThread:93036 [sender.py:send_request():409] send_request: stop_status
+2024-04-23 00:17:45,661 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-23 00:17:45,662 DEBUG   SenderThread:93036 [sender.py:send():382] send: history
+2024-04-23 00:17:45,662 DEBUG   SenderThread:93036 [sender.py:send_request():409] send_request: summary_record
+2024-04-23 00:17:45,663 INFO    SenderThread:93036 [sender.py:_save_file():1392] saving file wandb-summary.json with policy end
+2024-04-23 00:17:46,149 INFO    Thread-12 :93036 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-06/wandb/run-20240423_001658-ewywm7ru/files/wandb-summary.json
+2024-04-23 00:17:46,668 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: status_report
+2024-04-23 00:17:48,155 INFO    Thread-12 :93036 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-06/wandb/run-20240423_001658-ewywm7ru/files/output.log
+2024-04-23 00:17:48,918 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-23 00:17:48,919 DEBUG   SenderThread:93036 [sender.py:send():382] send: history
+2024-04-23 00:17:48,919 DEBUG   SenderThread:93036 [sender.py:send_request():409] send_request: summary_record
+2024-04-23 00:17:48,920 INFO    SenderThread:93036 [sender.py:_save_file():1392] saving file wandb-summary.json with policy end
+2024-04-23 00:17:49,155 INFO    Thread-12 :93036 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-06/wandb/run-20240423_001658-ewywm7ru/files/wandb-summary.json
+2024-04-23 00:17:50,158 INFO    Thread-12 :93036 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-06/wandb/run-20240423_001658-ewywm7ru/files/output.log
+2024-04-23 00:17:51,934 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: status_report
+2024-04-23 00:17:52,149 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-23 00:17:52,149 DEBUG   SenderThread:93036 [sender.py:send():382] send: history
+2024-04-23 00:17:52,150 DEBUG   SenderThread:93036 [sender.py:send_request():409] send_request: summary_record
+2024-04-23 00:17:52,150 INFO    SenderThread:93036 [sender.py:_save_file():1392] saving file wandb-summary.json with policy end
+2024-04-23 00:17:52,164 INFO    Thread-12 :93036 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-06/wandb/run-20240423_001658-ewywm7ru/files/wandb-summary.json
+2024-04-23 00:17:54,173 INFO    Thread-12 :93036 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-06/wandb/run-20240423_001658-ewywm7ru/files/output.log
+2024-04-23 00:17:55,374 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-23 00:17:55,374 DEBUG   SenderThread:93036 [sender.py:send():382] send: history
+2024-04-23 00:17:55,374 DEBUG   SenderThread:93036 [sender.py:send_request():409] send_request: summary_record
+2024-04-23 00:17:55,375 INFO    SenderThread:93036 [sender.py:_save_file():1392] saving file wandb-summary.json with policy end
+2024-04-23 00:17:56,183 INFO    Thread-12 :93036 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-06/wandb/run-20240423_001658-ewywm7ru/files/wandb-summary.json
+2024-04-23 00:17:57,384 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: status_report
+2024-04-23 00:17:58,193 INFO    Thread-12 :93036 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-06/wandb/run-20240423_001658-ewywm7ru/files/output.log
+2024-04-23 00:17:58,606 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-23 00:17:58,607 DEBUG   SenderThread:93036 [sender.py:send():382] send: history
+2024-04-23 00:17:58,607 DEBUG   SenderThread:93036 [sender.py:send_request():409] send_request: summary_record
+2024-04-23 00:17:58,607 INFO    SenderThread:93036 [sender.py:_save_file():1392] saving file wandb-summary.json with policy end
+2024-04-23 00:17:59,176 DEBUG   SystemMonitor:93036 [system_monitor.py:_start():172] Starting system metrics aggregation loop
+2024-04-23 00:17:59,180 DEBUG   SenderThread:93036 [sender.py:send():382] send: telemetry
+2024-04-23 00:17:59,181 DEBUG   SenderThread:93036 [sender.py:send():382] send: stats
+2024-04-23 00:17:59,194 INFO    Thread-12 :93036 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-06/wandb/run-20240423_001658-ewywm7ru/files/wandb-summary.json
+2024-04-23 00:17:59,231 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: internal_messages
+2024-04-23 00:17:59,233 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: stop_status
+2024-04-23 00:17:59,233 DEBUG   SenderThread:93036 [sender.py:send_request():409] send_request: stop_status
+2024-04-23 00:18:00,197 INFO    Thread-12 :93036 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-06/wandb/run-20240423_001658-ewywm7ru/files/output.log
+2024-04-23 00:18:01,856 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-23 00:18:01,857 DEBUG   SenderThread:93036 [sender.py:send():382] send: history
+2024-04-23 00:18:01,857 DEBUG   SenderThread:93036 [sender.py:send_request():409] send_request: summary_record
+2024-04-23 00:18:01,857 INFO    SenderThread:93036 [sender.py:_save_file():1392] saving file wandb-summary.json with policy end
+2024-04-23 00:18:02,206 INFO    Thread-12 :93036 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-06/wandb/run-20240423_001658-ewywm7ru/files/wandb-summary.json
+2024-04-23 00:18:02,861 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: status_report
+2024-04-23 00:18:03,209 INFO    Thread-12 :93036 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-06/wandb/run-20240423_001658-ewywm7ru/files/config.yaml
+2024-04-23 00:18:04,211 INFO    Thread-12 :93036 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-06/wandb/run-20240423_001658-ewywm7ru/files/output.log
+2024-04-23 00:18:05,106 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-23 00:18:05,107 DEBUG   SenderThread:93036 [sender.py:send():382] send: history
+2024-04-23 00:18:05,107 DEBUG   SenderThread:93036 [sender.py:send_request():409] send_request: summary_record
+2024-04-23 00:18:05,108 INFO    SenderThread:93036 [sender.py:_save_file():1392] saving file wandb-summary.json with policy end
+2024-04-23 00:18:05,216 INFO    Thread-12 :93036 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-06/wandb/run-20240423_001658-ewywm7ru/files/wandb-summary.json
+2024-04-23 00:18:06,218 INFO    Thread-12 :93036 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-06/wandb/run-20240423_001658-ewywm7ru/files/output.log
+2024-04-23 00:18:08,121 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: status_report
+2024-04-23 00:18:08,348 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-23 00:18:08,349 DEBUG   SenderThread:93036 [sender.py:send():382] send: history
+2024-04-23 00:18:08,349 DEBUG   SenderThread:93036 [sender.py:send_request():409] send_request: summary_record
+2024-04-23 00:18:08,350 INFO    SenderThread:93036 [sender.py:_save_file():1392] saving file wandb-summary.json with policy end
+2024-04-23 00:18:09,227 INFO    Thread-12 :93036 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-06/wandb/run-20240423_001658-ewywm7ru/files/wandb-summary.json
+2024-04-23 00:18:10,233 INFO    Thread-12 :93036 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-06/wandb/run-20240423_001658-ewywm7ru/files/output.log
+2024-04-23 00:18:11,597 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-23 00:18:11,598 DEBUG   SenderThread:93036 [sender.py:send():382] send: history
+2024-04-23 00:18:11,598 DEBUG   SenderThread:93036 [sender.py:send_request():409] send_request: summary_record
+2024-04-23 00:18:11,598 INFO    SenderThread:93036 [sender.py:_save_file():1392] saving file wandb-summary.json with policy end
+2024-04-23 00:18:12,239 INFO    Thread-12 :93036 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-06/wandb/run-20240423_001658-ewywm7ru/files/wandb-summary.json
+2024-04-23 00:18:13,605 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: status_report
+2024-04-23 00:18:14,237 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: internal_messages
+2024-04-23 00:18:14,237 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: stop_status
+2024-04-23 00:18:14,237 DEBUG   SenderThread:93036 [sender.py:send_request():409] send_request: stop_status
+2024-04-23 00:18:14,248 INFO    Thread-12 :93036 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-06/wandb/run-20240423_001658-ewywm7ru/files/output.log
+2024-04-23 00:18:14,846 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-23 00:18:14,847 DEBUG   SenderThread:93036 [sender.py:send():382] send: history
+2024-04-23 00:18:14,847 DEBUG   SenderThread:93036 [sender.py:send_request():409] send_request: summary_record
+2024-04-23 00:18:14,847 INFO    SenderThread:93036 [sender.py:_save_file():1392] saving file wandb-summary.json with policy end
+2024-04-23 00:18:15,249 INFO    Thread-12 :93036 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-06/wandb/run-20240423_001658-ewywm7ru/files/wandb-summary.json
+2024-04-23 00:18:16,254 INFO    Thread-12 :93036 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-06/wandb/run-20240423_001658-ewywm7ru/files/output.log
+2024-04-23 00:18:18,151 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-23 00:18:18,152 DEBUG   SenderThread:93036 [sender.py:send():382] send: history
+2024-04-23 00:18:18,152 DEBUG   SenderThread:93036 [sender.py:send_request():409] send_request: summary_record
+2024-04-23 00:18:18,152 INFO    SenderThread:93036 [sender.py:_save_file():1392] saving file wandb-summary.json with policy end
+2024-04-23 00:18:18,261 INFO    Thread-12 :93036 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-06/wandb/run-20240423_001658-ewywm7ru/files/wandb-summary.json
+2024-04-23 00:18:19,154 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: status_report
+2024-04-23 00:18:20,272 INFO    Thread-12 :93036 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-06/wandb/run-20240423_001658-ewywm7ru/files/output.log
+2024-04-23 00:18:21,404 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-23 00:18:21,405 DEBUG   SenderThread:93036 [sender.py:send():382] send: history
+2024-04-23 00:18:21,405 DEBUG   SenderThread:93036 [sender.py:send_request():409] send_request: summary_record
+2024-04-23 00:18:21,405 INFO    SenderThread:93036 [sender.py:_save_file():1392] saving file wandb-summary.json with policy end
+2024-04-23 00:18:22,283 INFO    Thread-12 :93036 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-06/wandb/run-20240423_001658-ewywm7ru/files/output.log
+2024-04-23 00:18:22,283 INFO    Thread-12 :93036 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-06/wandb/run-20240423_001658-ewywm7ru/files/wandb-summary.json
+2024-04-23 00:18:24,418 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: status_report
+2024-04-23 00:18:24,680 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-23 00:18:24,681 DEBUG   SenderThread:93036 [sender.py:send():382] send: history
+2024-04-23 00:18:24,681 DEBUG   SenderThread:93036 [sender.py:send_request():409] send_request: summary_record
+2024-04-23 00:18:24,681 INFO    SenderThread:93036 [sender.py:_save_file():1392] saving file wandb-summary.json with policy end
+2024-04-23 00:18:25,294 INFO    Thread-12 :93036 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-06/wandb/run-20240423_001658-ewywm7ru/files/wandb-summary.json
+2024-04-23 00:18:26,295 INFO    Thread-12 :93036 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-06/wandb/run-20240423_001658-ewywm7ru/files/output.log
+2024-04-23 00:18:27,961 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: partial_history
+2024-04-23 00:18:27,961 DEBUG   SenderThread:93036 [sender.py:send():382] send: history
+2024-04-23 00:18:27,961 DEBUG   SenderThread:93036 [sender.py:send_request():409] send_request: summary_record
+2024-04-23 00:18:27,962 INFO    SenderThread:93036 [sender.py:_save_file():1392] saving file wandb-summary.json with policy end
+2024-04-23 00:18:28,304 INFO    Thread-12 :93036 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-06/wandb/run-20240423_001658-ewywm7ru/files/wandb-summary.json
+2024-04-23 00:18:29,182 DEBUG   SenderThread:93036 [sender.py:send():382] send: stats
+2024-04-23 00:18:29,241 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: internal_messages
+2024-04-23 00:18:29,242 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: stop_status
+2024-04-23 00:18:29,242 DEBUG   SenderThread:93036 [sender.py:send_request():409] send_request: stop_status
+2024-04-23 00:18:29,421 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: status_report
+2024-04-23 00:18:30,310 INFO    Thread-12 :93036 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-06/wandb/run-20240423_001658-ewywm7ru/files/output.log
+2024-04-23 00:18:30,437 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: pause
+2024-04-23 00:18:30,437 INFO    HandlerThread:93036 [handler.py:handle_request_pause():705] stopping system metrics thread
+2024-04-23 00:18:30,437 INFO    HandlerThread:93036 [system_monitor.py:finish():203] Stopping system monitor
+2024-04-23 00:18:30,438 DEBUG   SystemMonitor:93036 [system_monitor.py:_start():179] Finished system metrics aggregation loop
+2024-04-23 00:18:30,438 DEBUG   SystemMonitor:93036 [system_monitor.py:_start():183] Publishing last batch of metrics
+2024-04-23 00:18:30,438 INFO    HandlerThread:93036 [interfaces.py:finish():202] Joined cpu monitor
+2024-04-23 00:18:30,438 INFO    HandlerThread:93036 [interfaces.py:finish():202] Joined disk monitor
+2024-04-23 00:18:30,438 INFO    HandlerThread:93036 [interfaces.py:finish():202] Joined gpuapple monitor
+2024-04-23 00:18:30,438 INFO    HandlerThread:93036 [interfaces.py:finish():202] Joined memory monitor
+2024-04-23 00:18:30,439 INFO    HandlerThread:93036 [interfaces.py:finish():202] Joined network monitor
+2024-04-23 00:18:30,439 DEBUG   SenderThread:93036 [sender.py:send():382] send: stats
+2024-04-23 00:18:34,451 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: status_report
+2024-04-23 00:18:39,469 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: status_report
+2024-04-23 00:18:44,246 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: internal_messages
+2024-04-23 00:18:44,246 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: stop_status
+2024-04-23 00:18:44,247 DEBUG   SenderThread:93036 [sender.py:send_request():409] send_request: stop_status
+2024-04-23 00:18:44,535 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: status_report
+2024-04-23 00:18:46,868 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: resume
+2024-04-23 00:18:46,869 INFO    HandlerThread:93036 [handler.py:handle_request_resume():696] starting system metrics thread
+2024-04-23 00:18:46,869 INFO    HandlerThread:93036 [system_monitor.py:start():194] Starting system monitor
+2024-04-23 00:18:46,869 INFO    SystemMonitor:93036 [system_monitor.py:_start():158] Starting system asset monitoring threads
+2024-04-23 00:18:46,869 INFO    SystemMonitor:93036 [interfaces.py:start():190] Started cpu monitoring
+2024-04-23 00:18:46,869 INFO    SystemMonitor:93036 [interfaces.py:start():190] Started disk monitoring
+2024-04-23 00:18:46,869 INFO    SystemMonitor:93036 [interfaces.py:start():190] Started gpuapple monitoring
+2024-04-23 00:18:46,873 INFO    SystemMonitor:93036 [interfaces.py:start():190] Started memory monitoring
+2024-04-23 00:18:46,873 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: pause
+2024-04-23 00:18:46,874 INFO    SystemMonitor:93036 [interfaces.py:start():190] Started network monitoring
+2024-04-23 00:18:46,874 INFO    HandlerThread:93036 [handler.py:handle_request_pause():705] stopping system metrics thread
+2024-04-23 00:18:46,874 INFO    HandlerThread:93036 [system_monitor.py:finish():203] Stopping system monitor
+2024-04-23 00:18:46,874 INFO    HandlerThread:93036 [interfaces.py:finish():202] Joined cpu monitor
+2024-04-23 00:18:46,875 DEBUG   SystemMonitor:93036 [system_monitor.py:_start():172] Starting system metrics aggregation loop
+2024-04-23 00:18:46,875 INFO    HandlerThread:93036 [interfaces.py:finish():202] Joined disk monitor
+2024-04-23 00:18:46,875 DEBUG   SystemMonitor:93036 [system_monitor.py:_start():179] Finished system metrics aggregation loop
+2024-04-23 00:18:46,875 DEBUG   SystemMonitor:93036 [system_monitor.py:_start():183] Publishing last batch of metrics
+2024-04-23 00:18:47,785 INFO    HandlerThread:93036 [interfaces.py:finish():202] Joined gpuapple monitor
+2024-04-23 00:18:47,785 INFO    HandlerThread:93036 [interfaces.py:finish():202] Joined memory monitor
+2024-04-23 00:18:47,785 INFO    HandlerThread:93036 [interfaces.py:finish():202] Joined network monitor
+2024-04-23 00:18:47,785 DEBUG   SenderThread:93036 [sender.py:send():382] send: stats
+2024-04-23 00:18:49,792 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: status_report
+2024-04-23 00:18:54,815 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: status_report
+2024-04-23 00:18:59,249 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: stop_status
+2024-04-23 00:18:59,250 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: internal_messages
+2024-04-23 00:18:59,250 DEBUG   SenderThread:93036 [sender.py:send_request():409] send_request: stop_status
+2024-04-23 00:19:00,515 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: status_report
+2024-04-23 00:19:05,535 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: status_report
+2024-04-23 00:19:10,558 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: status_report
+2024-04-23 00:19:14,257 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: stop_status
+2024-04-23 00:19:14,258 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: internal_messages
+2024-04-23 00:19:14,259 DEBUG   SenderThread:93036 [sender.py:send_request():409] send_request: stop_status
+2024-04-23 00:19:16,469 DEBUG   HandlerThread:93036 [handler.py:handle_request():146] handle_request: status_report

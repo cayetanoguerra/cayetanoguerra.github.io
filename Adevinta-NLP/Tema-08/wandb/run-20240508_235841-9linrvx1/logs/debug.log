@@ -1,0 +1,46 @@
+2024-05-08 23:58:41,927 INFO    MainThread:22069 [wandb_setup.py:_flush():76] Current SDK version is 0.17.0
+2024-05-08 23:58:41,927 INFO    MainThread:22069 [wandb_setup.py:_flush():76] Configure stats pid to 22069
+2024-05-08 23:58:41,927 INFO    MainThread:22069 [wandb_setup.py:_flush():76] Loading settings from /Users/cayetano/.config/wandb/settings
+2024-05-08 23:58:41,927 INFO    MainThread:22069 [wandb_setup.py:_flush():76] Loading settings from /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-08/wandb/settings
+2024-05-08 23:58:41,927 INFO    MainThread:22069 [wandb_setup.py:_flush():76] Loading settings from environment variables: {'notebook_name': 'iris_classification.ipynb'}
+2024-05-08 23:58:41,927 INFO    MainThread:22069 [wandb_setup.py:_flush():76] Applying setup settings: {'_disable_service': False}
+2024-05-08 23:58:41,927 INFO    MainThread:22069 [wandb_setup.py:_flush():76] Inferring run settings from compute environment: {'program': '<python with no main file>'}
+2024-05-08 23:58:41,927 INFO    MainThread:22069 [wandb_setup.py:_flush():76] Applying login settings: {}
+2024-05-08 23:58:41,927 INFO    MainThread:22069 [wandb_init.py:_log_setup():520] Logging user logs to /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-08/wandb/run-20240508_235841-9linrvx1/logs/debug.log
+2024-05-08 23:58:41,927 INFO    MainThread:22069 [wandb_init.py:_log_setup():521] Logging internal logs to /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-08/wandb/run-20240508_235841-9linrvx1/logs/debug-internal.log
+2024-05-08 23:58:41,927 INFO    MainThread:22069 [wandb_init.py:_jupyter_setup():466] configuring jupyter hooks <wandb.sdk.wandb_init._WandbInit object at 0x29fecc0d0>
+2024-05-08 23:58:41,927 INFO    MainThread:22069 [wandb_init.py:init():560] calling init triggers
+2024-05-08 23:58:41,927 INFO    MainThread:22069 [wandb_init.py:init():567] wandb.init called with sweep_config: {}
+config: {}
+2024-05-08 23:58:41,927 INFO    MainThread:22069 [wandb_init.py:init():610] starting backend
+2024-05-08 23:58:41,927 INFO    MainThread:22069 [wandb_init.py:init():614] setting up manager
+2024-05-08 23:58:41,928 INFO    MainThread:22069 [backend.py:_multiprocessing_setup():105] multiprocessing start_methods=spawn,fork,forkserver, using: spawn
+2024-05-08 23:58:41,930 INFO    MainThread:22069 [wandb_init.py:init():622] backend started and connected
+2024-05-08 23:58:41,939 INFO    MainThread:22069 [wandb_run.py:_label_probe_notebook():1328] probe notebook
+2024-05-08 23:58:41,939 INFO    MainThread:22069 [wandb_run.py:_label_probe_notebook():1338] Unable to probe notebook: 'NoneType' object has no attribute 'get'
+2024-05-08 23:58:41,940 INFO    MainThread:22069 [wandb_init.py:init():711] updated telemetry
+2024-05-08 23:58:41,965 INFO    MainThread:22069 [wandb_init.py:init():744] communicating run to backend with 90.0 second timeout
+2024-05-08 23:58:42,586 INFO    MainThread:22069 [wandb_run.py:_on_init():2396] communicating current version
+2024-05-08 23:58:42,756 INFO    MainThread:22069 [wandb_run.py:_on_init():2405] got version response 
+2024-05-08 23:58:42,756 INFO    MainThread:22069 [wandb_init.py:init():795] starting run threads in backend
+2024-05-08 23:58:43,385 INFO    MainThread:22069 [wandb_run.py:_console_start():2374] atexit reg
+2024-05-08 23:58:43,385 INFO    MainThread:22069 [wandb_run.py:_redirect():2229] redirect: wrap_raw
+2024-05-08 23:58:43,385 INFO    MainThread:22069 [wandb_run.py:_redirect():2294] Wrapping output streams.
+2024-05-08 23:58:43,385 INFO    MainThread:22069 [wandb_run.py:_redirect():2319] Redirects installed.
+2024-05-08 23:58:43,386 INFO    MainThread:22069 [wandb_init.py:init():838] run started, returning control to user process
+2024-05-08 23:58:43,557 INFO    MainThread:22069 [jupyter.py:save_ipynb():373] not saving jupyter notebook
+2024-05-08 23:58:43,557 INFO    MainThread:22069 [wandb_init.py:_pause_backend():431] pausing backend
+2024-05-09 00:00:08,055 INFO    MainThread:22069 [wandb_init.py:_resume_backend():436] resuming backend
+2024-05-09 00:00:08,058 INFO    MainThread:22069 [jupyter.py:save_ipynb():373] not saving jupyter notebook
+2024-05-09 00:00:08,058 INFO    MainThread:22069 [wandb_init.py:_pause_backend():431] pausing backend
+2024-05-09 00:00:18,547 INFO    MainThread:22069 [wandb_init.py:_resume_backend():436] resuming backend
+2024-05-09 00:00:25,711 INFO    MainThread:22069 [pyagent.py:run():323] Starting sweep agent: entity=None, project=None, count=None
+2024-05-09 00:00:32,732 WARNING MsgRouterThr:22069 [router.py:message_loop():77] message_loop has been closed
+2024-05-09 00:03:05,478 ERROR   Thread-14 (_heartbeat):22069 [internal_api.py:execute():344] 404 response executing GraphQL.
+2024-05-09 00:03:05,479 ERROR   Thread-14 (_heartbeat):22069 [internal_api.py:execute():345] {"errors":[{"message":"could not find agent i8f8skzx during agentHeartbeat","path":["agentHeartbeat"]}],"data":{"agentHeartbeat":null}}
+2024-05-09 00:03:28,242 INFO    MainThread:22069 [jupyter.py:save_ipynb():373] not saving jupyter notebook
+2024-05-09 00:03:28,242 INFO    MainThread:22069 [wandb_init.py:_pause_backend():431] pausing backend
+2024-05-09 00:05:21,258 INFO    MainThread:22069 [wandb_init.py:_resume_backend():436] resuming backend
+2024-05-09 00:05:22,379 INFO    MainThread:22069 [pyagent.py:run():323] Starting sweep agent: entity=None, project=None, count=None
+2024-05-09 00:05:30,087 INFO    MainThread:22069 [jupyter.py:save_ipynb():373] not saving jupyter notebook
+2024-05-09 00:05:30,087 INFO    MainThread:22069 [wandb_init.py:_pause_backend():431] pausing backend

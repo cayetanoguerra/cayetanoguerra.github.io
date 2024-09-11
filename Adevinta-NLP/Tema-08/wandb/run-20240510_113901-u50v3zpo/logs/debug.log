@@ -1,0 +1,40 @@
+2024-05-10 11:39:01,083 INFO    MainThread:41892 [wandb_setup.py:_flush():76] Current SDK version is 0.17.0
+2024-05-10 11:39:01,083 INFO    MainThread:41892 [wandb_setup.py:_flush():76] Configure stats pid to 41892
+2024-05-10 11:39:01,083 INFO    MainThread:41892 [wandb_setup.py:_flush():76] Loading settings from /Users/cayetano/.config/wandb/settings
+2024-05-10 11:39:01,083 INFO    MainThread:41892 [wandb_setup.py:_flush():76] Loading settings from /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-08/wandb/settings
+2024-05-10 11:39:01,083 INFO    MainThread:41892 [wandb_setup.py:_flush():76] Loading settings from environment variables: {'notebook_name': 'iris_classification.ipynb'}
+2024-05-10 11:39:01,084 INFO    MainThread:41892 [wandb_setup.py:_flush():76] Applying setup settings: {'_disable_service': False}
+2024-05-10 11:39:01,084 INFO    MainThread:41892 [wandb_setup.py:_flush():76] Inferring run settings from compute environment: {'program': '<python with no main file>'}
+2024-05-10 11:39:01,084 INFO    MainThread:41892 [wandb_setup.py:_flush():76] Applying login settings: {}
+2024-05-10 11:39:01,084 INFO    MainThread:41892 [wandb_init.py:_log_setup():520] Logging user logs to /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-08/wandb/run-20240510_113901-u50v3zpo/logs/debug.log
+2024-05-10 11:39:01,084 INFO    MainThread:41892 [wandb_init.py:_log_setup():521] Logging internal logs to /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-08/wandb/run-20240510_113901-u50v3zpo/logs/debug-internal.log
+2024-05-10 11:39:01,084 INFO    MainThread:41892 [wandb_init.py:_jupyter_setup():466] configuring jupyter hooks <wandb.sdk.wandb_init._WandbInit object at 0x2a6f4baf0>
+2024-05-10 11:39:01,084 INFO    MainThread:41892 [wandb_init.py:init():560] calling init triggers
+2024-05-10 11:39:01,084 INFO    MainThread:41892 [wandb_init.py:init():567] wandb.init called with sweep_config: {}
+config: {'hidden_size': 5, 'learning_rate': 0.01}
+2024-05-10 11:39:01,084 INFO    MainThread:41892 [wandb_init.py:init():610] starting backend
+2024-05-10 11:39:01,084 INFO    MainThread:41892 [wandb_init.py:init():614] setting up manager
+2024-05-10 11:39:01,085 INFO    MainThread:41892 [backend.py:_multiprocessing_setup():105] multiprocessing start_methods=spawn,fork,forkserver, using: spawn
+2024-05-10 11:39:01,087 INFO    MainThread:41892 [wandb_init.py:init():622] backend started and connected
+2024-05-10 11:39:01,093 INFO    MainThread:41892 [wandb_run.py:_label_probe_notebook():1328] probe notebook
+2024-05-10 11:39:01,094 INFO    MainThread:41892 [wandb_run.py:_label_probe_notebook():1338] Unable to probe notebook: 'NoneType' object has no attribute 'get'
+2024-05-10 11:39:01,094 INFO    MainThread:41892 [wandb_init.py:init():711] updated telemetry
+2024-05-10 11:39:01,158 INFO    MainThread:41892 [wandb_init.py:init():744] communicating run to backend with 90.0 second timeout
+2024-05-10 11:39:01,666 INFO    MainThread:41892 [wandb_run.py:_on_init():2396] communicating current version
+2024-05-10 11:39:01,878 INFO    MainThread:41892 [wandb_run.py:_on_init():2405] got version response 
+2024-05-10 11:39:01,878 INFO    MainThread:41892 [wandb_init.py:init():795] starting run threads in backend
+2024-05-10 11:39:02,780 INFO    MainThread:41892 [wandb_run.py:_console_start():2374] atexit reg
+2024-05-10 11:39:02,780 INFO    MainThread:41892 [wandb_run.py:_redirect():2229] redirect: wrap_raw
+2024-05-10 11:39:02,780 INFO    MainThread:41892 [wandb_run.py:_redirect():2294] Wrapping output streams.
+2024-05-10 11:39:02,780 INFO    MainThread:41892 [wandb_run.py:_redirect():2319] Redirects installed.
+2024-05-10 11:39:02,781 INFO    MainThread:41892 [wandb_init.py:init():838] run started, returning control to user process
+2024-05-10 11:39:02,994 INFO    MainThread:41892 [wandb_run.py:_finish():2103] finishing run cayetano/iris-classification/u50v3zpo
+2024-05-10 11:39:03,122 INFO    MainThread:41892 [jupyter.py:save_history():445] not saving jupyter history
+2024-05-10 11:39:03,122 INFO    MainThread:41892 [jupyter.py:save_ipynb():373] not saving jupyter notebook
+2024-05-10 11:39:03,122 INFO    MainThread:41892 [wandb_init.py:_jupyter_teardown():448] cleaning up jupyter logic
+2024-05-10 11:39:03,122 INFO    MainThread:41892 [wandb_run.py:_atexit_cleanup():2343] got exitcode: 0
+2024-05-10 11:39:03,122 INFO    MainThread:41892 [wandb_run.py:_restore():2326] restore
+2024-05-10 11:39:03,122 INFO    MainThread:41892 [wandb_run.py:_restore():2332] restore done
+2024-05-10 11:39:06,064 INFO    MainThread:41892 [wandb_run.py:_footer_history_summary_info():3994] rendering history
+2024-05-10 11:39:06,066 INFO    MainThread:41892 [wandb_run.py:_footer_history_summary_info():4026] rendering summary
+2024-05-10 11:39:06,084 INFO    MainThread:41892 [wandb_run.py:_footer_sync_info():3953] logging synced files

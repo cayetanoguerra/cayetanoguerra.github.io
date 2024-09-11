@@ -1,0 +1,41 @@
+2024-05-09 00:12:06,172 INFO    Thread-49 (_run_job):22236 [wandb_setup.py:_flush():76] Current SDK version is 0.17.0
+2024-05-09 00:12:06,172 INFO    Thread-49 (_run_job):22236 [wandb_setup.py:_flush():76] Configure stats pid to 22236
+2024-05-09 00:12:06,172 INFO    Thread-49 (_run_job):22236 [wandb_setup.py:_flush():76] Loading settings from /Users/cayetano/.config/wandb/settings
+2024-05-09 00:12:06,172 INFO    Thread-49 (_run_job):22236 [wandb_setup.py:_flush():76] Loading settings from /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-08/wandb/settings
+2024-05-09 00:12:06,172 INFO    Thread-49 (_run_job):22236 [wandb_setup.py:_flush():76] Loading settings from environment variables: {'notebook_name': 'iris_classification.ipynb', 'project': 'iris-classification', 'entity': 'cayetano', 'root_dir': '/Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-08', 'run_id': 'on3ryr4e', 'sweep_param_path': '/Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-08/wandb/sweep-8ya6ucnq/config-on3ryr4e.yaml', 'sweep_id': '8ya6ucnq'}
+2024-05-09 00:12:06,172 INFO    Thread-49 (_run_job):22236 [wandb_setup.py:_flush():76] Applying setup settings: {'_disable_service': False}
+2024-05-09 00:12:06,172 INFO    Thread-49 (_run_job):22236 [wandb_setup.py:_flush():76] Inferring run settings from compute environment: {'program': '<python with no main file>'}
+2024-05-09 00:12:06,172 INFO    Thread-49 (_run_job):22236 [wandb_setup.py:_flush():76] Applying login settings: {}
+2024-05-09 00:12:06,172 INFO    Thread-49 (_run_job):22236 [wandb_init.py:_log_setup():520] Logging user logs to /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-08/wandb/run-20240509_001206-on3ryr4e/logs/debug.log
+2024-05-09 00:12:06,172 INFO    Thread-49 (_run_job):22236 [wandb_init.py:_log_setup():521] Logging internal logs to /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-08/wandb/run-20240509_001206-on3ryr4e/logs/debug-internal.log
+2024-05-09 00:12:06,172 INFO    Thread-49 (_run_job):22236 [wandb_init.py:_jupyter_setup():466] configuring jupyter hooks <wandb.sdk.wandb_init._WandbInit object at 0x29b90cca0>
+2024-05-09 00:12:06,173 INFO    Thread-49 (_run_job):22236 [wandb_init.py:init():560] calling init triggers
+2024-05-09 00:12:06,173 INFO    Thread-49 (_run_job):22236 [wandb_init.py:init():567] wandb.init called with sweep_config: {'hidden_size': 20, 'learning_rate': 0.1}
+config: {}
+2024-05-09 00:12:06,173 INFO    Thread-49 (_run_job):22236 [wandb_init.py:init():610] starting backend
+2024-05-09 00:12:06,173 INFO    Thread-49 (_run_job):22236 [wandb_init.py:init():614] setting up manager
+2024-05-09 00:12:06,178 INFO    Thread-49 (_run_job):22236 [backend.py:_multiprocessing_setup():105] multiprocessing start_methods=spawn,fork,forkserver, using: spawn
+2024-05-09 00:12:06,179 INFO    Thread-49 (_run_job):22236 [wandb_init.py:init():622] backend started and connected
+2024-05-09 00:12:06,190 INFO    Thread-49 (_run_job):22236 [wandb_run.py:_config_callback():1376] config_cb None None {'hidden_size': 20, 'learning_rate': 0.1}
+2024-05-09 00:12:06,192 INFO    Thread-49 (_run_job):22236 [wandb_run.py:_label_probe_notebook():1328] probe notebook
+2024-05-09 00:12:06,192 INFO    Thread-49 (_run_job):22236 [wandb_run.py:_label_probe_notebook():1338] Unable to probe notebook: 'NoneType' object has no attribute 'get'
+2024-05-09 00:12:06,192 INFO    Thread-49 (_run_job):22236 [wandb_init.py:init():711] updated telemetry
+2024-05-09 00:12:06,213 INFO    Thread-49 (_run_job):22236 [wandb_init.py:init():744] communicating run to backend with 90.0 second timeout
+2024-05-09 00:12:06,672 INFO    Thread-49 (_run_job):22236 [wandb_run.py:_on_init():2396] communicating current version
+2024-05-09 00:12:06,855 INFO    Thread-49 (_run_job):22236 [wandb_run.py:_on_init():2405] got version response 
+2024-05-09 00:12:06,856 INFO    Thread-49 (_run_job):22236 [wandb_init.py:init():795] starting run threads in backend
+2024-05-09 00:12:07,385 INFO    Thread-49 (_run_job):22236 [wandb_run.py:_console_start():2374] atexit reg
+2024-05-09 00:12:07,385 INFO    Thread-49 (_run_job):22236 [wandb_run.py:_redirect():2229] redirect: wrap_raw
+2024-05-09 00:12:07,385 INFO    Thread-49 (_run_job):22236 [wandb_run.py:_redirect():2294] Wrapping output streams.
+2024-05-09 00:12:07,385 INFO    Thread-49 (_run_job):22236 [wandb_run.py:_redirect():2319] Redirects installed.
+2024-05-09 00:12:07,386 INFO    Thread-49 (_run_job):22236 [wandb_init.py:init():838] run started, returning control to user process
+2024-05-09 00:12:07,520 INFO    Thread-49 (_run_job):22236 [wandb_run.py:_finish():2103] finishing run cayetano/iris-classification/on3ryr4e
+2024-05-09 00:12:07,520 INFO    Thread-49 (_run_job):22236 [jupyter.py:save_history():445] not saving jupyter history
+2024-05-09 00:12:07,520 INFO    Thread-49 (_run_job):22236 [jupyter.py:save_ipynb():373] not saving jupyter notebook
+2024-05-09 00:12:07,520 INFO    Thread-49 (_run_job):22236 [wandb_init.py:_jupyter_teardown():448] cleaning up jupyter logic
+2024-05-09 00:12:07,520 INFO    Thread-49 (_run_job):22236 [wandb_run.py:_atexit_cleanup():2343] got exitcode: 0
+2024-05-09 00:12:07,520 INFO    Thread-49 (_run_job):22236 [wandb_run.py:_restore():2326] restore
+2024-05-09 00:12:07,520 INFO    Thread-49 (_run_job):22236 [wandb_run.py:_restore():2332] restore done
+2024-05-09 00:12:10,936 INFO    Thread-49 (_run_job):22236 [wandb_run.py:_footer_history_summary_info():3994] rendering history
+2024-05-09 00:12:10,936 INFO    Thread-49 (_run_job):22236 [wandb_run.py:_footer_history_summary_info():4026] rendering summary
+2024-05-09 00:12:10,940 INFO    Thread-49 (_run_job):22236 [wandb_run.py:_footer_sync_info():3953] logging synced files

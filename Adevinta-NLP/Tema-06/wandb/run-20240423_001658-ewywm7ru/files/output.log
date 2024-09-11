@@ -1,0 +1,30 @@
+huggingface/tokenizers: The current process just got forked, after parallelism has already been used. Disabling parallelism to avoid deadlocks...
+To disable this warning, you can either:
+	- Avoid using `tokenizers` before the fork if possible
+	- Explicitly set the environment variable TOKENIZERS_PARALLELISM=(true | false)
+{'loss': 1.0114, 'learning_rate': 0.001, 'epoch': 0.0}
+{'loss': 0.5474, 'learning_rate': 0.002, 'epoch': 0.01}
+{'loss': 0.4334, 'learning_rate': 0.003, 'epoch': 0.01}
+{'loss': 0.3742, 'learning_rate': 0.004, 'epoch': 0.02}
+{'loss': 0.33, 'learning_rate': 0.005000000000000001, 'epoch': 0.02}
+{'loss': 0.3202, 'learning_rate': 0.006, 'epoch': 0.02}
+{'loss': 0.3289, 'learning_rate': 0.007000000000000001, 'epoch': 0.03}
+{'loss': 0.3665, 'learning_rate': 0.008, 'epoch': 0.03}
+{'loss': 0.3512, 'learning_rate': 0.009, 'epoch': 0.04}
+{'loss': 0.8198, 'learning_rate': 0.010000000000000002, 'epoch': 0.04}
+{'loss': 0.7284, 'learning_rate': 0.011000000000000001, 'epoch': 0.04}
+{'loss': 1.3629, 'learning_rate': 0.012, 'epoch': 0.05}
+{'loss': 0.4888, 'learning_rate': 0.013000000000000001, 'epoch': 0.05}
+{'loss': 0.4686, 'learning_rate': 0.014000000000000002, 'epoch': 0.06}
+{'loss': 0.4312, 'learning_rate': 0.015, 'epoch': 0.06}
+{'loss': 0.4085, 'learning_rate': 0.016, 'epoch': 0.06}
+{'loss': 0.3927, 'learning_rate': 0.017, 'epoch': 0.07}
+{'loss': 0.3784, 'learning_rate': 0.018, 'epoch': 0.07}
+{'loss': 0.3924, 'learning_rate': 0.019000000000000003, 'epoch': 0.08}
+{'loss': 0.3764, 'learning_rate': 0.020000000000000004, 'epoch': 0.08}
+{'loss': 0.3714, 'learning_rate': 0.021, 'epoch': 0.08}
+{'loss': 0.3731, 'learning_rate': 0.022000000000000002, 'epoch': 0.09}
+{'loss': 0.436, 'learning_rate': 0.023000000000000003, 'epoch': 0.09}
+{'loss': 4.4326, 'learning_rate': 0.024, 'epoch': 0.1}
+{'loss': 0.7211, 'learning_rate': 0.025, 'epoch': 0.1}
+{'loss': 0.5482, 'learning_rate': 0.026000000000000002, 'epoch': 0.1}

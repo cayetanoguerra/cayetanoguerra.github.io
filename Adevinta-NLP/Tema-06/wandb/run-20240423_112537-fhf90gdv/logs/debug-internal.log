@@ -1,0 +1,62 @@
+2024-04-23 11:25:37,918 INFO    StreamThr :4237 [internal.py:wandb_internal():86] W&B internal server running at pid: 4237, started at: 2024-04-23 11:25:37.917542
+2024-04-23 11:25:37,918 DEBUG   HandlerThread:4237 [handler.py:handle_request():146] handle_request: status
+2024-04-23 11:25:37,927 INFO    WriterThread:4237 [datastore.py:open_for_write():85] open: /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-06/wandb/run-20240423_112537-fhf90gdv/run-fhf90gdv.wandb
+2024-04-23 11:25:37,927 DEBUG   SenderThread:4237 [sender.py:send():382] send: header
+2024-04-23 11:25:37,974 DEBUG   SenderThread:4237 [sender.py:send():382] send: run
+2024-04-23 11:25:38,454 INFO    SenderThread:4237 [dir_watcher.py:__init__():211] watching files in: /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-06/wandb/run-20240423_112537-fhf90gdv/files
+2024-04-23 11:25:38,454 INFO    SenderThread:4237 [sender.py:_start_run_threads():1136] run started: fhf90gdv with start time 1713867937.918606
+2024-04-23 11:25:38,459 DEBUG   HandlerThread:4237 [handler.py:handle_request():146] handle_request: check_version
+2024-04-23 11:25:38,460 DEBUG   SenderThread:4237 [sender.py:send_request():409] send_request: check_version
+2024-04-23 11:25:38,645 DEBUG   HandlerThread:4237 [handler.py:handle_request():146] handle_request: run_start
+2024-04-23 11:25:38,651 DEBUG   HandlerThread:4237 [system_info.py:__init__():32] System info init
+2024-04-23 11:25:38,651 DEBUG   HandlerThread:4237 [system_info.py:__init__():47] System info init done
+2024-04-23 11:25:38,651 INFO    HandlerThread:4237 [system_monitor.py:start():194] Starting system monitor
+2024-04-23 11:25:38,651 INFO    SystemMonitor:4237 [system_monitor.py:_start():158] Starting system asset monitoring threads
+2024-04-23 11:25:38,651 INFO    HandlerThread:4237 [system_monitor.py:probe():214] Collecting system info
+2024-04-23 11:25:38,652 INFO    SystemMonitor:4237 [interfaces.py:start():190] Started cpu monitoring
+2024-04-23 11:25:38,652 DEBUG   HandlerThread:4237 [system_info.py:probe():196] Probing system
+2024-04-23 11:25:38,652 INFO    SystemMonitor:4237 [interfaces.py:start():190] Started disk monitoring
+2024-04-23 11:25:38,653 INFO    SystemMonitor:4237 [interfaces.py:start():190] Started gpuapple monitoring
+2024-04-23 11:25:38,656 INFO    SystemMonitor:4237 [interfaces.py:start():190] Started memory monitoring
+2024-04-23 11:25:38,657 INFO    SystemMonitor:4237 [interfaces.py:start():190] Started network monitoring
+2024-04-23 11:25:38,662 DEBUG   HandlerThread:4237 [system_info.py:_probe_git():181] Probing git
+2024-04-23 11:25:38,683 DEBUG   HandlerThread:4237 [system_info.py:_probe_git():189] Probing git done
+2024-04-23 11:25:38,684 DEBUG   HandlerThread:4237 [system_info.py:probe():244] Probing system done
+2024-04-23 11:25:38,684 DEBUG   HandlerThread:4237 [system_monitor.py:probe():223] {'os': 'macOS-14.2.1-arm64-arm-64bit', 'python': '3.10.7', 'heartbeatAt': '2024-04-23T10:25:38.653782', 'startedAt': '2024-04-23T10:25:37.910526', 'docker': None, 'cuda': None, 'args': (), 'state': 'running', 'program': '<python with no main file>', 'codePathLocal': None, 'git': {'remote': 'https://github.com/cayetanoguerra/cayetanoguerra.github.io.git', 'commit': '44b731d5c25c5672c39b96df593c453efc9fc157'}, 'email': 'cayetanoguerra@gmail.com', 'root': '/Users/cayetano/Propio/Docencia/cayetanoguerra.github.io', 'host': 'MacBook-Pro-de-Cayetano-M1.local', 'username': 'cayetano', 'executable': '/Users/cayetano/Propio/Notebooks/Machine Learning/RL/env/bin/python', 'cpu_count': 10, 'cpu_count_logical': 10, 'disk': {'/': {'total': 926.3517189025879, 'used': 13.368278503417969}}, 'gpuapple': {'type': 'arm', 'vendor': 'Apple'}, 'memory': {'total': 16.0}}
+2024-04-23 11:25:38,684 INFO    HandlerThread:4237 [system_monitor.py:probe():224] Finished collecting system info
+2024-04-23 11:25:38,684 INFO    HandlerThread:4237 [system_monitor.py:probe():227] Publishing system info
+2024-04-23 11:25:38,684 DEBUG   HandlerThread:4237 [system_info.py:_save_pip():52] Saving list of pip packages installed into the current environment
+2024-04-23 11:25:38,684 DEBUG   HandlerThread:4237 [system_info.py:_save_pip():68] Saving pip packages done
+2024-04-23 11:25:38,685 INFO    HandlerThread:4237 [system_monitor.py:probe():229] Finished publishing system info
+2024-04-23 11:25:38,689 DEBUG   SenderThread:4237 [sender.py:send():382] send: files
+2024-04-23 11:25:38,689 INFO    SenderThread:4237 [sender.py:_save_file():1392] saving file wandb-metadata.json with policy now
+2024-04-23 11:25:38,702 DEBUG   HandlerThread:4237 [handler.py:handle_request():146] handle_request: internal_messages
+2024-04-23 11:25:38,702 DEBUG   HandlerThread:4237 [handler.py:handle_request():146] handle_request: stop_status
+2024-04-23 11:25:38,702 DEBUG   SenderThread:4237 [sender.py:send_request():409] send_request: stop_status
+2024-04-23 11:25:39,037 DEBUG   SenderThread:4237 [sender.py:send():382] send: telemetry
+2024-04-23 11:25:39,037 DEBUG   SenderThread:4237 [sender.py:send():382] send: config
+2024-04-23 11:25:39,037 DEBUG   SenderThread:4237 [sender.py:send():382] send: metric
+2024-04-23 11:25:39,037 DEBUG   SenderThread:4237 [sender.py:send():382] send: telemetry
+2024-04-23 11:25:39,037 DEBUG   SenderThread:4237 [sender.py:send():382] send: metric
+2024-04-23 11:25:39,037 WARNING SenderThread:4237 [sender.py:send_metric():1343] Seen metric with glob (shouldn't happen)
+2024-04-23 11:25:39,037 DEBUG   SenderThread:4237 [sender.py:send():382] send: telemetry
+2024-04-23 11:25:39,457 INFO    Thread-12 :4237 [dir_watcher.py:_on_file_created():271] file/dir created: /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-06/wandb/run-20240423_112537-fhf90gdv/files/wandb-metadata.json
+2024-04-23 11:25:39,457 INFO    Thread-12 :4237 [dir_watcher.py:_on_file_created():271] file/dir created: /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-06/wandb/run-20240423_112537-fhf90gdv/files/output.log
+2024-04-23 11:25:39,457 INFO    Thread-12 :4237 [dir_watcher.py:_on_file_created():271] file/dir created: /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-06/wandb/run-20240423_112537-fhf90gdv/files/requirements.txt
+2024-04-23 11:25:39,493 INFO    wandb-upload_0:4237 [upload_job.py:push():131] Uploaded file /var/folders/gm/03tk2cn52jzgnlz4qchk9s9m0000gn/T/tmp_y_tvfsqwandb/b6jyipcd-wandb-metadata.json
+2024-04-23 11:25:40,130 DEBUG   HandlerThread:4237 [handler.py:handle_request():146] handle_request: pause
+2024-04-23 11:25:40,130 INFO    HandlerThread:4237 [handler.py:handle_request_pause():705] stopping system metrics thread
+2024-04-23 11:25:40,130 INFO    HandlerThread:4237 [system_monitor.py:finish():203] Stopping system monitor
+2024-04-23 11:25:40,131 DEBUG   SystemMonitor:4237 [system_monitor.py:_start():172] Starting system metrics aggregation loop
+2024-04-23 11:25:40,131 DEBUG   SystemMonitor:4237 [system_monitor.py:_start():179] Finished system metrics aggregation loop
+2024-04-23 11:25:40,131 DEBUG   SystemMonitor:4237 [system_monitor.py:_start():183] Publishing last batch of metrics
+2024-04-23 11:25:40,131 INFO    HandlerThread:4237 [interfaces.py:finish():202] Joined cpu monitor
+2024-04-23 11:25:40,131 INFO    HandlerThread:4237 [interfaces.py:finish():202] Joined disk monitor
+2024-04-23 11:25:40,131 INFO    HandlerThread:4237 [interfaces.py:finish():202] Joined gpuapple monitor
+2024-04-23 11:25:40,131 INFO    HandlerThread:4237 [interfaces.py:finish():202] Joined memory monitor
+2024-04-23 11:25:40,131 INFO    HandlerThread:4237 [interfaces.py:finish():202] Joined network monitor
+2024-04-23 11:25:40,131 DEBUG   SenderThread:4237 [sender.py:send():382] send: telemetry
+2024-04-23 11:25:40,131 DEBUG   SenderThread:4237 [sender.py:send():382] send: stats
+2024-04-23 11:25:41,461 INFO    Thread-12 :4237 [dir_watcher.py:_on_file_modified():288] file/dir modified: /Users/cayetano/Propio/Docencia/cayetanoguerra.github.io/Adevinta-NLP/Tema-06/wandb/run-20240423_112537-fhf90gdv/files/output.log
+2024-04-23 11:25:43,149 DEBUG   HandlerThread:4237 [handler.py:handle_request():146] handle_request: status_report
+2024-04-23 11:25:48,167 DEBUG   HandlerThread:4237 [handler.py:handle_request():146] handle_request: status_report

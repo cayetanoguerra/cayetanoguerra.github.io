@@ -1,0 +1,36 @@
+{
+    "os": "macOS-14.2.1-arm64-arm-64bit",
+    "python": "3.10.7",
+    "heartbeatAt": "2024-05-08T16:00:20.824398",
+    "startedAt": "2024-05-08T16:00:20.029393",
+    "docker": null,
+    "cuda": null,
+    "args": [],
+    "state": "running",
+    "program": "<python with no main file>",
+    "codePathLocal": null,
+    "git": {
+        "remote": "https://github.com/cayetanoguerra/cayetanoguerra.github.io.git",
+        "commit": "44b731d5c25c5672c39b96df593c453efc9fc157"
+    },
+    "email": "cayetanoguerra@gmail.com",
+    "root": "/Users/cayetano/Propio/Docencia/cayetanoguerra.github.io",
+    "host": "MacBook-Pro-de-Cayetano-M1.local",
+    "username": "cayetano",
+    "executable": "/Users/cayetano/Propio/Notebooks/Machine Learning/RL/env/bin/python",
+    "cpu_count": 10,
+    "cpu_count_logical": 10,
+    "disk": {
+        "/": {
+            "total": 926.3517189025879,
+            "used": 13.369068145751953
+        }
+    },
+    "gpuapple": {
+        "type": "arm",
+        "vendor": "Apple"
+    },
+    "memory": {
+        "total": 16.0
+    }
+}

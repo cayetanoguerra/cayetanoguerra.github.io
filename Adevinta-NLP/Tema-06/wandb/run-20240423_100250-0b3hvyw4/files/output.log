@@ -1,0 +1,82 @@
+huggingface/tokenizers: The current process just got forked, after parallelism has already been used. Disabling parallelism to avoid deadlocks...
+To disable this warning, you can either:
+	- Avoid using `tokenizers` before the fork if possible
+	- Explicitly set the environment variable TOKENIZERS_PARALLELISM=(true | false)
+{'loss': 12.5623, 'learning_rate': 1.0000000000000002e-06, 'epoch': 0.0}
+{'loss': 12.5341, 'learning_rate': 2.0000000000000003e-06, 'epoch': 0.01}
+{'loss': 12.4999, 'learning_rate': 3e-06, 'epoch': 0.01}
+{'loss': 12.4457, 'learning_rate': 4.000000000000001e-06, 'epoch': 0.02}
+{'loss': 12.4154, 'learning_rate': 5e-06, 'epoch': 0.02}
+{'loss': 12.2502, 'learning_rate': 6e-06, 'epoch': 0.02}
+{'loss': 12.0686, 'learning_rate': 7.000000000000001e-06, 'epoch': 0.03}
+{'loss': 11.7707, 'learning_rate': 8.000000000000001e-06, 'epoch': 0.03}
+{'loss': 11.3456, 'learning_rate': 9e-06, 'epoch': 0.04}
+{'loss': 10.923, 'learning_rate': 1e-05, 'epoch': 0.04}
+{'loss': 10.0406, 'learning_rate': 1.1000000000000001e-05, 'epoch': 0.04}
+{'loss': 8.9157, 'learning_rate': 1.2e-05, 'epoch': 0.05}
+{'loss': 7.4221, 'learning_rate': 1.3000000000000001e-05, 'epoch': 0.05}
+{'loss': 6.0247, 'learning_rate': 1.4000000000000001e-05, 'epoch': 0.06}
+{'loss': 4.7066, 'learning_rate': 1.5e-05, 'epoch': 0.06}
+{'loss': 3.2341, 'learning_rate': 1.6000000000000003e-05, 'epoch': 0.06}
+{'loss': 2.1991, 'learning_rate': 1.7000000000000003e-05, 'epoch': 0.07}
+{'loss': 1.6229, 'learning_rate': 1.8e-05, 'epoch': 0.07}
+{'loss': 1.2836, 'learning_rate': 1.9e-05, 'epoch': 0.08}
+{'loss': 1.1288, 'learning_rate': 2e-05, 'epoch': 0.08}
+{'loss': 0.9518, 'learning_rate': 2.1e-05, 'epoch': 0.08}
+{'loss': 0.9242, 'learning_rate': 2.2000000000000003e-05, 'epoch': 0.09}
+{'loss': 0.8728, 'learning_rate': 2.3000000000000003e-05, 'epoch': 0.09}
+{'loss': 0.814, 'learning_rate': 2.4e-05, 'epoch': 0.1}
+{'loss': 0.8016, 'learning_rate': 2.5e-05, 'epoch': 0.1}
+{'loss': 0.74, 'learning_rate': 2.6000000000000002e-05, 'epoch': 0.1}
+{'loss': 0.7152, 'learning_rate': 2.7000000000000002e-05, 'epoch': 0.11}
+{'loss': 0.6739, 'learning_rate': 2.8000000000000003e-05, 'epoch': 0.11}
+{'loss': 0.634, 'learning_rate': 2.9e-05, 'epoch': 0.12}
+{'loss': 0.6274, 'learning_rate': 3e-05, 'epoch': 0.12}
+{'loss': 0.6119, 'learning_rate': 3.1e-05, 'epoch': 0.12}
+{'loss': 0.5878, 'learning_rate': 3.2000000000000005e-05, 'epoch': 0.13}
+{'loss': 0.5562, 'learning_rate': 3.3e-05, 'epoch': 0.13}
+{'loss': 0.5231, 'learning_rate': 3.4000000000000007e-05, 'epoch': 0.14}
+{'loss': 0.5065, 'learning_rate': 3.5e-05, 'epoch': 0.14}
+{'loss': 0.494, 'learning_rate': 3.6e-05, 'epoch': 0.14}
+{'loss': 0.4726, 'learning_rate': 3.7e-05, 'epoch': 0.15}
+{'loss': 0.4603, 'learning_rate': 3.8e-05, 'epoch': 0.15}
+{'loss': 0.4425, 'learning_rate': 3.9000000000000006e-05, 'epoch': 0.16}
+{'loss': 0.4366, 'learning_rate': 4e-05, 'epoch': 0.16}
+{'loss': 0.4292, 'learning_rate': 4.1e-05, 'epoch': 0.16}
+{'loss': 0.4143, 'learning_rate': 4.2e-05, 'epoch': 0.17}
+{'loss': 0.4027, 'learning_rate': 4.3e-05, 'epoch': 0.17}
+{'loss': 0.403, 'learning_rate': 4.4000000000000006e-05, 'epoch': 0.18}
+{'loss': 0.392, 'learning_rate': 4.5e-05, 'epoch': 0.18}
+{'loss': 0.3877, 'learning_rate': 4.600000000000001e-05, 'epoch': 0.18}
+{'loss': 0.3732, 'learning_rate': 4.7e-05, 'epoch': 0.19}
+{'loss': 0.3754, 'learning_rate': 4.8e-05, 'epoch': 0.19}
+{'loss': 0.3631, 'learning_rate': 4.9e-05, 'epoch': 0.2}
+{'loss': 0.3658, 'learning_rate': 5e-05, 'epoch': 0.2}
+{'loss': 0.3571, 'learning_rate': 4.975e-05, 'epoch': 0.2}
+{'loss': 0.3616, 'learning_rate': 4.9500000000000004e-05, 'epoch': 0.21}
+{'loss': 0.357, 'learning_rate': 4.9250000000000004e-05, 'epoch': 0.21}
+{'loss': 0.3515, 'learning_rate': 4.9e-05, 'epoch': 0.22}
+{'loss': 0.349, 'learning_rate': 4.875e-05, 'epoch': 0.22}
+{'loss': 0.3514, 'learning_rate': 4.85e-05, 'epoch': 0.22}
+{'loss': 0.3538, 'learning_rate': 4.825e-05, 'epoch': 0.23}
+{'loss': 0.3332, 'learning_rate': 4.8e-05, 'epoch': 0.23}
+{'loss': 0.3408, 'learning_rate': 4.775e-05, 'epoch': 0.24}
+{'loss': 0.3399, 'learning_rate': 4.75e-05, 'epoch': 0.24}
+{'loss': 0.3418, 'learning_rate': 4.7249999999999997e-05, 'epoch': 0.24}
+{'loss': 0.3391, 'learning_rate': 4.7e-05, 'epoch': 0.25}
+{'loss': 0.3358, 'learning_rate': 4.6750000000000005e-05, 'epoch': 0.25}
+{'loss': 0.3396, 'learning_rate': 4.6500000000000005e-05, 'epoch': 0.26}
+{'loss': 0.3453, 'learning_rate': 4.6250000000000006e-05, 'epoch': 0.26}
+The attention mask and the pad token id were not set. As a consequence, you may observe unexpected behavior. Please pass your input's `attention_mask` to obtain reliable results.
+Setting `pad_token_id` to `eos_token_id`:50256 for open-end generation.
+El número 123456789 en formato textual es: 123456789 one one one one one one one one one one one one one one
+The attention mask and the pad token id were not set. As a consequence, you may observe unexpected behavior. Please pass your input's `attention_mask` to obtain reliable results.
+Setting `pad_token_id` to `eos_token_id`:50256 for open-end generation.
+El número 123456789 en formato textual es: 123456789 one one one one one one one one one one one one one one
+El modelo tiene 124439808 parámetros
+El modelo tiene 125619456 parámetros
+El modelo tiene 124439808 parámetros entrenables
+El modelo tiene 124439808 parámetros
+El modelo tiene 124439808 parámetros entrenables
+El modelo tiene 124439808 parámetros
+El modelo tiene 124439808 parámetros entrenables

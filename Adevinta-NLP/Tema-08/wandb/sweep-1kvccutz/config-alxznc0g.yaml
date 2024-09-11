@@ -1,0 +1,6 @@
+wandb_version: 1
+
+hidden_size:
+  value: 20
+learning_rate:
+  value: 0.01
