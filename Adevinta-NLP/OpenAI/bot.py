@@ -2,7 +2,7 @@ from openai import OpenAI
 
 class Bot:
     def __init__(self):
-        self.client = OpenAI(api_key="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")
+        self.client = OpenAI(api_key="")
 
     def chat(self, messages):
         response = self.client.chat.completions.create(
