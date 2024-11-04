@@ -28,3 +28,4 @@ Adevinta-NLP/Tema-06/modelo_entrenado/tokenizer_config.json
 Adevinta-NLP/Tema-06/modelo_entrenado/vocab.json
 Adevinta-NLP/Tema-06/models/mistral-7b-instruct-v0.2.Q4_K_S.gguf
 ia/nbpy/nlp/Tema-05/data/datasets_practice.zip
+ia/nbpy/nlp/Tema-05/models/mistral-7b-instruct-v0.2.Q4_K_S.gguf
