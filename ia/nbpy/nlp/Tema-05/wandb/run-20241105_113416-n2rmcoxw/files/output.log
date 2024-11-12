@@ -141,3 +141,6 @@ Holaaaaa
 Holaaaaa
 Holaaaaa
 Holaaaaa
+Holaaaaa
+wandb: Network error (ConnectionError), entering retry loop.
+[34m[1mwandb[39m[22m: Network error resolved after 0:11:26.707014, resuming normal operation.
