@@ -1,0 +1,251 @@
+el perro corre en el parque
+el perro come carne
+el perro bebe agua
+el perro duerme en la casa
+el perro juega con la pelota
+la perra corre en el parque
+la perra come carne
+la perra bebe agua
+la perra duerme en la casa
+la perra juega con la pelota
+el gato corre en el patio
+el gato come pescado
+el gato bebe leche
+el gato duerme en el sofá
+el gato juega con la cuerda
+la gata corre en el patio
+la gata come pescado
+la gata bebe leche
+la gata duerme en el sofá
+la gata juega con la cuerda
+el pájaro vuela sobre el árbol
+el pájaro canta por la mañana
+el pájaro bebe agua en la fuente
+la niña lee un libro
+la niña dibuja una casa
+la niña canta una canción
+la niña juega en el parque
+el niño lee un libro
+el niño dibuja un coche
+el niño canta una canción
+el niño juega en el parque
+el maestro explica la lección
+la maestra corrige el examen
+el alumno escucha al maestro
+la alumna escribe en el cuaderno
+el médico cura al paciente
+la médica cura al paciente
+el enfermero ayuda al médico
+la enfermera ayuda a la médica
+el panadero hace pan por la mañana
+la panadera vende pan por la mañana
+el cocinero prepara sopa
+la cocinera prepara arroz
+el camarero sirve agua
+la camarera sirve café
+el conductor maneja el autobús
+la conductora maneja el coche
+el piloto vuela el avión
+la piloto vuela el avión
+el ingeniero diseña un puente
+la ingeniera diseña un puente
+el programador escribe código
+la programadora escribe código
+el músico toca la guitarra
+la música toca el piano
+el pintor pinta un cuadro azul
+la pintora pinta un cuadro rojo
+el jardinero riega las plantas
+la jardinera riega las flores
+el policía cuida la ciudad
+la policía cuida la ciudad
+el bombero apaga el fuego
+la bombera apaga el fuego
+la madre cocina arroz
+el padre cocina pasta
+la madre lee el periódico
+el padre lee una revista
+el hermano juega al fútbol
+la hermana juega al voleibol
+el abuelo pasea por la plaza
+la abuela pasea por la plaza
+mi amigo corre por la playa
+mi amiga corre por la playa
+mi amigo bebe café
+mi amiga bebe té
+yo camino por la avenida
+yo corro por la playa
+yo estudio por la noche
+yo trabajo por la mañana
+tú estudias por la tarde
+tú trabajas por la mañana
+él come fruta
+ella come verdura
+nosotros bebemos agua fría
+nosotras bebemos agua fría
+vosotros leéis un libro corto
+vosotras leéis un libro corto
+ellos juegan al fútbol
+ellas juegan al baloncesto
+hoy hace sol en la ciudad
+hoy llueve en el campo
+mañana hará viento en la costa
+ayer hizo frío en la montaña
+el verano es caluroso
+el invierno es frío
+la primavera tiene flores
+el otoño tiene hojas
+la casa es grande
+la casa es pequeña
+la casa es blanca
+la casa es azul
+el coche es rojo
+el coche es negro
+el coche es rápido
+el coche es lento
+la pelota es roja
+la pelota es azul
+la pelota es pequeña
+la pelota es grande
+la mesa es de madera
+la silla es de metal
+la ventana está abierta
+la puerta está cerrada
+la calle está vacía
+la calle está llena
+el parque está cerca
+la playa está lejos
+el gato es blanco
+el perro es negro
+la gata es gris
+la perra es marrón
+el gato pequeño duerme
+el perro grande corre
+la leche está fría
+el café está caliente
+el agua está fresca
+el té está caliente
+el libro es corto
+el libro es largo
+el cuadro es bonito
+la canción es bonita
+el profesor es paciente
+la profesora es paciente
+el alumno es curioso
+la alumna es curiosa
+parís es una ciudad
+madrid es una ciudad
+roma es una ciudad
+parís está en francia
+madrid está en españa
+roma está en italia
+francia es un país
+españa es un país
+italia es un país
+la tienda abre por la mañana
+la tienda cierra por la noche
+el mercado abre los lunes
+el museo abre los sábados
+el museo cierra los martes
+el tren llega a la estación
+el tren sale de la estación
+el autobús llega tarde
+el autobús sale temprano
+la clase empieza a las ocho
+la clase termina a las diez
+el partido empieza a las seis
+el partido termina a las ocho
+me gusta el café
+me gusta el té
+me gusta el pan
+no me gusta el ruido
+no me gusta el humo
+a la niña le gusta el helado
+al niño le gusta el chocolate
+a la madre le gusta leer
+al padre le gusta correr
+quiero agua fría
+quiero pan caliente
+quiero una mesa libre
+quiero un asiento cómodo
+veo un perro blanco
+veo un gato negro
+veo una casa azul
+veo una pelota roja
+tengo una taza
+tengo un vaso
+tengo un libro
+tengo una libreta
+pongo el vaso en la mesa
+pongo el libro en la mochila
+pongo la pelota en el suelo
+pongo la llave en la puerta
+abro la puerta
+cierro la ventana
+subo la escalera
+bajo la escalera
+entro en la casa
+salgo de la casa
+voy a la escuela
+vuelvo de la escuela
+voy al trabajo
+vuelvo del trabajo
+como pan con queso
+como arroz con pollo
+bebo agua con limón
+bebo leche con cacao
+el perro ladra fuerte
+el gato maúlla suave
+el bebé llora
+la madre calma al bebé
+el reloj marca la hora
+la radio suena música
+la televisión muestra noticias
+el teléfono suena
+la luz está encendida
+la luz está apagada
+el ordenador está encendido
+la tableta está apagada
+el sol sale temprano
+el sol se pone tarde
+la luna brilla de noche
+las estrellas brillan de noche
+hay una nube blanca
+hay dos nubes grises
+hay viento suave
+hay lluvia ligera
+el mar está tranquilo
+el mar está agitado
+la arena está seca
+la arena está húmeda
+el turista visita el museo
+la turista visita la playa
+el guía explica la historia
+la guía explica el mapa
+el rey vive en un palacio
+la reina vive en un palacio
+el rey lleva una corona
+la reina lleva una corona
+el gato persigue al ratón
+el perro persigue al gato
+el ratón come queso
+el pájaro come semillas
+el chef corta pan
+el chef cocina sopa
+el chef prueba la sal
+la estudiante abre el libro
+el estudiante cierra el libro
+la estudiante toma apuntes
+el estudiante hace un resumen
+el tren rápido pasa
+el tren lento espera
+la bicicleta es verde
+la moto es amarilla
+la camiseta es blanca
+los pantalones son azules
+la botella está vacía
+la botella está llena
+el cajón está abierto
+el cajón está cerrado
+está abierto el cajón
+está cerrado el cajón
