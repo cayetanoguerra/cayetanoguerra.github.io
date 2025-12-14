@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Una Guía Visual sobre el Razonamiento en LLMs (Traducción)</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 20px;
+            max-width: 900px;
+            margin-left: auto;
+            margin-right: auto;
+            color: #333;
+        }
+        h1, h2 {
+            color: #004d40;
+            border-bottom: 2px solid #e0f2f1;
+            padding-bottom: 5px;
+            margin-top: 30px;
+        }
+        h3 {
+            color: #00796b;
+            margin-top: 20px;
+        }
+        blockquote {
+            border-left: 5px solid #4db6ac;
+            padding: 10px 20px;
+            margin: 15px 0;
+            background-color: #f0fafa;
+        }
+        .author-info {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 20px;
+            border-bottom: 1px dashed #ccc;
+            padding-bottom: 10px;
+        }
+        .image-placeholder {
+            display: block;
+            margin: 20px 0;
+            padding: 10px;
+            border: 1px solid #ddd;
+            background-color: #f9f9f9;
+            text-align: center;
+            font-style: italic;
+        }
+        .list-unstyled {
+            list-style: none;
+            padding-left: 0;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Una Guía Visual sobre el Razonamiento en LLMs</h1>
+        <h3 class="subtitle">Explorando las Técnicas de Cómputo en Tiempo de Prueba y DeepSeek-R1</h3>
+        <div class="author-info">
+            <p>Por Maarten Grootendorst | 3 de febrero de 2025</p>
+        </div>
+    </header>
+
+    <div class="content">
+        <h5>Traducciones<em> - Chino | Coreano | Francés</em></h5>
+        <p><a href="https://github.com/deepseek-ai/DeepSeek-R1">DeepSeek-R1</a>, <a href="https://openai.com/index/openai-o3-mini/">OpenAI o3-mini</a>, y <a href="https://deepmind.google/technologies/gemini/flash-thinking/">Google Gemini 2.0 Flash Thinking</a> son ejemplos primordiales de cómo los LLMs pueden escalarse a nuevas alturas a través de marcos de "razonamiento".</p>
+        <p>Marcan el cambio de paradigma de escalar el **cómputo en tiempo de entrenamiento (*train-time compute*)** a escalar el **cómputo en tiempo de prueba (*test-time compute*)**.</p>
+        <div class="image-placeholder">Imagen: Ilustración de la Desviación del Paradigma del Cómputo en Tiempo de Entrenamiento al Cómputo en Tiempo de Prueba</div>
+        <p>Con más de 40 visuales personalizados en esta publicación, explorará el campo de los LLMs de razonamiento, el cómputo en tiempo de prueba y profundizará en **DeepSeek-R1**. Exploramos los conceptos uno por uno para desarrollar una intuición sobre este nuevo cambio de paradigma.</p>
+        <blockquote>
+            <p><em>👈 Haga clic en la pila de líneas de la izquierda para ver una **Tabla de Contenidos** (ToC),</em></p>
+        </blockquote>
+        <p>¡Vea el libro que escribimos sobre modelos de lenguaje grande para más visualizaciones relacionadas con LLMs y para apoyar este boletín!</p>
+        <div class="image-placeholder">Imagen: Cubierta del libro "Hands-On Large Language Models"</div>
+        <p>P.D. Si lee el libro, una [reseña rápida] significaría mucho— ¡realmente nos ayuda a los autores!</p>
+        
+        <h2>¿Qué son los LLMs de Razonamiento?</h2>
+        <p>En comparación con los LLMs regulares, los LLMs de razonamiento tienden a **descomponer un problema en pasos más pequeños** (a menudo llamados pasos de razonamiento o procesos de pensamiento) antes de responder una pregunta dada.</p>
+        <div class="image-placeholder">Imagen: Ilustración que muestra cómo un LLM de razonamiento descompone un problema.</div>
+        <p>Entonces, ¿qué significa realmente un "proceso de pensamiento", un "paso de razonamiento" o una "Cadena de Pensamiento"?</p>
+        <p>Aunque podemos filosofar si los LLMs son realmente capaces de pensar como los humanos, estos pasos de razonamiento dividen el proceso en **inferencias más pequeñas y estructuradas**.</p>
+        <div class="image-placeholder">Imagen: Diagrama que explica que los pasos de razonamiento dividen el proceso en inferencias estructuradas.</div>
+        <p>En otras palabras, en lugar de que los LLMs aprendan "qué" responder, ¡aprenden "cómo" responder!</p>
+        <p>Para entender cómo se crean los LLMs de razonamiento, primero exploramos el cambio de paradigma de un enfoque en el escalamiento del entrenamiento (**cómputo en tiempo de entrenamiento**) a la inferencia (**cómputo en tiempo de prueba**).</p>
+
+        <h2>¿Qué es el Cómputo en Tiempo de Entrenamiento?</h2>
+        <p>Hasta la mitad de 2024, para aumentar el rendimiento de los LLMs durante el **preentrenamiento**, los desarrolladores a menudo aumentaban el **tamaño** de:</p>
+        <ul>
+            <li><p>El Modelo (número de **parámetros**)</p></li>
+            <li><p>El Conjunto de Datos (número de **tokens**)</p></li>
+            <li><p>El Cómputo (número de **FLOPs**)</p></li>
+        </ul>
+        <p>En conjunto, esto se llama **cómputo en tiempo de entrenamiento,** que se refiere a la idea de que los datos de preentrenamiento son el "combustible fósil de la IA". Esencialmente, cuanto mayor sea su presupuesto de preentrenamiento, mejor será el modelo resultante.</p>
+        <div class="image-placeholder">Imagen: Ilustración de los factores del Cómputo en Tiempo de Entrenamiento (Parámetros, Tokens, FLOPs).</div>
+        <p>El cómputo en tiempo de entrenamiento puede incluir tanto el cómputo necesario durante el entrenamiento como durante el ajuste fino (*fine-tuning*).</p>
+        <div class="image-placeholder">Imagen: Diagrama de los pasos del Cómputo en Tiempo de Entrenamiento (Preentrenamiento y Ajuste Fino).</div>
+        <p>Juntos, han sido un enfoque principal para aumentar el rendimiento de los LLMs.</p>
+
+        <h3>Leyes de Escalamiento</h3>
+        <p>La forma en que la escala de un modelo (a través del cómputo, el tamaño del conjunto de datos y el tamaño del modelo) se correlaciona con el rendimiento de un modelo se investiga a través de varias leyes de escalamiento. </p>
+        <p>Son las llamadas "leyes de potencia" donde un aumento en una variable (ej., cómputo) resulta en un cambio proporcional en otra variable (ej., rendimiento).</p>
+        <div class="image-placeholder">Imagen: Gráfico de una Ley de Escalamiento mostrando un cambio proporcional entre variables.</div>
+        <p>Las más conocidas son las leyes de escalamiento de "Kaplan" y "Chinchilla". Estas leyes dicen más o menos que el rendimiento de un modelo aumentará con más cómputo, *tokens* y parámetros.</p>
+        <div class="image-placeholder">Imagen: Figura anotada de las "Leyes de escalamiento para modelos de lenguaje neuronal". Muestra cómo el rendimiento puede aumentar con diferentes medidas de cómputo.</div>
+        <p>Sugieren que los tres factores deben escalarse conjuntamente para un rendimiento óptimo.</p>
+        <p>La Ley de Escalamiento de Kaplan establece que escalar el tamaño del modelo es típicamente más efectivo que escalar los datos (dado un cómputo fijo). En contraste, la Ley de Escalamiento de Chinchilla sugiere que el tamaño del modelo y los datos son igual de importantes. </p>
+        <p>Sin embargo, a lo largo de 2024, el cómputo, el tamaño del conjunto de datos y los parámetros del modelo han crecido constantemente, pero las ganancias han mostrado rendimientos decrecientes.</p>
+        <div class="image-placeholder">Imagen: Gráfico que ilustra los rendimientos decrecientes a medida que se escala.</div>
+        <p>Como ocurre con estas leyes de potencia, hay rendimientos decrecientes a medida que se escala.</p>
+        <p>Esto plantea la pregunta:</p>
+        <blockquote>
+            <p>“¿Hemos llegado a un muro?”</p>
+        </blockquote>
+
+        <h2>¿Qué es el Cómputo en Tiempo de Prueba?</h2>
+        <p>La naturaleza costosa de aumentar el cómputo en tiempo de entrenamiento llevó a un interés en un enfoque alternativo, a saber, el **cómputo en tiempo de prueba**.</p>
+        <p>En lugar de aumentar continuamente los presupuestos de preentrenamiento, el cómputo en tiempo de prueba permite que los modelos "<em>piensen más tiempo</em>" durante la **inferencia**.</p>
+        <div class="image-placeholder">Imagen: Diagrama que ilustra la diferencia en el tiempo de inferencia y la cantidad de pensamiento/cómputo.</div>
+        <p>Con los modelos que no razonan, normalmente solo se obtendría la respuesta y se omitirían los pasos de "razonamiento":</p>
+        <div class="image-placeholder">Imagen: Salida de un modelo sin razonamiento que da una respuesta directa.</div>
+        <p>Sin embargo, los modelos de razonamiento usarían más *tokens* para derivar su respuesta a través de un proceso de **"pensamiento"** sistemático:</p>
+        <div class="image-placeholder">Imagen: Salida de un modelo de razonamiento que incluye un proceso de pensamiento detallado.</div>
+        <p>La idea es que el LLM tiene que gastar recursos (como el cómputo de VRAM) para crear una respuesta. Sin embargo, si todo el cómputo se gasta generando la respuesta, ¡eso es un poco ineficiente!</p>
+        <p>En cambio, al crear más *tokens* de antemano que contienen información adicional, relaciones y nuevos pensamientos, el modelo gastó más cómputo generando la respuesta final.</p>
+        <div class="image-placeholder">Imagen: Diagrama que muestra cómo más *tokens* de pensamiento conducen a más cómputo en tiempo de prueba.</div>
+        <p>En comparación con el cómputo en tiempo de entrenamiento, las leyes de escalamiento para el cómputo en tiempo de prueba son relativamente nuevas. Cabe destacar dos fuentes interesantes que relacionan el escalamiento del cómputo en tiempo de prueba con el cómputo en tiempo de entrenamiento.</p>
+        <p>Primero, una <a href="https://openai.com/index/learning-to-reason-with-llms/">publicación de OpenAI</a> muestra que el cómputo en tiempo de prueba podría seguir la misma tendencia que el escalamiento del cómputo en tiempo de entrenamiento.</p>
+        <div class="image-placeholder">Imagen: Figura anotada de "Aprendiendo a razonar con LLMs". Muestra que el nuevo paradigma podría ser el cómputo en tiempo de prueba.</div>
+        <p>Como tal, afirman que podría haber un cambio de paradigma hacia el escalamiento del cómputo en tiempo de prueba, ya que todavía es un campo nuevo.</p>
+        <p>Segundo, un interesante artículo llamado "Scaling Scaling Laws with Board Games" explora **AlphaZero** y lo entrena con varios grados de cómputo para jugar Hex. </p>
+        <div class="image-placeholder">Imagen: Figura anotada de "Scaling Scaling Laws with Board Games". Muestra la construcción de cómputo en tiempo de entrenamiento y cómputo en tiempo de prueba variables.</div>
+        <p>Sus resultados muestran que el cómputo en tiempo de entrenamiento y el cómputo en tiempo de prueba están estrechamente relacionados. Cada línea punteada muestra el cómputo mínimo necesario para esa puntuación ELO particular.</p>
+        <div class="image-placeholder">Imagen: Figura anotada de "Scaling Scaling Laws with Board Games". Demuestra la relación entre el cómputo en tiempo de entrenamiento y el cómputo en tiempo de prueba.</div>
+        <p>Con el cómputo en tiempo de prueba escalando como el cómputo en tiempo de entrenamiento, se está produciendo un cambio de paradigma hacia modelos de "razonamiento" que utilizan más cómputo en tiempo de prueba. </p>
+        <p>A través de este cambio de paradigma, en lugar de centrarse puramente en el cómputo en tiempo de entrenamiento (preentrenamiento y ajuste fino), estos modelos de "razonamiento" en cambio equilibran el entrenamiento con la inferencia. </p>
+        <div class="image-placeholder">Imagen: Diagrama que muestra el equilibrio entre el Cómputo en Tiempo de Entrenamiento y el Cómputo en Tiempo de Prueba.</div>
+        <p>El cómputo en tiempo de prueba podría incluso escalar en longitud:</p>
+        <div class="image-placeholder">Imagen: Diagrama que muestra cómo el cómputo en tiempo de prueba puede escalarse en longitud (más pasos de razonamiento).</div>
+        <p>¡El escalamiento en longitud es algo que también exploraremos al profundizar en DeepSeek-R1!</p>
+
+        <h2>Categorías de Cómputo en Tiempo de Prueba</h2>
+        <p>El increíble éxito de modelos de razonamiento como DeepSeek R-1 y OpenAI o1 muestran que hay más técnicas que simplemente pensar "más tiempo".</p>
+        <p>Como exploraremos, el cómputo en tiempo de prueba puede ser muchas cosas diferentes, incluyendo Cadena de Pensamiento, revisión de respuestas, retroceso, muestreo y más.</p>
+        <p>Estos se pueden clasificar, a grandes rasgos, en dos categorías:</p>
+        <ul>
+            <li><p>Búsqueda contra Verificadores (*Search against Verifiers*) (muestrear generaciones y seleccionar la mejor respuesta)</p></li>
+            <li><p>Modificación de la Distribución de Propuesta (*Modifying Proposal Distribution*) (proceso de "pensamiento" entrenado)</p></li>
+        </ul>
+        <div class="image-placeholder">Imagen: Diagrama que muestra las dos categorías de técnicas de razonamiento.</div>
+        <p>Por lo tanto, la búsqueda contra verificadores está **centrada en la salida** (*output*-focused), mientras que la modificación de la distribución de propuesta está **centrada en la entrada** (*input*-focused). </p>
+        <div class="image-placeholder">Imagen: Diagrama que compara los enfoques centrado en la salida (Search) y centrado en la entrada (Modifying Proposal Distribution).</div>
+        <p>Hay dos tipos de verificadores que exploraremos:</p>
+        <ul class="list-unstyled">
+            <li><p>Modelos de Recompensa de Resultado (*Outcome Reward Models*, ORM)</p></li>
+            <li><p>Modelos de Recompensa de Proceso (*Process Reward Models*, PRM)</p></li>
+        </ul>
+        <p>Como sus nombres indican, el ORM solo juzga el resultado y no se preocupa por el proceso subyacente:</p>
+        <div class="image-placeholder">Imagen: Diagrama que ilustra un ORM juzgando solo el resultado.</div>
+        <p>En contraste, el PRM también juzga el proceso que conduce al resultado (el "razonamiento"):</p>
+        <div class="image-placeholder">Imagen: Diagrama que ilustra un PRM juzgando cada paso del razonamiento.</div>
+        <p>Observe cómo el paso 2 es un paso de razonamiento deficiente y es puntuado bajo por el PRM!</p>
+        <p>Ahora que tiene una buena comprensión de los ORM frente a los PRM, ¡exploremos cómo se pueden aplicar en varias técnicas de verificación!</p>
+
+        <h2>Búsqueda contra Verificadores</h2>
+        <p>La primera categoría principal de cómputo en tiempo de prueba es la búsqueda contra verificadores. Esto generalmente implica dos pasos.</p>
+        <ul>
+            <li><p>Primero, se crean **múltiples muestras** de procesos de razonamiento y respuestas.</p></li>
+            <li><p>Segundo, un verificador (*Reward Model*) puntúa la salida generada</p></li>
+        </ul>
+        <div class="image-placeholder">Imagen: Diagrama que ilustra la creación de múltiples muestras de respuesta.</div>
+        <p>El verificador es típicamente un LLM, ajustado para juzgar el resultado (ORM) o el proceso (PRM).</p>
+        <p>Una ventaja importante de usar verificadores es que **no es necesario volver a entrenar o ajustar fino el LLM** que se utiliza para responder a la pregunta.</p>
+
+        <h3>Votación por Mayoría (*Majority Voting*)</h3>
+        <p>El método más sencillo es en realidad no utilizar un modelo de recompensa o verificador, sino realizar una **votación por mayoría**.</p>
+        <p>Permitimos que el modelo genere múltiples respuestas y la respuesta que se genera con mayor frecuencia será la respuesta final. </p>
+        <div class="image-placeholder">Imagen: Diagrama que ilustra la Votación por Mayoría (Autoconsistencia).</div>
+        <p>Este método también se llama **autoconsistencia (*self-consistency*)** como una forma de enfatizar la necesidad de generar múltiples respuestas y pasos de razonamiento.</p>
+
+        <h3>Muestras *Best-of-N*</h3>
+        <p>El primer método que involucra un verificador se llama Muestras *Best-of-N*. Esta técnica genera $N$ muestras y luego utiliza un verificador (Modelo de Recompensa de Resultado, ORM) para juzgar cada respuesta:</p>
+        <p>Primero, el LLM (a menudo llamado el Proponente) genera múltiples respuestas utilizando una temperatura alta o variable. </p>
+        <div class="image-placeholder">Imagen: Diagrama que ilustra la generación de múltiples respuestas (Best-of-N).</div>
+        <p>Segundo, cada respuesta se pasa a través de un Modelo de Recompensa de Resultado (ORM) y se puntúa la calidad de la respuesta. Se selecciona la respuesta con la puntuación más alta:</p>
+        <div class="image-placeholder">Imagen: Diagrama que ilustra la puntuación de las respuestas con un ORM.</div>
+        <p>En lugar de juzgar la respuesta, el proceso de razonamiento también podría ser juzgado con un **Modelo de Recompensa de Proceso** (PRM) que juzga la calidad de cada paso de razonamiento. Elegirá el candidato con el peso total más alto. </p>
+        <div class="image-placeholder">Imagen: Diagrama que ilustra la puntuación del proceso con un PRM.</div>
+        <p>Con ambos tipos de verificadores, también podemos ponderar cada respuesta candidata por el RM y elegir aquella con el peso total más alto. Esto se llama Muestras *Best-of-N* Ponderadas:</p>
+        <div class="image-placeholder">Imagen: Diagrama que ilustra el muestreo ponderado Best-of-N.</div>
+
+        <h2>Búsqueda *Beam* con Modelos de Recompensa de Proceso</h2>
+        <p>Este proceso de generación de respuestas y pasos intermedios puede extenderse aún más con la **búsqueda *beam*** (*beam search*). Con la búsqueda *beam*, se muestrean múltiples pasos de razonamiento y cada uno es juzgado por PRM (similar al Árbol de Pensamiento). Los 3 principales "**haces**" (*beams*) (caminos con mejor puntuación) son rastreados a lo largo del proceso.</p>
+        <div class="image-placeholder">Imagen: Diagrama que ilustra la búsqueda *Beam* con un PRM.</div>
+        <p>Este método permite detener rápidamente los caminos de "razonamiento" que no resultan fructíferos (puntuados bajos por el PRM). </p>
+        <p>Las respuestas resultantes se ponderan luego utilizando el enfoque *Best-of-N* que exploramos antes.</p>
+
+        <h2>Búsqueda en Árbol Monte Carlo (*Monte Carlo Tree Search*)</h2>
+        <p>Una gran técnica para hacer que las búsquedas en árbol sean más eficientes se llama **Búsqueda en Árbol Monte Carlo (MCTS)**. Consta de cuatro pasos:</p>
+        <ul class="list-unstyled">
+            <li><p>Selección (seleccionar una hoja dada basándose en una fórmula predeterminada)</p></li>
+            <li><p>Expansión (crear nodos adicionales)</p></li>
+            <li><p>Despliegues (*Rollouts*) (crear nodos aleatoriamente hasta llegar al final)</p></li>
+            <li><p>Retropropagación (*Backprop*) (actualizar las puntuaciones de los nodos padres basándose en la salida)</p></li>
+        </ul>
+        <p>El objetivo principal de estos pasos es seguir expandiendo los mejores pasos de razonamiento mientras también se exploran otros caminos. </p>
+        <p>Es, por lo tanto, un equilibrio entre **exploración** y **explotación**. Un ejemplo de cómo se puntúan y seleccionan los nodos es el siguiente:</p>
+        <div class="image-placeholder">Imagen: Fórmula utilizada para la selección y puntuación de nodos en MCTS (fórmula Upper Confidence Bound 1 - UCB1).</div>
+        <p>Por lo tanto, cuando seleccionamos un nuevo paso de razonamiento para explorar, no tiene que ser el camino de mejor rendimiento hasta ahora. </p>
+        <p>Usando este tipo de fórmula, comenzamos **seleccionando** un nodo (paso de razonamiento) y lo **expandimos** generando nuevos pasos de razonamiento. Como antes, esto se puede hacer con valores de **temperatura** razonablemente altos y variables:</p>
+        <div class="image-placeholder">Imagen: Diagrama de la fase de Selección y Expansión en MCTS.</div>
+        <p>Uno de los pasos de razonamiento expandidos se selecciona y se despliega (*rolled out*) varias veces hasta que alcanza varias respuestas. </p>
+        <p>Estos despliegues se pueden juzgar basándose en los pasos de razonamiento (PRM), las recompensas (ORM) o una combinación de ambos.</p>
+        <p>Las puntuaciones de los nodos padres se actualizan (retropropagadas) y podemos comenzar el proceso de nuevo comenzando con la selección.</p>
+        <div class="image-placeholder">Imagen: Diagrama que ilustra el ciclo completo de MCTS (Selección, Expansión, Despliegue y Retropropagación).</div>
+
+        <h2>Modificación de la Distribución de Propuesta</h2>
+        <p>La segunda categoría para crear LLMs de razonamiento se llama "**Modificación de la Distribución de Propuesta**". En lugar de buscar los pasos de razonamiento correctos con verificadores (**centrado en la salida**), el modelo es entrenado para crear pasos de razonamiento mejorados (**centrado en la entrada**).</p>
+        <p>En otras palabras, la distribución de la que se muestrean las terminaciones/pensamientos/tokens se modifica. </p>
+        <p>Imagine que tenemos una pregunta y una distribución de la que podemos muestrear *tokens*. Una estrategia común sería obtener el *token* con la puntuación más alta:</p>
+        <div class="image-placeholder">Imagen: Diagrama que muestra la selección del *token* con la puntuación más alta (greedy decoding).</div>
+        <p>Sin embargo, observe que algunos de los *tokens* están coloreados de rojo en la imagen de arriba. Esos son los *tokens* que tienen más probabilidades de conducir a un proceso de razonamiento:</p>
+        <div class="image-placeholder">Imagen: Distribución de *tokens* donde algunos están coloreados de rojo (probables *tokens* de razonamiento).</div>
+        <p>Aunque tomar el *token* ambicioso (*greedy*) no es necesariamente incorrecto, seleccionar un *token* que conduzca a un proceso de razonamiento tiende a resultar en una respuesta mejorada. </p>
+        <p>Cuando modificamos la distribución de propuesta (la distribución de probabilidad de *tokens*), esencialmente estamos haciendo que el modelo reordene la distribución de tal manera que los *tokens* de "razonamiento" se seleccionen con más frecuencia:</p>
+        <div class="image-placeholder">Imagen: Diagrama que muestra la distribución de *tokens* reordenada para priorizar los *tokens* de razonamiento.</div>
+        <p>Hay varios métodos para modificar la distribución de propuesta, pero generalmente se pueden clasificar en dos categorías:</p>
+        <ul class="list-unstyled">
+            <li><p>Actualizar el ***prompt*** a través de la ingeniería de *prompts*</p></li>
+            <li><p>**Entrenar** el modelo para centrarse en los *tokens*/procesos de razonamiento</p></li>
+        </ul>
+
+        <h2>Prompting</h2>
+        <p>Con la ingeniería de *prompts*, intentamos mejorar la salida actualizando el *prompt*. Este proceso también puede empujar al modelo a mostrar algunos de los procesos de razonamiento que vimos antes.</p>
+        <p>Para cambiar la distribución de propuesta con *prompting*, podemos proporcionar ejemplos al modelo (*in-context learning*) que tiene que seguir para generar un comportamiento similar al razonamiento:</p>
+        <div class="image-placeholder">Imagen: Diagrama que ilustra la ingeniería de *prompts* con ejemplos (CoT *Few-Shot*).</div>
+        <p>Este proceso se puede simplificar aún más simplemente indicando "<em>Pensemos paso a paso</em>". Del mismo modo, esto cambia la distribución de propuesta de tal manera que el LLM tiende a descomponer el proceso antes de responder:</p>
+        <div class="image-placeholder">Imagen: Diagrama que ilustra el CoT *Zero-Shot*.</div>
+        <p>Sin embargo, el modelo no ha aprendido inherentemente a seguir este proceso. Además, este es un proceso estático y lineal que inhibe el auto-refinamiento. Si un modelo comienza con un proceso de razonamiento incorrecto, tiende a mantenerlo en lugar de revisarlo.</p>
+
+        <h2>STaR</h2>
+        <p>Además del *prompting*, también podemos hacer que el modelo aprenda a "razonar" entrenándolo para que sea recompensado por generar estos pasos de razonamiento. Esto generalmente implica un conjunto de datos de razonamiento y aprendizaje por refuerzo para recompensar ciertos comportamientos.</p>
+        <p>Una técnica muy debatida se llama **STaR** o **Self-Taught Reasoner** (Razonador Auto-Enseñado). STaR es un método que utiliza el LLM para generar sus propios datos de razonamiento como entrada para el ajuste fino (*fine-tuning*) del modelo.</p>
+        <p>En el primer paso (1), genera pasos de razonamiento y una respuesta. Si la respuesta es correcta (2a), entonces añade el razonamiento y la respuesta a un conjunto de datos de entrenamiento en triplete (3b). Estos datos se utilizan para realizar el **ajuste fino supervisado** del modelo (5):</p>
+        <div class="image-placeholder">Imagen: Diagrama del proceso STaR cuando la respuesta inicial es Correcta (pasos 1, 2a, 3b, 5).</div>
+        <p>Sin embargo, si el modelo proporciona una respuesta incorrecta (2b), entonces proporcionamos una "pista" (la respuesta correcta) y le pedimos al modelo que razone por qué esta respuesta sería correcta (4b). El paso de razonamiento final se añade al mismo conjunto de datos de entrenamiento en triplete que se utiliza para realizar el **ajuste fino supervisado** del modelo (5): </p>
+        <div class="image-placeholder">Imagen: Diagrama del proceso STaR cuando la respuesta inicial es Incorrecta (pasos 1, 2b, 4b, 5).</div>
+        <p>Un elemento clave aquí (junto con muchas otras técnicas para modificar la distribución de propuesta) es que entrenamos explícitamente al modelo para que siga los procesos de razonamiento que le mostramos.</p>
+        <p>En otras palabras, decidimos cómo debe ser el proceso de razonamiento a través del **ajuste fino supervisado**.</p>
+        <p>El *pipeline* completo es bastante interesante ya que esencialmente genera **ejemplos de entrenamiento sintéticos**. Usar ejemplos de entrenamiento sintéticos (como exploraremos en DeepSeek R-1) es un método increíble para **destilar** este proceso de razonamiento en otros modelos.</p>
+
+        <h2>DeepSeek-R1</h2>
+        <p>Un lanzamiento importante en modelos de razonamiento es **DeepSeek-R1**, un modelo de código abierto cuyos pesos están disponibles. Compitiendo directamente con el modelo de razonamiento OpenAI o1, DeepSeek-R1 ha tenido un gran impacto en el campo.</p>
+        <p>DeepSeek ha hecho un trabajo notable al destilar elegantemente el razonamiento en su modelo base (**DeepSeek-V3-Base**) a través de varias técnicas.</p>
+        <p>Curiosamente, no se utilizaron verificadores y, en lugar de utilizar el ajuste fino supervisado para destilar el comportamiento de razonamiento, un gran enfoque se centró en el aprendizaje por refuerzo.</p>
+        <p>¡Exploremos cómo entrenaron el comportamiento de razonamiento en sus modelos!</p>
+
+        <h3>Razonamiento con DeepSeek-R1 Zero</h3>
+        <p>Un gran avance que condujo a DeepSeek-R1 fue un modelo experimental llamado **DeepSeek-R1 Zero**.</p>
+        <p>Comenzando con DeepSeek-V3-Base, en lugar de utilizar el ajuste fino supervisado en un montón de datos de razonamiento, solo utilizaron el aprendizaje por refuerzo (RL) para habilitar el comportamiento de razonamiento.</p>
+        <p>Para hacerlo, comenzaron con un *prompt* muy sencillo (similar a un *prompt* del sistema) para ser utilizado en el *pipeline*:</p>
+        <div class="image-placeholder">Imagen: El *prompt* del sistema utilizado en el entrenamiento de DeepSeek-R1 Zero, que especifica el uso de *tags* &lt;think&gt; y &lt;answer&gt;.</div>
+        <p>Observe cómo mencionan explícitamente que el proceso de razonamiento debe ir entre las ***tags* &lt;think&gt;**, ¡pero no especifican cómo debe ser el proceso de razonamiento!</p>
+        <p>Durante el aprendizaje por refuerzo, se crearon dos recompensas específicas basadas en reglas:</p>
+        <ul class="list-unstyled">
+            <li><p>Recompensas de Precisión (*Accuracy rewards*) - Recompensa la **respuesta** probándola.</p></li>
+            <li><p>Recompensas de Formato (*Format rewards*) - Recompensa el uso de las **tags &lt;thinking&gt;** y **&lt;answer&gt;**.</p></li>
+        </ul>
+        <p>El algoritmo de RL utilizado en este proceso se llama **Optimización de Política Relativa a Grupos (GRPO)**. La intuición detrás de este algoritmo es que hace que todas las elecciones que condujeron a una respuesta correcta o incorrecta sean más o menos probables. Estas elecciones pueden ser tanto conjuntos de *tokens* como pasos de razonamiento.</p>
+        <div class="image-placeholder">Imagen: Diagrama que ilustra el proceso de GRPO (Muestreo, Recompensa de Grupo y Actualización de Política).</div>
+        <p>Curiosamente, no se dieron ejemplos sobre cómo debería ser el proceso &lt;think&gt;. ¡Simplemente indica que **debe usar las *tags* &lt;think&gt;**, y nada más!</p>
+        <p>Al proporcionar estas recompensas indirectas relacionadas con el comportamiento de Cadena de Pensamiento, el modelo aprendió por sí mismo que cuanto más largo y complejo era el proceso de razonamiento, más probable era que la respuesta fuera correcta.</p>
+        <div class="image-placeholder">Imagen: Gráfico que muestra la relación entre la longitud del razonamiento y la precisión.</div>
+        <p>Este gráfico es especialmente importante ya que refuerza el **cambio de paradigma** del cómputo en **tiempo de entrenamiento** al cómputo en **tiempo de prueba**. A medida que estos modelos generan secuencias de pensamientos más largas, se centran en el cómputo en **tiempo de prueba**.</p>
+        <p>Utilizando este *pipeline* de entrenamiento, descubrieron que el modelo descubre por sí mismo el comportamiento más óptimo similar a la Cadena de Pensamiento, incluyendo capacidades de razonamiento avanzadas como la auto-reflexión y la auto-verificación.</p>
+        <p>Sin embargo, todavía tenía un inconveniente significativo. Tenía poca legibilidad y tendía a mezclar idiomas. En su lugar, exploraron una alternativa, el ahora conocido **DeepSeek R1**.</p>
+        <p>¡Exploremos cómo estabilizaron el proceso de razonamiento!</p>
+
+        <h2>DeepSeek-R1</h2>
+        <p>Para crear DeepSeek-R1, los autores siguieron cinco pasos:</p>
+        <ol>
+            <li><p>Arranque en Frío (*Cold Start*)</p></li>
+            <li><p>Aprendizaje por Refuerzo Orientado al Razonamiento</p></li>
+            <li><p>Muestreo por Rechazo (*Rejection Sampling*)</p></li>
+            <li><p>Ajuste Fino Supervisado</p></li>
+            <li><p>Aprendizaje por Refuerzo para todos los Escenarios</p>
+        </ol>
+        <p>En el **paso 1**, DeepSeek-V3-Base se ajustó con un pequeño conjunto de datos de razonamiento de alta calidad (≈5.000 *tokens*). Esto se hizo para prevenir el problema del arranque en frío que resultaba en una mala legibilidad. </p>
+        <div class="image-placeholder">Imagen: Diagrama del Paso 1 (Ajuste Fino de Arranque en Frío).</div>
+        <p>En el **paso 2**, el modelo resultante se entrenó utilizando un proceso de RL similar al utilizado para entrenar DeepSeek-R1-Zero. Sin embargo, se añadió otra medida de recompensa para asegurar que el idioma objetivo se mantuviera consistente. </p>
+        <div class="image-placeholder">Imagen: Diagrama del Paso 2 (RL Orientado al Razonamiento con recompensa de idioma).</div>
+        <p>En el **paso 3**, el modelo resultante entrenado con RL se utilizó para generar datos de razonamiento sintéticos que se utilizarían para el ajuste fino supervisado en una etapa posterior. Mediante el muestreo por rechazo (recompensas basadas en reglas) y un modelo de recompensa (DeepSeek-V3-Base), se crearon 600.000 muestras de razonamiento de alta calidad.</p>
+        <p>Además, se crearon 200.000 muestras sin razonamiento utilizando DeepSeek-V3 y parte de los datos con los que se entrenó.</p>
+        <div class="image-placeholder">Imagen: Diagrama del Paso 3 (Generación de Muestras de Razonamiento Sintético).</div>
+        <p>En el **paso 4**, el conjunto de datos resultante de 800.000 muestras se utilizó para realizar el ajuste fino supervisado del modelo DeepSeek-V3-Base. </p>
+        <div class="image-placeholder">Imagen: Diagrama del Paso 4 (Ajuste Fino Supervisado con el conjunto de datos sintético).</div>
+        <p>En el **paso 5**, se realizó el entrenamiento basado en RL en el modelo resultante utilizando un enfoque similar al utilizado en DeepSeek-R1-Zero. Sin embargo, para alinearse con las preferencias humanas, se agregaron señales de recompensa adicionales centradas en la utilidad y la inofensividad. </p>
+        <p>También se le pidió al modelo que resumiera el proceso de razonamiento para prevenir problemas de legibilidad.</p>
+        <div class="image-placeholder">Imagen: Diagrama del Paso 5 (RL Final con Recompensas de Preferencia y Resumen).</div>
+        <p>¡Y eso es todo! Esto significa que DeepSeek-R1 es en realidad un ajuste fino de DeepSeek-V3-Base a través de ajuste fino supervisado y aprendizaje por refuerzo. </p>
+        <p>¡La mayor parte del trabajo es asegurarse de que se generen muestras de alta calidad!</p>
+
+        <h3>Destilación del Razonamiento con DeepSeek-R1</h3>
+        <p>DeepSeek-R1 es un modelo enorme con 671B de parámetros. Desafortunadamente, esto significa que ejecutar un modelo de este tipo será difícil en *hardware* de consumo.</p>
+        <p>Afortunadamente, los autores exploraron formas de destilar la calidad del razonamiento de DeepSeek-R1 en otros modelos, como Qwen-32B, ¡que podemos ejecutar en *hardware* de consumo!</p>
+        <p>Para hacerlo, utilizan DeepSeek-R1 como modelo **maestro** y el modelo más pequeño como **estudiante**. A ambos modelos se les presenta un *prompt* y tienen que generar una distribución de probabilidad de *tokens*. Durante el entrenamiento, el **estudiante** intentará seguir de cerca la distribución del **maestro**.</p>
+        <div class="image-placeholder">Imagen: Diagrama de la Destilación del Conocimiento (Modelo Maestro y Modelo Estudiante).</div>
+        <p>Este proceso se realizó utilizando las 800.000 muestras de alta calidad completas que vimos antes:</p>
+        <div class="image-placeholder">Imagen: Diagrama que muestra la Destilación en el Conjunto de Datos Completo.</div>
+        <p>¡Los modelos destilados resultantes son bastante eficientes ya que no solo aprendieron de las 800.000 muestras, sino también de la forma en que el maestro (DeepSeek-R1) las respondería!</p>
+
+        <h2>Intentos Fallidos</h2>
+        <p>¿Recuerda cuando hablamos de **Modelos de Recompensa de Proceso** (PRMs) y la **Búsqueda en Árbol Monte Carlo** (MCTS)? Resulta que DeepSeek también probó esas técnicas para inculcar el razonamiento, pero no tuvo éxito al hacerlo. </p>
+        <p>Con MCTS, encontraron problemas con el gran espacio de búsqueda y tuvieron que limitar las expansiones de nodos. Además, entrenar un Modelo de Recompensa de grano fino es intrínsecamente difícil. </p>
+        <p>Con los PRMs para las técnicas *Best-of-N*, encontraron problemas con la sobrecarga computacional para seguir reentrenando el Modelo de Recompensa para prevenir el *reward-hacking*.</p>
+        <p>¡Esto no significa que no sean técnicas válidas, pero proporciona información interesante sobre las limitaciones de estas técnicas!</p>
+
+        <h2>Conclusión</h2>
+        <p>Esto concluye nuestro viaje de los LLMs de razonamiento. Con suerte, esta publicación le brinda una mejor comprensión del potencial de escalar el cómputo en tiempo de prueba.</p>
+        <p>Para ver más visualizaciones relacionadas con LLMs y para apoyar este boletín, ¡consulte el libro que escribí sobre Modelos de Lenguaje Grande! </p>
+        <div class="image-placeholder">Imagen: Cubierta del libro "Hands-On Large Language Models"</div>
+
+        <h2>Recursos</h2>
+        <p>Con suerte, esta fue una introducción accesible a los LLMs de razonamiento. Si desea profundizar, le sugiero los siguientes recursos:</p>
+        <ul class="list-unstyled">
+            <li><p><a href="https://newsletter.languagemodels.co/p/the-illustrated-deepseek-r1">The Illustrated DeepSeek-R1</a> es una guía increíble de Jay Alammar.</p></li>
+            <li><p>Una gran <a href="https://huggingface.co/spaces/HuggingFaceH4/blogpost-scaling-test-time-compute">publicación de Hugging Face</a> sobre el escalamiento del cómputo en tiempo de prueba con experimentos interesantes.</p></li>
+            <li><p>Este video, <a href="https://www.youtube.com/watch?v=6PEJ96k1kiw">Speculations on Test-Time Scaling</a>, hace un gran trabajo al entrar en los detalles técnicos de las técnicas comunes de cómputo en tiempo de prueba. </p></li>
+        </ul>
+
+        <hr>
+        <p><strong>Notas a pie de página:</strong></p>
+        <ol>
+            <li>Como psicólogo, es bastante asombroso ver lo "reflexivos" que pueden ser los LLMs a veces. Al mismo tiempo, sin embargo, estos pasos de "razonamiento" podrían centrarse demasiado en seguir el comportamiento humano. Por ejemplo, ¿cómo sería el "razonamiento" en un LLM si usáramos lenguaje simbólico en su lugar?</li>
+            <li>Kaplan, Jared, et al. "Scaling laws for neural language models." arXiv preprint arXiv:2001.08361 (2020).</li>
+            <li>Hoffmann, J., Borgeaud, S., Mensch, A., Buchatskaya, E., Cai, T., Rutherford, E., ... &amp; Sifre, L. (2022). Training compute-optimal large language models. arXiv preprint arXiv:2203.15556.</li>
+            <li>Jones, Andy L. "Scaling scaling laws with board games." arXiv preprint arXiv:2104.03113 (2021).</li>
+            <li>Snell, Charlie, et al. "Scaling llm test-time compute optimally can be more effective than scaling model parameters." arXiv preprint arXiv:2408.03314 (2024).</li>
+            <li>Wang, Xuezhi, et al. "Self-consistency improves chain of thought reasoning in language models." arXiv preprint arXiv:2203.11171 (2022).</li>
+            <li>Yao, Shunyu, et al. "Tree of thoughts: Deliberate problem solving with large language models." Advances in Neural Information Processing Systems 36 (2024).</li>
+            <li>Kojima, Takeshi, et al. "Large language models are zero-shot reasoners." Advances in neural information processing systems 35 (2022): 22199-22213.</li>
+            <li>Zelikman, Eric, et al. "Star: Bootstrapping reasoning with reasoning." Advances in Neural Information Processing Systems 35 (2022): 15476-15488.</li>
+            <li>Guo, Daya, et al. "Deepseek-r1: Incentivizing reasoning capability in llms via reinforcement learning." arXiv preprint arXiv:2501.12948 (2025).</li>
+            <li>Shao, Zhihong, et al. "Deepseekmath: Pushing the limits of mathematical reasoning in open language models." arXiv preprint arXiv:2402.03300 (2024).</li>
+        </ol>
+    </div>
+
+</body>
+</html>
