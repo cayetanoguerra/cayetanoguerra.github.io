@@ -17,7 +17,7 @@ Pympler==1.0.1
 QtPy==2.4.0
 SQLAlchemy==2.0.30
 Send2Trash==1.8.2
-Werkzeug==3.0.1
+Werkzeug==3.0.6
 absl-py==1.4.0
 accelerate==0.25.0
 aiohttp-retry==2.8.3
