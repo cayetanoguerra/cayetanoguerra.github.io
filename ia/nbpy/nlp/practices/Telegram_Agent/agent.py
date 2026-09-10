@@ -1,13 +1,16 @@
+import os
+from dotenv import load_dotenv
 from flask import Flask, request, Response
 import requests
 import llm
 
-# NGROK
-NGROK_URL = "https://6906267213b0.ngrok-free.app"
+load_dotenv()
 
-TELEGRAM_TOKEN = "8348497260:AAHHV9Svn97B4p7ZkhjftKz0X92jch25JKk"
+# NGROK
+NGROK_URL = os.getenv("NGROK_URL")
 
 # Telegram credentials
+TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")    
 
 app = Flask(__name__)
 

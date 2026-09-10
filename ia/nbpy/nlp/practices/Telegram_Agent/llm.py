@@ -1,6 +1,10 @@
+import os
+from dotenv import load_dotenv
 from openai import OpenAI
 
-OPENAI_API_KEY = "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"
+load_dotenv()
+
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 class LLM:
     def __init__(self):
