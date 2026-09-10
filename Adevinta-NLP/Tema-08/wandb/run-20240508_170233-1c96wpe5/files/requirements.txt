@@ -43,7 +43,7 @@ comm==0.1.4
 confection==0.1.1
 contourpy==1.1.0
 ctransformers==0.2.27
-curl-cffi==0.6.3
+curl-cffi==0.7.0
 cycler==0.11.0
 cymem==2.0.7
 dataclasses-json==0.6.5
