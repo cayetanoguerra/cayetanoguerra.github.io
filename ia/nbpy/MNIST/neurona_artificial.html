@@ -1,0 +1,682 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Neurona artificial</title>
+<style>
+  :root {
+    color-scheme: light;
+    /* Colores institucionales ULPGC */
+    --blue: #0266a2; --blue-dark: #014d7a; --blue-soft: #e8f1f8;
+    --orange: #ff9600; --orange-dark: #b86b00; --orange-soft: #fff3e0;
+    --bg: #f4f6f8; --panel: #ffffff; --ink: #1b2430; --muted: #5d6875;
+    --line: #e1e6eb;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .topbar { background: var(--panel); border-top: 4px solid var(--blue);
+            border-bottom: 1px solid var(--line); }
+  header { max-width: 1160px; margin: 0 auto; padding: 18px 16px 20px;
+           display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; }
+  .logo { height: 30px; width: auto; opacity: .9; flex-shrink: 0; margin-top: 4px; }
+  h1 { font-size: 26px; margin: 0 0 6px; letter-spacing: -.01em; color: var(--blue); }
+  h1::after { content: ""; display: block; width: 48px; height: 3px; background: var(--orange);
+              border-radius: 2px; margin-top: 6px; }
+  header p { margin: 0; color: var(--muted); max-width: 72ch; }
+  main { max-width: 1160px; margin: 0 auto; padding: 16px; display: grid; align-items: start;
+         grid-template-columns: minmax(0, 472px) minmax(0, 1fr); gap: 16px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px;
+          box-shadow: 0 1px 2px rgba(16, 40, 64, .04); min-width: 0; }
+  .card h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .08em;
+             color: var(--blue); margin: 0 0 12px; font-weight: 700;
+             display: flex; align-items: center; gap: 8px; }
+  .card h2::before { content: ""; width: 4px; height: 14px; background: var(--orange); border-radius: 2px; }
+  .note { color: var(--muted); font-size: 13px; margin: 8px 0 0; }
+  .note b { color: var(--ink); }
+  kbd { font: 12px ui-monospace, monospace; background: var(--blue-soft); color: var(--blue);
+        border-radius: 4px; padding: 1px 5px; }
+
+  button, select { font: inherit; padding: 7px 14px; border-radius: 8px; border: 1px solid var(--line);
+           background: var(--bg); color: var(--ink); cursor: pointer; transition: background .15s, border-color .15s; }
+  button:hover { border-color: #c4ccd4; }
+  button.primary { background: var(--blue); color: #fff; border-color: var(--blue); font-weight: 600; }
+  button.primary:hover { background: var(--blue-dark); border-color: var(--blue-dark); }
+  button.primary.running { background: var(--orange-dark); border-color: var(--orange-dark); }
+  button:focus-visible, select:focus-visible, input:focus-visible { outline: 3px solid var(--orange); outline-offset: 2px; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 12px; }
+  .lbl { color: var(--muted); font-size: 13px; }
+
+  /* Selector de clase */
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 9px; overflow: hidden; }
+  .seg button { border: 0; border-radius: 0; background: var(--panel); display: flex; align-items: center; gap: 7px; }
+  .seg button + button { border-left: 1px solid var(--line); }
+  .seg button .dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.25); }
+  .seg button[aria-pressed="true"] { background: var(--blue-soft); font-weight: 600; }
+  .seg button[data-c="1"][aria-pressed="true"] { background: var(--orange-soft); }
+
+  /* Plano */
+  .plane-wrap { position: relative; }
+  #plane { display: block; width: 100%; aspect-ratio: 1; border-radius: 8px; cursor: crosshair;
+           touch-action: none; border: 1px solid var(--line); }
+  .datasets button { padding: 5px 11px; font-size: 13px; }
+
+  .right { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-content: start; }
+  .wide { grid-column: 1 / -1; }
+
+  /* Neurona */
+  #neuron { width: 100%; height: auto; display: block; }
+  .sliders { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px 18px; margin-top: 6px; }
+  .slider label { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); }
+  .slider label b { font-variant-numeric: tabular-nums; color: var(--ink); }
+  .slider input { width: 100%; accent-color: var(--orange); }
+  .eq { font: 14px ui-monospace, "SF Mono", Menlo, monospace; background: var(--bg); border-radius: 8px;
+        padding: 9px 12px; line-height: 1.8; overflow-x: auto; white-space: nowrap; margin-top: 12px; }
+  .eq .c0 { color: var(--blue); font-weight: 700; }
+  .eq .c1 { color: var(--orange-dark); font-weight: 700; }
+
+  /* Entrenamiento */
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
+  .stat { background: var(--bg); border-radius: 8px; padding: 6px 10px; }
+  .stat span { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+  .stat b { font-size: 20px; font-variant-numeric: tabular-nums; }
+  #loss, #sig { width: 100%; height: auto; display: block; margin-top: 10px; }
+
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--muted); margin-top: 8px; }
+  .legend i { display: inline-block; vertical-align: middle; margin-right: 5px; }
+  .left { display: grid; gap: 16px; min-width: 0; }
+  .explain { display: grid; gap: 14px; }
+  .explain h3 { font-size: 14px; margin: 0 0 4px; color: var(--ink); }
+  .explain p { margin: 0; color: var(--muted); font-size: 13px; }
+
+  @media (max-width: 920px) {
+    header { flex-direction: column-reverse; gap: 14px; }
+    .logo { height: 24px; }
+    main { grid-template-columns: minmax(0, 1fr); }
+  }
+  @media (max-width: 640px) {
+    .right { grid-template-columns: minmax(0, 1fr); }
+    .sliders { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="topbar">
+<header>
+  <div>
+    <h1>Neurona artificial</h1>
+    <p>Coloca puntos de dos clases en el plano y observa cómo una única neurona aprende a separarlos.
+       La neurona recibe dos entradas (e₁, e₂), calcula una suma ponderada <i>z</i> = w₁e₁ + w₂e₂ + b
+       y la transforma con la función sigmoide en una probabilidad <i>p</i> entre 0 y 1.</p>
+  </div>
+  <img class="logo" src="logo-ulpgc.jpg" alt="ULPGC · Universidad de Las Palmas de Gran Canaria">
+</header>
+</div>
+
+<main>
+  <div class="left">
+  <section class="card">
+    <h2>Plano de entrada (e₁, e₂)</h2>
+    <div class="row" style="margin:0 0 12px">
+      <span class="lbl">Añadir puntos de</span>
+      <div class="seg" role="group" aria-label="Clase de los nuevos puntos">
+        <button data-c="0" aria-pressed="true"><span class="dot" style="background:#0266a2"></span>Clase 0</button>
+        <button data-c="1" aria-pressed="false"><span class="dot" style="background:#ff9600"></span>Clase 1</button>
+      </div>
+    </div>
+    <div class="plane-wrap"><canvas id="plane" width="440" height="440"></canvas></div>
+    <div class="legend">
+      <span><i style="width:18px;height:0;border-top:2.5px solid #1b2430"></i>frontera (p = 0,5)</span>
+      <span><i style="width:18px;height:0;border-top:1.5px dashed #5d6875"></i>p = 0,1 y p = 0,9</span>
+      <span><i style="width:18px;height:0;border-top:2px solid #b86b00"></i>vector de pesos w</span>
+    </div>
+    <p class="note"><b>Clic</b>: añadir un punto · <b>Clic sobre un punto</b>: borrarlo ·
+      <kbd>Mayús</kbd>+clic o clic derecho: añadir de la otra clase.</p>
+    <div class="row datasets">
+      <span class="lbl">Ejemplos:</span>
+      <button data-set="sep">Separables</button>
+      <button data-set="overlap">Solapados</button>
+      <button data-set="xor">XOR</button>
+      <button data-set="clear">Borrar puntos</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>¿Qué está pasando?</h2>
+    <div class="explain">
+      <div><h3>Una frontera recta</h3>
+        <p>La neurona responde «clase 1» cuando p &gt; 0,5, es decir, cuando z &gt; 0. Los puntos con
+           z = 0 cumplen w₁e₁ + w₂e₂ + b = 0: la ecuación de una <b>recta</b>. Por eso una sola neurona
+           es un clasificador lineal.</p></div>
+      <div><h3>Pesos y sesgo</h3>
+        <p>El vector w = (w₁, w₂) es perpendicular a la frontera y apunta hacia la clase 1. Cuanto más
+           largo, más brusca es la transición entre clases. El sesgo b desplaza la recta sin girarla.</p></div>
+      <div><h3>El límite: XOR</h3>
+        <p>Carga el ejemplo XOR: ninguna recta separa esas cuatro nubes, así que el error nunca baja
+           mucho. Para resolverlo hacen falta varias neuronas en capas, es decir, una red neuronal.</p></div>
+    </div>
+  </section>
+  </div>
+
+  <div class="right">
+    <section class="card wide">
+      <h2>La neurona</h2>
+      <svg id="neuron" viewBox="0 0 640 210" role="img" aria-label="Esquema de la neurona con sus valores"></svg>
+      <div class="sliders">
+        <div class="slider"><label for="sw1">Peso w₁ <b id="vw1"></b></label><input id="sw1" type="range" min="-10" max="10" step="0.01"></div>
+        <div class="slider"><label for="sw2">Peso w₂ <b id="vw2"></b></label><input id="sw2" type="range" min="-10" max="10" step="0.01"></div>
+        <div class="slider"><label for="sb">Sesgo b <b id="vb"></b></label><input id="sb" type="range" min="-10" max="10" step="0.01"></div>
+      </div>
+      <div class="eq" id="eq"></div>
+      <p class="note">Pasa el ratón por el plano para ver qué calcula la neurona en cada punto.
+        Puedes mover los pesos a mano o dejar que el entrenamiento los ajuste.</p>
+    </section>
+
+    <section class="card">
+      <h2>Entrenamiento</h2>
+      <div class="row" style="margin-top:0">
+        <button id="train" class="primary">▶ Entrenar</button>
+        <button id="step">Un paso</button>
+        <button id="rand">Pesos aleatorios</button>
+      </div>
+      <div class="row">
+        <label class="lbl" for="lr">Tasa de aprendizaje</label>
+        <select id="lr">
+          <option value="0.05">0,05</option><option value="0.2">0,2</option>
+          <option value="0.5" selected>0,5</option><option value="1">1</option><option value="3">3</option>
+        </select>
+        <label class="lbl" for="speed">Velocidad</label>
+        <select id="speed">
+          <option value="1">lenta</option><option value="5" selected>normal</option><option value="25">rápida</option>
+        </select>
+      </div>
+      <div class="stats">
+        <div class="stat"><span>Época</span><b id="epoch">0</b></div>
+        <div class="stat"><span>Error</span><b id="lossv">–</b></div>
+        <div class="stat"><span>Aciertos</span><b id="acc">–</b></div>
+      </div>
+      <svg id="loss" viewBox="0 0 320 130" aria-label="Evolución del error"></svg>
+      <p class="note">Error: entropía cruzada media. En cada época se calcula el gradiente con todos los
+        puntos y los pesos dan un pequeño paso en la dirección que más reduce el error (descenso del gradiente).</p>
+    </section>
+
+    <section class="card">
+      <h2>Función de activación: sigmoide</h2>
+      <svg id="sig" viewBox="0 0 320 190" aria-label="Función sigmoide con los puntos proyectados"></svg>
+      <p class="note">Cada punto del plano se proyecta sobre la curva según su valor <i>z</i>.
+        Una neurona bien entrenada lleva los puntos de clase 0 hacia p ≈ 0 (izquierda)
+        y los de clase 1 hacia p ≈ 1 (derecha).</p>
+    </section>
+
+  </div>
+</main>
+
+<script>
+// ================= Modelo: una neurona con dos entradas =================
+const XMIN = -2, XMAX = 2;               // dominio del plano (igual en e₁ y e₂)
+const L2 = 0.001;                         // pequeña regularización para que los pesos no crezcan sin límite
+const WLIM = 10;
+const sigmoid = z => 1 / (1 + Math.exp(-z));
+let w1, w2, b;
+let points = [];                          // {x1, x2, y}
+let epoch = 0, history = [];
+
+function randomWeights() {
+  w1 = (Math.random() * 2 - 1) * 1.5;
+  w2 = (Math.random() * 2 - 1) * 1.5;
+  b = (Math.random() * 2 - 1) * 0.5;
+  epoch = 0; history = [];
+}
+const zOf = (x1, x2) => w1 * x1 + w2 * x2 + b;
+
+function lossAcc() {
+  if (!points.length) return { loss: NaN, acc: NaN };
+  let L = 0, ok = 0;
+  for (const p of points) {
+    const q = Math.min(1 - 1e-7, Math.max(1e-7, sigmoid(zOf(p.x1, p.x2))));
+    L -= p.y ? Math.log(q) : Math.log(1 - q);
+    if ((q > 0.5) === (p.y === 1)) ok++;
+  }
+  return { loss: L / points.length, acc: ok / points.length };
+}
+
+// Una época de descenso del gradiente (lote completo) sobre la entropía cruzada.
+function trainEpoch(lr) {
+  if (!points.length) return;
+  let g1 = 0, g2 = 0, gb = 0;
+  for (const p of points) {
+    const e = sigmoid(zOf(p.x1, p.x2)) - p.y;   // dL/dz
+    g1 += e * p.x1; g2 += e * p.x2; gb += e;
+  }
+  const n = points.length;
+  w1 -= lr * (g1 / n + L2 * w1);
+  w2 -= lr * (g2 / n + L2 * w2);
+  b -= lr * (gb / n);
+  w1 = Math.max(-WLIM, Math.min(WLIM, w1));
+  w2 = Math.max(-WLIM, Math.min(WLIM, w2));
+  b = Math.max(-WLIM, Math.min(WLIM, b));
+  epoch++;
+  history.push(lossAcc().loss);
+  if (history.length > 4000) history = history.filter((_, i) => i % 2 === 0);
+}
+
+// ================= Conjuntos de ejemplo =================
+function gauss() { let u = 0, v = 0; while (!u) u = Math.random(); while (!v) v = Math.random();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); }
+function blob(cx, cy, s, n, y) {
+  const out = [];
+  for (let i = 0; i < n; i++) {
+    const x1 = cx + gauss() * s, x2 = cy + gauss() * s;
+    if (x1 > XMIN + .05 && x1 < XMAX - .05 && x2 > XMIN + .05 && x2 < XMAX - .05) out.push({ x1, x2, y }); else i--;
+  }
+  return out;
+}
+const DATASETS = {
+  sep: () => [...blob(-0.9, -0.6, 0.35, 14, 0), ...blob(0.8, 0.7, 0.35, 14, 1)],
+  overlap: () => [...blob(-0.4, -0.3, 0.6, 20, 0), ...blob(0.4, 0.4, 0.6, 20, 1)],
+  xor: () => [...blob(-1, -1, 0.28, 9, 0), ...blob(1, 1, 0.28, 9, 0), ...blob(-1, 1, 0.28, 9, 1), ...blob(1, -1, 0.28, 9, 1)],
+  clear: () => []
+};
+
+// ================= Colores =================
+const BLUE = [2, 102, 162], ORANGE = [255, 150, 0], INK = '#1b2430', MUTED = '#5d6875';
+const TINT0 = [180, 211, 233], TINT1 = [255, 216, 160];   // fondos suaves de cada clase
+const fmt = (v, d = 2) => (Object.is(v, -0) ? 0 : v).toLocaleString('es-ES', { minimumFractionDigits: d, maximumFractionDigits: d });
+const sgn = v => (v < 0 ? '− ' : '+ ') + fmt(Math.abs(v));
+
+// ================= Plano =================
+const plane = document.getElementById('plane');
+const pctx = plane.getContext('2d');
+const S = 440;
+const field = document.createElement('canvas');
+const FR = 110; field.width = field.height = FR;
+const fctx = field.getContext('2d');
+const fimg = fctx.createImageData(FR, FR);
+let hover = null;              // {x1, x2} bajo el ratón
+let newClass = 0;
+
+function setupHiDPI() {
+  const dpr = Math.min(3, window.devicePixelRatio || 1);
+  plane.width = plane.height = Math.round(S * dpr);
+  pctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+const toPx = v => (v - XMIN) / (XMAX - XMIN) * S;           // e₁ → px
+const toPy = v => (XMAX - v) / (XMAX - XMIN) * S;           // e₂ → px (eje hacia arriba)
+const fromPx = px => XMIN + px / S * (XMAX - XMIN);
+const fromPy = py => XMAX - py / S * (XMAX - XMIN);
+
+function drawField() {
+  const d = fimg.data;
+  for (let j = 0; j < FR; j++) {
+    const x2 = XMAX - (j + .5) / FR * (XMAX - XMIN);
+    for (let i = 0; i < FR; i++) {
+      const x1 = XMIN + (i + .5) / FR * (XMAX - XMIN);
+      const p = sigmoid(zOf(x1, x2));
+      const t = Math.pow(Math.abs(2 * p - 1), 0.7), col = p > .5 ? TINT1 : TINT0, k = 4 * (j * FR + i);
+      d[k] = 255 + (col[0] - 255) * t; d[k + 1] = 255 + (col[1] - 255) * t; d[k + 2] = 255 + (col[2] - 255) * t; d[k + 3] = 255;
+    }
+  }
+  fctx.putImageData(fimg, 0, 0);
+  pctx.imageSmoothingEnabled = true;
+  pctx.drawImage(field, 0, 0, S, S);
+}
+
+// Recta w₁e₁ + w₂e₂ + b = c recortada al dominio
+function lineFor(c) {
+  if (Math.abs(w1) < 1e-9 && Math.abs(w2) < 1e-9) return null;
+  const pts = [];
+  if (Math.abs(w2) > 1e-9) for (const x of [XMIN, XMAX]) pts.push([x, (c - b - w1 * x) / w2]);
+  if (Math.abs(w1) > 1e-9) for (const y of [XMIN, XMAX]) pts.push([(c - b - w2 * y) / w1, y]);
+  const inside = pts.filter(([x, y]) => x >= XMIN - 1e-9 && x <= XMAX + 1e-9 && y >= XMIN - 1e-9 && y <= XMAX + 1e-9);
+  if (inside.length < 2) return null;
+  inside.sort((a, b2) => a[0] - b2[0] || a[1] - b2[1]);
+  return [inside[0], inside[inside.length - 1]];
+}
+function strokeLine(seg, color, width, dash) {
+  if (!seg) return;
+  pctx.save();
+  pctx.strokeStyle = color; pctx.lineWidth = width; pctx.setLineDash(dash || []);
+  pctx.beginPath(); pctx.moveTo(toPx(seg[0][0]), toPy(seg[0][1])); pctx.lineTo(toPx(seg[1][0]), toPy(seg[1][1])); pctx.stroke();
+  pctx.restore();
+}
+
+function drawAxes() {
+  pctx.save();
+  pctx.strokeStyle = 'rgba(27,36,48,.08)'; pctx.lineWidth = 1;
+  for (let v = XMIN; v <= XMAX; v += 0.5) {
+    pctx.beginPath(); pctx.moveTo(toPx(v), 0); pctx.lineTo(toPx(v), S); pctx.stroke();
+    pctx.beginPath(); pctx.moveTo(0, toPy(v)); pctx.lineTo(S, toPy(v)); pctx.stroke();
+  }
+  pctx.strokeStyle = 'rgba(27,36,48,.35)';
+  pctx.beginPath(); pctx.moveTo(toPx(0), 0); pctx.lineTo(toPx(0), S); pctx.moveTo(0, toPy(0)); pctx.lineTo(S, toPy(0)); pctx.stroke();
+  pctx.fillStyle = MUTED; pctx.font = '11px system-ui, sans-serif';
+  for (let v = XMIN + 1; v < XMAX; v += 1) {
+    if (v === 0) continue;
+    pctx.textAlign = 'center'; pctx.fillText(String(v).replace('-', '−'), toPx(v), toPy(0) + 14);
+    pctx.textAlign = 'left'; pctx.fillText(String(v).replace('-', '−'), toPx(0) + 5, toPy(v) + 4);
+  }
+  pctx.font = 'italic 13px system-ui, sans-serif';
+  pctx.textAlign = 'right'; pctx.fillText('e₁', S - 6, toPy(0) - 6);
+  pctx.textAlign = 'left'; pctx.fillText('e₂', toPx(0) + 6, 14);
+  pctx.restore();
+}
+
+function drawWeightVector() {
+  const n = Math.hypot(w1, w2);
+  if (n < 1e-6) return;
+  // Punto de la frontera más cercano al centro del plano
+  const t = -b / (n * n);
+  let ox = w1 * t, oy = w2 * t;
+  if (Math.abs(ox) > XMAX - .2 || Math.abs(oy) > XMAX - .2) return;
+  const len = Math.min(1.2, 0.25 + n * 0.12);
+  const ex = ox + w1 / n * len, ey = oy + w2 / n * len;
+  const ax = toPx(ox), ay = toPy(oy), bx = toPx(ex), by = toPy(ey);
+  const ang = Math.atan2(by - ay, bx - ax);
+  pctx.save();
+  pctx.strokeStyle = '#b86b00'; pctx.fillStyle = '#b86b00'; pctx.lineWidth = 2.5;
+  pctx.beginPath(); pctx.moveTo(ax, ay); pctx.lineTo(bx - 8 * Math.cos(ang), by - 8 * Math.sin(ang)); pctx.stroke();
+  pctx.beginPath(); pctx.moveTo(bx, by);
+  pctx.lineTo(bx - 12 * Math.cos(ang - .4), by - 12 * Math.sin(ang - .4));
+  pctx.lineTo(bx - 12 * Math.cos(ang + .4), by - 12 * Math.sin(ang + .4)); pctx.closePath(); pctx.fill();
+  pctx.beginPath(); pctx.arc(ax, ay, 3.5, 0, 2 * Math.PI); pctx.fill();
+  pctx.font = 'bold italic 14px system-ui, sans-serif';
+  pctx.fillText('w', bx + 8 * Math.cos(ang) - 4, by + 8 * Math.sin(ang) + 5);
+  pctx.restore();
+}
+
+function drawPoints() {
+  for (const p of points) {
+    const x = toPx(p.x1), y = toPy(p.x2);
+    const wrong = (sigmoid(zOf(p.x1, p.x2)) > .5) !== (p.y === 1);
+    pctx.beginPath(); pctx.arc(x, y, 6.5, 0, 2 * Math.PI);
+    pctx.fillStyle = p.y ? '#ff9600' : '#0266a2'; pctx.fill();
+    pctx.lineWidth = 2; pctx.strokeStyle = '#fff'; pctx.stroke();
+    if (wrong) {   // mal clasificado: anillo
+      pctx.beginPath(); pctx.arc(x, y, 10.5, 0, 2 * Math.PI);
+      pctx.lineWidth = 1.5; pctx.strokeStyle = INK; pctx.stroke();
+    }
+  }
+}
+
+function drawHover() {
+  if (!hover) return;
+  const x = toPx(hover.x1), y = toPy(hover.x2);
+  pctx.save();
+  pctx.strokeStyle = 'rgba(27,36,48,.45)'; pctx.setLineDash([3, 3]); pctx.lineWidth = 1;
+  pctx.beginPath(); pctx.moveTo(x, toPy(0)); pctx.lineTo(x, y); pctx.lineTo(toPx(0), y); pctx.stroke();
+  pctx.setLineDash([]);
+  pctx.beginPath(); pctx.arc(x, y, 5, 0, 2 * Math.PI); pctx.fillStyle = INK; pctx.fill();
+  const p = sigmoid(zOf(hover.x1, hover.x2));
+  const txt = `p = ${fmt(p)}`;
+  pctx.font = '600 12px system-ui, sans-serif';
+  const tw = pctx.measureText(txt).width + 12;
+  const bx = Math.min(S - tw - 4, x + 10), by = Math.max(4, y - 28);
+  pctx.fillStyle = 'rgba(255,255,255,.92)'; pctx.strokeStyle = '#c4ccd4';
+  pctx.beginPath(); pctx.roundRect(bx, by, tw, 20, 5); pctx.fill(); pctx.stroke();
+  pctx.fillStyle = p > .5 ? '#b86b00' : '#0266a2'; pctx.fillText(txt, bx + 6, by + 14);
+  pctx.restore();
+}
+
+function drawPlane() {
+  pctx.clearRect(0, 0, S, S);
+  drawField();
+  drawAxes();
+  const zc = Math.log(9);   // p = 0,9 ↔ z = ln 9
+  strokeLine(lineFor(zc), MUTED, 1.5, [5, 4]);
+  strokeLine(lineFor(-zc), MUTED, 1.5, [5, 4]);
+  strokeLine(lineFor(0), INK, 2.5);
+  drawWeightVector();
+  drawPoints();
+  drawHover();
+}
+
+// ================= Esquema de la neurona (SVG) =================
+const nsvg = document.getElementById('neuron');
+nsvg.innerHTML = `
+  <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+    <path d="M0,0 L10,5 L0,10 z" fill="#5d6875"/></marker></defs>
+  <g font-family="system-ui, sans-serif" font-size="13" fill="${INK}">
+    <line id="e1" x1="92" y1="52" x2="282" y2="100" stroke-linecap="round"/>
+    <line id="e2" x1="92" y1="158" x2="282" y2="120" stroke-linecap="round"/>
+    <text id="tw1" x="180" y="58" text-anchor="middle" font-weight="700"></text>
+    <text id="tw2" x="180" y="166" text-anchor="middle" font-weight="700"></text>
+    <circle cx="62" cy="48" r="30" fill="#e8f1f8" stroke="#0266a2" stroke-width="1.5"/>
+    <circle cx="62" cy="162" r="30" fill="#e8f1f8" stroke="#0266a2" stroke-width="1.5"/>
+    <text x="62" y="44" text-anchor="middle" font-style="italic" fill="#014d7a">e₁</text>
+    <text x="62" y="158" text-anchor="middle" font-style="italic" fill="#014d7a">e₂</text>
+    <text id="tx1" x="62" y="62" text-anchor="middle" font-size="12" fill="#014d7a"></text>
+    <text id="tx2" x="62" y="176" text-anchor="middle" font-size="12" fill="#014d7a"></text>
+
+    <text x="310" y="18" text-anchor="middle" fill="${MUTED}">sesgo b</text>
+    <text id="tb" x="310" y="36" text-anchor="middle" font-weight="700"></text>
+    <line x1="310" y1="42" x2="310" y2="72" stroke="#5d6875" stroke-width="1.2" marker-end="url(#ar)"/>
+    <circle cx="310" cy="108" r="32" fill="#fff" stroke="#0266a2" stroke-width="2"/>
+    <text x="310" y="118" text-anchor="middle" font-size="28" fill="#0266a2">Σ</text>
+
+    <line x1="342" y1="108" x2="418" y2="108" stroke="#5d6875" stroke-width="1.2" marker-end="url(#ar)"/>
+    <text x="380" y="98" text-anchor="middle" font-style="italic" fill="${MUTED}">z</text>
+    <text id="tz" x="380" y="128" text-anchor="middle" font-weight="700"></text>
+
+    <rect x="420" y="80" width="84" height="56" rx="10" fill="#fff3e0" stroke="#ff9600" stroke-width="2"/>
+    <polyline id="minisig" fill="none" stroke="#b86b00" stroke-width="2.5" stroke-linejoin="round"/>
+    <circle id="minidot" r="4" fill="${INK}" style="display:none"/>
+    <text x="462" y="154" text-anchor="middle" font-size="12" fill="#b86b00">sigmoide σ</text>
+
+    <line x1="504" y1="108" x2="560" y2="108" stroke="#5d6875" stroke-width="1.2" marker-end="url(#ar)"/>
+    <circle id="out" cx="592" cy="108" r="30" stroke="#1b2430" stroke-width="1.5"/>
+    <text x="592" y="104" text-anchor="middle" font-style="italic" id="outl">p</text>
+    <text id="tp" x="592" y="121" text-anchor="middle" font-weight="700" font-size="13"></text>
+    <text id="tcls" x="592" y="160" text-anchor="middle" font-size="12" font-weight="700"></text>
+  </g>`;
+(function miniSigmoid() {
+  const pts = [];
+  for (let i = 0; i <= 48; i++) { const z = -6 + 12 * i / 48; pts.push(`${(430 + 64 * i / 48).toFixed(1)},${(126 - 36 * sigmoid(z)).toFixed(1)}`); }
+  document.getElementById('minisig').setAttribute('points', pts.join(' '));
+})();
+const $ = id => document.getElementById(id);
+function edgeStyle(el, w) {
+  const a = Math.min(1, Math.abs(w) / 6);
+  el.setAttribute('stroke', w >= 0 ? '#ff9600' : '#0266a2');
+  el.setAttribute('stroke-width', (1.5 + Math.min(10, Math.abs(w) * 1.1)).toFixed(1));
+  el.setAttribute('stroke-opacity', (0.35 + 0.65 * a).toFixed(2));
+}
+function mix(p) {   // color de salida según p
+  const c = p > .5 ? TINT1 : TINT0, t = Math.abs(2 * p - 1);
+  return `rgb(${c.map(v => Math.round(255 + (v - 255) * t)).join(',')})`;
+}
+function drawNeuron() {
+  edgeStyle($('e1'), w1); edgeStyle($('e2'), w2);
+  $('tw1').textContent = `w₁ = ${fmt(w1)}`; $('tw2').textContent = `w₂ = ${fmt(w2)}`;
+  $('tw1').setAttribute('fill', w1 >= 0 ? '#b86b00' : '#0266a2');
+  $('tw2').setAttribute('fill', w2 >= 0 ? '#b86b00' : '#0266a2');
+  $('tb').textContent = fmt(b);
+  const md = $('minidot');
+  if (hover) {
+    const z = zOf(hover.x1, hover.x2), p = sigmoid(z);
+    $('tx1').textContent = fmt(hover.x1); $('tx2').textContent = fmt(hover.x2);
+    $('tz').textContent = fmt(z); $('tp').textContent = fmt(p);
+    $('out').setAttribute('fill', mix(p));
+    $('tcls').textContent = p > .5 ? 'clase 1' : 'clase 0';
+    $('tcls').setAttribute('fill', p > .5 ? '#b86b00' : '#0266a2');
+    const zc = Math.max(-6, Math.min(6, z));
+    md.setAttribute('cx', 430 + (zc + 6) / 12 * 64); md.setAttribute('cy', 126 - 36 * sigmoid(zc)); md.style.display = '';
+    $('eq').innerHTML =
+      `z = ${fmt(w1)}·(${fmt(hover.x1)}) ${sgn(w2)}·(${fmt(hover.x2)}) ${sgn(b)} = <b>${fmt(z)}</b><br>` +
+      `p = σ(${fmt(z)}) = <b>${fmt(p, 3)}</b> → <span class="${p > .5 ? 'c1' : 'c0'}">clase ${p > .5 ? 1 : 0}</span>`;
+  } else {
+    $('tx1').textContent = ''; $('tx2').textContent = ''; $('tz').textContent = ''; $('tp').textContent = '';
+    $('out').setAttribute('fill', '#fff'); $('tcls').textContent = ''; md.style.display = 'none';
+    $('eq').innerHTML = `z = w₁·e₁ + w₂·e₂ + b = ${fmt(w1)}·e₁ ${sgn(w2)}·e₂ ${sgn(b)}<br>p = σ(z) = 1 / (1 + e<sup>−z</sup>)`;
+  }
+}
+
+// ================= Sigmoide con los puntos proyectados =================
+const ssvg = document.getElementById('sig');
+const ZR = 8, SX = z => 26 + (z + ZR) / (2 * ZR) * 284, SY = p => 150 - p * 128;
+(function () {
+  let d = '';
+  for (let z = -ZR; z <= ZR + 1e-9; z += 0.2) d += (d ? 'L' : 'M') + SX(z).toFixed(1) + ' ' + SY(sigmoid(z)).toFixed(1);
+  ssvg.innerHTML = `
+    <rect x="${SX(-ZR)}" y="${SY(1)}" width="${SX(0) - SX(-ZR)}" height="${SY(0) - SY(1)}" fill="#e8f1f8"/>
+    <rect x="${SX(0)}" y="${SY(1)}" width="${SX(ZR) - SX(0)}" height="${SY(0) - SY(1)}" fill="#fff3e0"/>
+    <line x1="${SX(-ZR)}" x2="${SX(ZR)}" y1="${SY(.5)}" y2="${SY(.5)}" stroke="#c4ccd4" stroke-dasharray="3 3"/>
+    <line x1="${SX(0)}" x2="${SX(0)}" y1="${SY(0)}" y2="${SY(1)}" stroke="#c4ccd4"/>
+    <line x1="${SX(-ZR)}" x2="${SX(ZR)}" y1="${SY(0)}" y2="${SY(0)}" stroke="#9aa5b1"/>
+    <g font-family="system-ui, sans-serif" font-size="11" fill="${MUTED}">
+      <text x="${SX(-ZR) + 6}" y="${SY(1) + 14}" fill="#0266a2" font-weight="700">clase 0</text>
+      <text x="${SX(ZR) - 6}" y="${SY(0) - 8}" text-anchor="end" fill="#b86b00" font-weight="700">clase 1</text>
+      <text x="${SX(-ZR) - 5}" y="${SY(1) + 4}" text-anchor="end">1</text>
+      <text x="${SX(-ZR) - 5}" y="${SY(.5) + 4}" text-anchor="end">0,5</text>
+      <text x="${SX(-ZR) - 5}" y="${SY(0) + 4}" text-anchor="end">0</text>
+      ${[-8, -4, 0, 4, 8].map(z => `<text x="${SX(z)}" y="${SY(0) + 30}" text-anchor="middle">${String(z).replace('-', '−')}</text>`).join('')}
+      <text x="${SX(ZR)}" y="${SY(0) + 30}" text-anchor="end" font-style="italic" dx="-18">z</text>
+    </g>
+    <path d="${d}" fill="none" stroke="${INK}" stroke-width="2"/>
+    <g id="sigpts"></g>
+    <g id="sighov" style="display:none">
+      <line id="shl" stroke="${INK}" stroke-dasharray="2 2" opacity=".5"/>
+      <circle id="shc" r="6.5" fill="#fff" stroke="${INK}" stroke-width="3"/>
+    </g>`;
+})();
+function drawSigmoid() {
+  let html = '';
+  for (const p of points) {
+    const z = Math.max(-ZR, Math.min(ZR, zOf(p.x1, p.x2)));
+    const c = p.y ? '#ff9600' : '#0266a2';
+    html += `<circle cx="${SX(z).toFixed(1)}" cy="${SY(sigmoid(z)).toFixed(1)}" r="4" fill="${c}" fill-opacity=".75" stroke="#fff" stroke-width="1"/>`;
+    html += `<line x1="${SX(z).toFixed(1)}" x2="${SX(z).toFixed(1)}" y1="${SY(0) + 4}" y2="${SY(0) + 14}" stroke="${c}" stroke-width="2" stroke-opacity=".7"/>`;
+  }
+  $('sigpts').innerHTML = html;
+  const g = $('sighov');
+  if (hover) {
+    const z = Math.max(-ZR, Math.min(ZR, zOf(hover.x1, hover.x2)));
+    const x = SX(z), y = SY(sigmoid(z));
+    $('shl').setAttribute('x1', x); $('shl').setAttribute('x2', x); $('shl').setAttribute('y1', SY(0)); $('shl').setAttribute('y2', y);
+    $('shc').setAttribute('cx', x); $('shc').setAttribute('cy', y);
+    g.style.display = '';
+  } else g.style.display = 'none';
+}
+
+// ================= Curva de error =================
+const lsvg = document.getElementById('loss');
+function drawLoss() {
+  const X0 = 34, X1 = 312, Y0 = 110, Y1 = 10;
+  let top = Math.max(0.8, ...history.slice(0, 50));
+  top = Math.ceil(top * 5) / 5;
+  let path = '';
+  const n = history.length;
+  if (n > 1) {
+    const step = Math.max(1, Math.floor(n / 300));
+    for (let i = 0; i < n; i += step) {
+      const x = X0 + (X1 - X0) * i / (n - 1), y = Y0 - (Y0 - Y1) * Math.min(1, history[i] / top);
+      path += (path ? 'L' : 'M') + x.toFixed(1) + ' ' + y.toFixed(1);
+    }
+    const y = Y0 - (Y0 - Y1) * Math.min(1, history[n - 1] / top);
+    path += 'L' + X1 + ' ' + y.toFixed(1);
+  }
+  lsvg.innerHTML = `
+    <g font-family="system-ui, sans-serif" font-size="11" fill="${MUTED}">
+      <line x1="${X0}" x2="${X1}" y1="${Y0}" y2="${Y0}" stroke="#9aa5b1"/>
+      <line x1="${X0}" x2="${X1}" y1="${(Y0 + Y1) / 2}" y2="${(Y0 + Y1) / 2}" stroke="#e1e6eb"/>
+      <line x1="${X0}" x2="${X1}" y1="${Y1}" y2="${Y1}" stroke="#e1e6eb"/>
+      <text x="${X0 - 5}" y="${Y0 + 4}" text-anchor="end">0</text>
+      <text x="${X0 - 5}" y="${(Y0 + Y1) / 2 + 4}" text-anchor="end">${fmt(top / 2, 1)}</text>
+      <text x="${X0 - 5}" y="${Y1 + 4}" text-anchor="end">${fmt(top, 1)}</text>
+      <text x="${X0}" y="${Y0 + 16}">0</text>
+      <text x="${X1}" y="${Y0 + 16}" text-anchor="end">${n ? n.toLocaleString('es-ES') + ' épocas' : 'épocas'}</text>
+      ${n ? '' : `<text x="${(X0 + X1) / 2}" y="${(Y0 + Y1) / 2 - 6}" text-anchor="middle">Pulsa «Entrenar» para ver cómo baja el error</text>`}
+    </g>
+    <path d="${path}" fill="none" stroke="#0266a2" stroke-width="2" stroke-linejoin="round"/>`;
+}
+
+// ================= Controles =================
+const sw1 = $('sw1'), sw2 = $('sw2'), sb = $('sb');
+function syncSliders() {
+  sw1.value = w1; sw2.value = w2; sb.value = b;
+  $('vw1').textContent = fmt(w1); $('vw2').textContent = fmt(w2); $('vb').textContent = fmt(b);
+}
+function updateStats() {
+  const { loss, acc } = lossAcc();
+  $('epoch').textContent = epoch.toLocaleString('es-ES');
+  $('lossv').textContent = isNaN(loss) ? '–' : fmt(loss, 3);
+  $('acc').textContent = isNaN(acc) ? '–' : Math.round(acc * 100) + ' %';
+}
+let dirty = true;
+const touch = () => { dirty = true; };
+function render() {
+  drawPlane(); drawNeuron(); drawSigmoid(); drawLoss(); syncSliders(); updateStats();
+}
+
+[sw1, sw2, sb].forEach(s => s.addEventListener('input', () => {
+  w1 = +sw1.value; w2 = +sw2.value; b = +sb.value; touch();
+}));
+
+let training = false;
+const trainBtn = $('train');
+function setTraining(on) {
+  training = on && points.length > 0;
+  trainBtn.textContent = training ? '❚❚ Pausa' : '▶ Entrenar';
+  trainBtn.classList.toggle('running', training);
+}
+trainBtn.addEventListener('click', () => setTraining(!training));
+$('step').addEventListener('click', () => { setTraining(false); trainEpoch(+$('lr').value); touch(); });
+$('rand').addEventListener('click', () => { randomWeights(); touch(); });
+
+document.querySelectorAll('.seg button').forEach(btn => btn.addEventListener('click', () => {
+  newClass = +btn.dataset.c;
+  document.querySelectorAll('.seg button').forEach(b2 => b2.setAttribute('aria-pressed', b2 === btn));
+}));
+document.querySelectorAll('[data-set]').forEach(btn => btn.addEventListener('click', () => {
+  points = DATASETS[btn.dataset.set]();
+  epoch = 0; history = [];
+  if (!points.length) setTraining(false);
+  touch();
+}));
+
+// Interacción con el plano
+function evPos(e) {
+  const r = plane.getBoundingClientRect();
+  return { px: (e.clientX - r.left) * S / r.width, py: (e.clientY - r.top) * S / r.height };
+}
+plane.addEventListener('pointermove', e => {
+  const { px, py } = evPos(e);
+  hover = { x1: fromPx(px), x2: fromPy(py) }; touch();
+});
+plane.addEventListener('pointerleave', () => { hover = null; touch(); });
+plane.addEventListener('contextmenu', e => e.preventDefault());
+plane.addEventListener('pointerdown', e => {
+  const { px, py } = evPos(e);
+  if (e.pointerType !== 'mouse') hover = { x1: fromPx(px), x2: fromPy(py) };
+  // ¿Clic sobre un punto existente? → borrarlo
+  let idx = -1, best = 11;
+  points.forEach((p, i) => { const d = Math.hypot(toPx(p.x1) - px, toPy(p.x2) - py); if (d < best) { best = d; idx = i; } });
+  if (idx >= 0) points.splice(idx, 1);
+  else {
+    const other = e.shiftKey || e.button === 2;
+    points.push({ x1: fromPx(px), x2: fromPy(py), y: other ? 1 - newClass : newClass });
+  }
+  epoch = 0; history = [];
+  if (!points.length) setTraining(false);
+  touch();
+});
+
+// Bucle principal
+function loop() {
+  if (training) {
+    const n = +$('speed').value, lr = +$('lr').value;
+    for (let i = 0; i < n; i++) trainEpoch(lr);
+    dirty = true;
+  }
+  if (dirty) { dirty = false; render(); }
+  requestAnimationFrame(loop);
+}
+
+setupHiDPI();
+window.addEventListener('resize', () => { setupHiDPI(); touch(); });
+randomWeights();
+points = DATASETS.sep();
+loop();
+</script>
+</body>
+</html>

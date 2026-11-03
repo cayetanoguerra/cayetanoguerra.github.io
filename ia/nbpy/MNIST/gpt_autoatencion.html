@@ -1,0 +1,690 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Autoatención enmascarada en GPT</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+  /* Layout: barra superior ULPGC · tira de pasos · [esquema del bloque | escenario del paso] */
+  :root {
+    color-scheme: light;
+    /* Colores institucionales ULPGC */
+    --blue: #0266a2; --blue-dark: #014d7a; --blue-soft: #e8f1f8;
+    --orange: #ff9600; --orange-dark: #b86b00; --orange-soft: #fff3e0;
+    --bg: #f4f6f8; --panel: #ffffff; --ink: #1b2430; --muted: #5d6875;
+    --line: #e1e6eb; --hatch-a: #eef1f4; --hatch-b: #d3dae1;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    --cw: 34px; --ch: 26px;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .gut { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  .topbar { background: var(--panel); border-top: 4px solid var(--blue); border-bottom: 1px solid var(--line); }
+  header { max-width: 1280px; margin: 0 auto; padding-block: 18px 20px;
+           display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; }
+  .logo { height: 30px; width: auto; opacity: .9; flex-shrink: 0; margin-top: 4px; }
+  h1 { font-size: 26px; margin: 0 0 6px; letter-spacing: -.01em; color: var(--blue); text-wrap: balance; }
+  h1::after { content: ""; display: block; width: 48px; height: 3px; background: var(--orange); border-radius: 2px; margin-top: 6px; }
+  header p { margin: 0; color: var(--muted); max-width: 84ch; }
+
+  .steps-wrap { max-width: 1280px; margin: 0 auto; padding-block: 16px 0; }
+  .steps { display: flex; flex-wrap: wrap; gap: 6px; }
+  .steps button { display: flex; align-items: center; gap: 7px; padding: 5px 11px 5px 6px; font-size: 13px;
+                  background: var(--panel); border: 1px solid var(--line); border-radius: 999px; }
+  .steps button .n { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center;
+                     background: var(--blue-soft); color: var(--blue); font-weight: 700; font-size: 11px;
+                     font-variant-numeric: tabular-nums; }
+  .steps button.done .n { background: var(--blue); color: #fff; }
+  .steps button.cur { border-color: var(--blue); background: var(--blue-soft); font-weight: 600; color: var(--blue-dark); }
+  .steps button.cur .n { background: var(--orange); color: #fff; }
+
+  main { max-width: 1280px; margin: 0 auto; padding-block: 16px 28px; display: grid; gap: 16px;
+         grid-template-columns: 250px minmax(0, 1fr); align-items: start; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px;
+          box-shadow: 0 1px 2px rgba(16, 40, 64, .04); min-width: 0; }
+  .card h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: var(--blue);
+             margin: 0 0 12px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  .card h2::before { content: ""; width: 4px; height: 14px; background: var(--orange); border-radius: 2px; }
+  .note { color: var(--muted); font-size: 13px; margin: 8px 0 0; }
+
+  button, select { font: inherit; padding: 7px 14px; border-radius: 8px; border: 1px solid var(--line);
+           background: var(--bg); color: var(--ink); cursor: pointer; transition: background .15s, border-color .15s; }
+  button:hover { border-color: #c4ccd4; }
+  button:disabled { opacity: .45; cursor: default; }
+  button.primary { background: var(--blue); color: #fff; border-color: var(--blue); font-weight: 600; }
+  button.primary:hover { background: var(--blue-dark); border-color: var(--blue-dark); }
+  button:focus-visible, input:focus-visible { outline: 3px solid var(--orange); outline-offset: 2px; }
+  .sm { padding: 4px 10px; font-size: 13px; }
+
+  /* ---------- Esquema del bloque ---------- */
+  aside.card { position: sticky; top: 12px; }
+  .arch { display: flex; flex-direction: column; align-items: stretch; gap: 0; font-size: 13px; }
+  .a-arrow { text-align: center; color: #9aa6b2; line-height: 1; padding: 3px 0; font-size: 14px; }
+  .a-node, .a-sub { border: 1px solid var(--line); background: var(--bg); border-radius: 8px; padding: 6px 10px;
+                    text-align: center; cursor: pointer; transition: background .2s, border-color .2s, color .2s; }
+  .a-node small { display: block; color: var(--muted); font-size: 11px; }
+  .a-block { border: 2px dashed #c4ccd4; border-radius: 12px; padding: 22px 8px 8px; position: relative;
+             display: flex; flex-direction: column; gap: 6px; transition: border-color .2s, background .2s; }
+  .a-att { border: 1px solid #c9d8e5; border-radius: 10px; padding: 20px 6px 6px; position: relative;
+           display: grid; grid-template-columns: 1fr 1fr; gap: 4px; background: #fbfcfd; }
+  .a-att .a-sub { font-size: 12px; padding: 4px 4px; font-family: var(--mono); }
+  .a-att .a-sub.full { grid-column: 1 / -1; }
+  .a-tag { position: absolute; top: 3px; left: 10px; font-size: 10.5px; text-transform: uppercase;
+           letter-spacing: .07em; color: var(--muted); font-weight: 700; }
+  .a-node.on, .a-sub.on { background: var(--orange-soft); border-color: var(--orange); color: var(--orange-dark); font-weight: 700; }
+  .a-node.done, .a-sub.done { background: var(--blue-soft); border-color: #b7cfe2; color: var(--blue-dark); }
+  .a-block.on { border-color: var(--orange); background: #fffaf2; }
+  .legend { display: grid; gap: 6px; margin-top: 14px; font-size: 12px; color: var(--muted); }
+  .legend span { display: flex; align-items: center; gap: 8px; }
+  .sw { width: 22px; height: 14px; border-radius: 3px; flex-shrink: 0; }
+
+  /* ---------- Escenario ---------- */
+  .stage-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  .stage-head h2 { margin-bottom: 4px; }
+  .stepno { color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+  .explain { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 16px 24px; margin-bottom: 14px; }
+  .explain .txt p { margin: 0 0 8px; max-width: 68ch; }
+  .explain .txt p:last-child { margin-bottom: 0; }
+  .formula { background: var(--blue-soft); border-radius: 10px; padding: 12px 14px; font-family: var(--mono);
+             font-size: 13.5px; line-height: 1.7; color: var(--blue-dark); align-self: start; overflow-x: auto; }
+  .formula .c { font-family: system-ui, sans-serif; color: var(--muted); font-size: 12.5px; display: block; line-height: 1.45; margin-top: 4px; }
+  .formula b { color: var(--ink); }
+  .viz { overflow-x: auto; padding: 14px 4px 8px; border-top: 1px solid var(--line); min-height: 260px; }
+  .calc { margin-top: 12px; padding: 10px 12px; background: var(--orange-soft); border-radius: 8px;
+          font-family: var(--mono); font-size: 13px; line-height: 1.6; color: #6b3f00; min-height: 44px; overflow-x: auto; }
+  .calc .h { font-family: system-ui, sans-serif; font-weight: 700; color: var(--orange-dark); font-size: 12px;
+             text-transform: uppercase; letter-spacing: .06em; display: block; }
+  .nav { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+  .hint { color: var(--muted); font-size: 12.5px; }
+  kbd { font: 12px var(--mono); background: var(--blue-soft); color: var(--blue); border-radius: 4px; padding: 1px 5px; }
+
+  /* ---------- Matrices ---------- */
+  .eq { display: flex; align-items: center; gap: 12px; flex-wrap: nowrap; width: max-content; }
+  .op { font-size: 22px; color: var(--muted); font-weight: 300; padding-top: 18px; }
+  .mx { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+  .mx-title { font-family: var(--mono); font-size: 13px; color: var(--blue-dark); font-weight: 700; padding-left: 2px; }
+  .mx-title small { font-weight: 400; color: var(--muted); font-family: system-ui, sans-serif; }
+  .mx-grid { display: grid; gap: 2px; }
+  .mx-rl { font-size: 12px; color: var(--muted); padding-right: 6px; text-align: right; align-self: center; white-space: nowrap; }
+  .mx-cl { font-size: 11px; color: var(--muted); text-align: center; align-self: end; white-space: nowrap; overflow: hidden; }
+  .mx-rl.hl, .mx-cl.hl { color: var(--orange-dark); font-weight: 700; }
+  .cell { width: var(--cw); height: var(--ch); display: grid; place-items: center; border-radius: 3px;
+          font: 10.5px/1 var(--mono); font-variant-numeric: tabular-nums; cursor: pointer; position: relative;
+          box-shadow: inset 0 0 0 1px rgba(27, 36, 48, .06); transition: box-shadow .12s; }
+  .mini .cell { --cw: 18px; --ch: 18px; }
+  .cell.hl { box-shadow: inset 0 0 0 2px var(--orange-dark), 0 0 0 1px var(--orange); z-index: 1; }
+  .cell.dim { opacity: .35; }
+  .cell.masked { background: repeating-linear-gradient(45deg, var(--hatch-a) 0 5px, var(--hatch-b) 5px 6px) !important;
+                 color: #8a95a1 !important; }
+  .cell.target::after { content: ""; position: absolute; top: 2px; right: 2px; width: 7px; height: 7px; border-radius: 50%;
+                        background: var(--orange); box-shadow: 0 0 0 1.5px #fff; }
+  .cell.cheat { box-shadow: inset 0 0 0 2px #d9480f; }
+  .stamp { animation: stamp .45s cubic-bezier(.2, .9, .3, 1.3) both; }
+  @keyframes stamp { from { transform: scale(1.6); opacity: 0; } to { transform: none; opacity: 1; } }
+
+  /* ---------- Tokens ---------- */
+  .chip { display: inline-flex; align-items: center; justify-content: center; padding: 6px 12px; border-radius: 8px;
+          background: var(--blue-soft); color: var(--blue-dark); font-weight: 600; border: 1px solid #c9dbea; white-space: nowrap; }
+  .chip.tgt { background: var(--orange-soft); color: #7a4700; border-color: #ffd699; }
+  .chip.hid { background: repeating-linear-gradient(45deg, var(--hatch-a) 0 5px, var(--hatch-b) 5px 6px); color: transparent;
+              border-color: var(--line); }
+  .tokgrid { display: grid; grid-template-columns: 130px repeat(6, minmax(78px, 1fr)); gap: 8px 10px; align-items: center;
+             width: max-content; min-width: 100%; }
+  .tokgrid .lab { font-size: 13px; color: var(--muted); }
+  .tokgrid .pos { text-align: center; font-size: 11px; color: var(--muted); font-family: var(--mono); }
+  .tokgrid .down { text-align: center; color: var(--orange-dark); font-size: 12px; line-height: 1.1; }
+
+  /* Entrada al bloque */
+  .enter { display: flex; gap: 28px; align-items: flex-end; width: max-content; padding: 10px 0 0; }
+  .tblock { border: 2px dashed var(--orange); background: #fffaf2; border-radius: 14px; padding: 30px 16px 14px; position: relative; }
+  .tblock .a-tag { color: var(--orange-dark); top: 8px; left: 14px; font-size: 11px; }
+  .vrows { display: grid; gap: 4px; }
+  .vrow { display: flex; align-items: center; gap: 2px; }
+  .vrow .mx-rl { width: 76px; }
+  .vrow.rise { animation: rise 1.1s cubic-bezier(.25, .8, .3, 1) both; }
+  @keyframes rise { 0% { transform: translateY(var(--from, 220px)); opacity: 0; } 25% { opacity: 1; } 100% { transform: none; opacity: 1; } }
+  .src { display: grid; gap: 6px; font-size: 12.5px; color: var(--muted); max-width: 230px; }
+  .flowtag { display: inline-block; margin-top: 10px; font-size: 12px; color: var(--orange-dark); font-weight: 600; }
+
+  /* Barras de una fila */
+  .rowbars { display: grid; grid-template-columns: 74px minmax(120px, 1fr) 52px; gap: 5px 10px; align-items: center; font-size: 13px; }
+  .rowbars .t { text-align: right; color: var(--muted); }
+  .rowbars .track { height: 16px; background: var(--bg); border-radius: 4px; overflow: hidden; }
+  .rowbars .track, .rowbars .fill { display: block; }
+  .rowbars .fill { height: 100%; background: var(--blue); border-radius: 4px; transition: width .35s; }
+  .rowbars .fill.cheat { background: #d9480f; }
+  .rowbars .track.masked { background: repeating-linear-gradient(45deg, var(--hatch-a) 0 5px, var(--hatch-b) 5px 6px); }
+  .rowbars .v { font-family: var(--mono); font-size: 12px; font-variant-numeric: tabular-nums; }
+  .split { display: flex; gap: 32px; align-items: flex-start; flex-wrap: wrap; }
+  .split > * { min-width: 0; }
+  .panel-t { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 700; margin: 0 0 8px; }
+  .toggle { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer; padding: 7px 12px;
+            border-radius: 8px; border: 1px solid var(--line); background: var(--bg); }
+  .toggle input { accent-color: #d9480f; width: 16px; height: 16px; }
+  .warn { margin-top: 10px; padding: 10px 12px; border-left: 4px solid #d9480f; background: #fdeee7; border-radius: 6px;
+          font-size: 13.5px; max-width: 60ch; }
+  .ok { margin-top: 10px; padding: 10px 12px; border-left: 4px solid var(--blue); background: var(--blue-soft); border-radius: 6px;
+        font-size: 13.5px; max-width: 60ch; }
+
+  /* Arcos de A·V */
+  svg text { font-family: system-ui, sans-serif; }
+  .arcs { display: block; }
+
+  /* Paso final */
+  .stair { display: grid; grid-template-columns: 82px repeat(6, auto) 24px auto; gap: 6px; align-items: center; width: max-content; }
+  .stair .lab { font-size: 12px; color: var(--muted); }
+  .stair .chip { padding: 4px 9px; font-size: 13px; }
+  .stair .arr { color: var(--orange-dark); text-align: center; }
+  .flow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 13px; margin-top: 4px; }
+  .flow .f { padding: 5px 10px; border-radius: 8px; background: var(--bg); border: 1px solid var(--line); }
+  .flow .f.k { background: var(--blue-soft); border-color: #c9dbea; color: var(--blue-dark); font-weight: 600; }
+  .flow .f.o { background: var(--orange-soft); border-color: #ffd699; color: #7a4700; font-weight: 600; }
+  .flow .ar { color: #9aa6b2; }
+  .facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-top: 14px; }
+  .fact { background: var(--bg); border-radius: 8px; padding: 10px 12px; }
+  .fact b { display: block; font-size: 20px; color: var(--blue); font-variant-numeric: tabular-nums; }
+  .fact span { font-size: 12px; color: var(--muted); }
+
+  @media (max-width: 900px) {
+    main { grid-template-columns: minmax(0, 1fr); }
+    aside.card { position: static; order: 2; }
+    .explain { grid-template-columns: minmax(0, 1fr); }
+    .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .logo { height: 24px; }
+  }
+  @media (max-width: 560px) {
+    .steps button .lbl { display: none; }
+    .steps button { padding: 5px; }
+    header { flex-direction: column-reverse; gap: 10px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .vrow.rise, .stamp { animation: none; }
+    .rowbars .fill { transition: none; }
+  }
+</style>
+</head>
+<body>
+<div class="topbar gut">
+<header>
+  <div>
+    <h1>Autoatención enmascarada en un GPT</h1>
+    <p>Sigue paso a paso qué ocurre cuando los vectores de una frase entran en un bloque transformer durante el
+       <b>entrenamiento</b>: cómo se calculan las consultas, claves y valores, cómo se puntúa cada par de tokens y
+       por qué la <b>matriz de máscara causal</b> impide que cada posición vea las palabras que tiene que predecir.
+       Pasa el ratón (o toca) sobre las celdas para ver cada cálculo.</p>
+  </div>
+  <img class="logo" src="logo-ulpgc.jpg" alt="ULPGC · Universidad de Las Palmas de Gran Canaria">
+</header>
+</div>
+
+<div class="steps-wrap gut"><nav class="steps" id="steps" aria-label="Pasos"></nav></div>
+
+<main class="gut">
+  <aside class="card">
+    <h2>Dónde estamos</h2>
+    <div class="arch" id="arch">
+      <div class="a-node" data-k="out">Lineal + softmax<small>p(siguiente token)</small></div>
+      <div class="a-arrow">↑</div>
+      <div class="a-block" data-k="block">
+        <div class="a-tag">Bloque transformer · ×N</div>
+        <div class="a-node" data-k="add2">Suma + normalización</div>
+        <div class="a-node" data-k="ffn">Red feed-forward</div>
+        <div class="a-node" data-k="add1">Suma + normalización</div>
+        <div class="a-att">
+          <div class="a-tag">Autoatención causal</div>
+          <div class="a-sub full" data-k="av">A · V</div>
+          <div class="a-sub" data-k="soft">softmax</div>
+          <div class="a-sub" data-k="mask">+ M</div>
+          <div class="a-sub" data-k="scale">÷ √d<sub>k</sub></div>
+          <div class="a-sub" data-k="qk">Q · Kᵀ</div>
+          <div class="a-sub full" data-k="qkv">Q, K, V</div>
+        </div>
+      </div>
+      <div class="a-arrow">↑</div>
+      <div class="a-node" data-k="emb">Embedding + posición</div>
+      <div class="a-arrow">↑</div>
+      <div class="a-node" data-k="tok">Tokens</div>
+    </div>
+    <div class="legend">
+      <span><i class="sw" style="background: rgba(2,102,162,.8)"></i>valor positivo</span>
+      <span><i class="sw" style="background: rgba(255,150,0,.8)"></i>valor negativo</span>
+      <span><i class="sw" style="background: repeating-linear-gradient(45deg, var(--hatch-a) 0 5px, var(--hatch-b) 5px 6px)"></i>tapado por la máscara</span>
+      <span><i class="sw" style="background: var(--panel); position: relative; box-shadow: inset 0 0 0 1px var(--line)"><i style="position:absolute; top:3px; right:3px; width:7px; height:7px; border-radius:50%; background: var(--orange)"></i></i>token que esa fila debe predecir</span>
+    </div>
+  </aside>
+
+  <section class="card" aria-live="polite">
+    <div class="stage-head">
+      <h2 id="st-title">—</h2>
+      <span class="stepno" id="st-no"></span>
+    </div>
+    <div class="explain">
+      <div class="txt" id="st-text"></div>
+      <div class="formula" id="st-formula"></div>
+    </div>
+    <div class="viz" id="viz"></div>
+    <div class="nav">
+      <button id="prev">← Anterior</button>
+      <span class="hint">También con <kbd>←</kbd> <kbd>→</kbd></span>
+      <button id="next" class="primary">Siguiente →</button>
+    </div>
+  </section>
+</main>
+
+<script>
+/* ======================= Datos del ejemplo ======================= */
+function rng(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+  t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const r1 = x => Math.round(x * 10) / 10, r2 = x => Math.round(x * 100) / 100;
+const TOK = ["El", "gato", "se", "comió", "el", "pescado"], NEXT = [...TOK.slice(1), "."];
+const N = 6, D = 8, DK = 4;
+const R = rng(7), u = a => r1((R() * 2 - 1) * a);
+const T = [...Array(N)].map(() => [...Array(D)].map(() => u(1)));
+const P = [...Array(N)].map((_, p) => [...Array(D)].map((_, k) => {
+  const i = k - (k % 2), a = p / Math.pow(10000, i / D); return r1(k % 2 ? Math.cos(a) : Math.sin(a)); }));
+const E = T.map((r, i) => r.map((v, k) => r1(v + P[i][k])));
+const mkW = () => [...Array(D)].map(() => [...Array(DK)].map(() => u(0.8)));
+const WQ = mkW(), WK = mkW(), WV = mkW();
+const mm = (A, B, rd = x => x) => A.map(r => B[0].map((_, c) => rd(r.reduce((s, v, k) => s + v * B[k][c], 0))));
+const tr = A => A[0].map((_, c) => A.map(r => r[c]));
+const Q = mm(E, WQ, r1), K = mm(E, WK, r1), V = mm(E, WV, r1), KT = tr(K);
+const S = mm(Q, KT, r2);
+const SC = S.map(r => r.map(v => v / 2));
+const MASK = S.map((r, i) => r.map((_, j) => j <= i ? 0 : -Infinity));
+const SM = SC.map((r, i) => r.map((v, j) => v + MASK[i][j]));
+const softmax = row => { const m = Math.max(...row.filter(isFinite)); const e = row.map(v => isFinite(v) ? Math.exp(v - m) : 0);
+  const s = e.reduce((a, b) => a + b, 0); return e.map(x => x / s); };
+const A = SM.map(softmax), AU = SC.map(softmax), AS = S.map(r => softmax(r.map((v, j) => v)));
+const Z = mm(A, V, r2);
+
+/* ======================= Utilidades de dibujo ======================= */
+const $ = s => document.querySelector(s);
+const neg = (s, v) => (v < 0 || Object.is(v, -0) ? "−" : "") + s;
+const f1 = v => neg(Math.abs(v).toFixed(1), v), f2 = v => neg(Math.abs(v).toFixed(2), v);
+const fx = v => !isFinite(v) ? "−∞" : f2(v);
+const pct = v => Math.round(v * 100) + " %";
+const sub = s => `<sub>${s}</sub>`;
+function cellStyle(v, max, kind) {
+  if (!isFinite(v)) return "";
+  if (kind === "prob") { const a = Math.min(v, 1); return `background:rgba(2,102,162,${(a * .9).toFixed(3)});color:${a > .45 ? "#fff" : "var(--ink)"}`; }
+  if (kind === "plain") return "background:var(--bg)";
+  const a = Math.min(Math.abs(v) / max, 1);
+  return v >= 0 ? `background:rgba(2,102,162,${(a * .85).toFixed(3)});color:${a > .55 ? "#fff" : "var(--ink)"}`
+                : `background:rgba(255,150,0,${(a * .85).toFixed(3)});color:var(--ink)`;
+}
+/* Matriz como rejilla de celdas. o: {rows, cols, fmt, kind, mini, title, max, cls(i,j), stampMasked} */
+function matrix(name, M, o = {}) {
+  const C = M[0].length, fmt = o.fmt || f1, kind = o.kind || "div";
+  const max = o.max ?? Math.max(1e-9, ...M.flat().filter(isFinite).map(Math.abs));
+  let h = `<div class="mx ${o.mini ? "mini" : ""}">`;
+  if (o.title) h += `<div class="mx-title">${o.title}</div>`;
+  h += `<div class="mx-grid" style="grid-template-columns:${o.rows ? "auto " : ""}repeat(${C}, var(--cw))">`;
+  if (o.cols) { if (o.rows) h += "<span></span>"; o.cols.forEach((c, j) => h += `<span class="mx-cl" data-m="${name}" data-c="${j}">${c}</span>`); }
+  M.forEach((row, i) => {
+    if (o.rows) h += `<span class="mx-rl" data-m="${name}" data-r="${i}">${o.rows[i]}</span>`;
+    row.forEach((v, j) => {
+      const masked = !isFinite(v) || (o.isMasked && o.isMasked(i, j));
+      const extra = o.cls ? o.cls(i, j) : "";
+      const delay = masked && o.stampMasked ? ` style="animation-delay:${(.15 + (j - i) * .18 + i * .04).toFixed(2)}s"` : "";
+      const txt = o.mini ? "" : (masked ? (o.maskTxt ?? "−∞") : fmt(v));
+      const st = masked ? "" : cellStyle(v, max, kind);
+      h += `<span class="cell ${masked ? "masked" : ""} ${masked && o.stampMasked ? "stamp" : ""} ${extra}" data-m="${name}" data-r="${i}" data-c="${j}" `
+         + `title="${name}[${i + 1},${j + 1}] = ${masked ? "−∞" : fmt(v)}"${delay ? delay.replace(' style="', ' style="' + st + ';') : ` style="${st}"`}>${txt}</span>`;
+    });
+  });
+  return h + "</div></div>";
+}
+const op = s => `<span class="op">${s}</span>`;
+function clearHL() { viz.querySelectorAll(".hl").forEach(e => e.classList.remove("hl")); }
+function addHL(sel) { viz.querySelectorAll(sel).forEach(e => e.classList.add("hl")); }
+const q = (m, r, c) => `[data-m="${m}"]` + (r != null ? `[data-r="${r}"]` : "") + (c != null ? `[data-c="${c}"]` : "");
+function dotTerms(a, b) { return a.map((v, k) => `${f1(v)}·${b[k] < 0 ? "(" + f1(b[k]) + ")" : f1(b[k])}`).join(" + "); }
+
+/* ======================= Pasos ======================= */
+const viz = $("#viz");
+const STEPS = [
+{ short: "Tokens", keys: ["tok"],
+  title: "1 · La frase y su objetivo",
+  text: `<p>El texto se trocea en <b>tokens</b> (en un GPT real suelen ser trozos de palabra). Aquí usamos 6:
+         <i>El gato se comió el pescado</i>.</p>
+         <p>Para entrenar, el objetivo es <b>la misma frase desplazada una posición</b>: en cada posición el modelo debe
+         predecir el token siguiente. Así, una sola frase de 6 tokens contiene 6 ejemplos de entrenamiento.</p>
+         <p>Las 6 posiciones se procesan <b>a la vez</b>. Si no hiciéramos nada, la posición de «se» podría mirar
+         «comió», que es justo la respuesta que debe adivinar. La máscara causal (paso 7) lo impide.</p>`,
+  formula: `entrada&nbsp;&nbsp;= t${sub(1)} … t${sub(6)}<br>objetivo = t${sub(2)} … t${sub(7)}<span class="c">Posición i: dados t${sub(1)}…t${sub("i")}, predecir t${sub("i+1")}.</span>`,
+  render() {
+    let h = `<div class="tokgrid"><span class="lab">Objetivo</span>${NEXT.map(t => `<span class="chip tgt">${t}</span>`).join("")}`;
+    h += `<span></span>${TOK.map(() => `<span class="down">↑<br>debe predecir</span>`).join("")}`;
+    h += `<span class="lab">Entrada</span>${TOK.map(t => `<span class="chip">${t}</span>`).join("")}`;
+    h += `<span></span>${TOK.map((_, i) => `<span class="pos">posición ${i + 1}</span>`).join("")}</div>`;
+    h += `<p class="note" style="margin-top:16px">Fíjate en la diagonal: el objetivo de cada posición es el token de entrada de la posición siguiente.
+          Por eso, en entrenamiento, «mirar hacia delante» equivale a copiar la respuesta.</p>`;
+    viz.innerHTML = h;
+  } },
+
+{ short: "Embeddings", keys: ["emb"],
+  title: "2 · Cada token se convierte en un vector",
+  text: `<p>Cada token se sustituye por su <b>vector de embedding</b> t${sub("i")} (una fila de una tabla aprendida) y se le suma
+         un <b>vector de posición</b> p${sub("i")}, porque la atención por sí sola no sabe en qué orden van las palabras.</p>
+         <p>El resultado, e${sub("i")}, es lo que entra al bloque. Aquí cada vector tiene d${sub("model")} = 8 componentes;
+         en GPT-2 pequeño son 768.</p>`,
+  formula: `e${sub("i")} = t${sub("i")} + p${sub("i")}<br>p(pos, 2k)&nbsp;&nbsp; = sin(pos / 10000<sup>2k/d</sup>)<br>p(pos, 2k+1) = cos(pos / 10000<sup>2k/d</sup>)
+            <span class="c">Aquí usamos la codificación sinusoidal del artículo original; GPT-2 aprende los vectores de posición.</span>`,
+  sel: [1, 2],
+  render() {
+    const cols = [...Array(D)].map((_, k) => k + 1);
+    viz.innerHTML = `<div class="eq">${matrix("T", T, { rows: TOK, cols, title: `T <small>embedding del token</small>`, max: 2 })}
+      ${op("+")}${matrix("P", P, { cols, title: `P <small>posición</small>`, max: 2 })}
+      ${op("=")}${matrix("E", E, { cols, title: `E <small>entrada al bloque · 6×8</small>`, max: 2 })}</div>
+      <div class="calc" id="calc"></div>`;
+    this.show(...this.sel);
+  },
+  onCell(m, r, c) { if (["T", "P", "E"].includes(m)) this.show(r, c); },
+  show(r, c) {
+    this.sel = [r, c]; clearHL(); ["T", "P", "E"].forEach(m => addHL(q(m, r, c)));
+    addHL(q("T", r)+".mx-rl");
+    const k = c - (c % 2), fn = c % 2 ? "cos" : "sin";
+    $("#calc").innerHTML = `<span class="h">Componente ${c + 1} del token «${TOK[r]}» (posición ${r})</span>
+      e = t + p = ${f1(T[r][c])} + ${f1(P[r][c])} = <b>${f1(E[r][c])}</b>
+      &nbsp;&nbsp;·&nbsp;&nbsp; p = ${fn}(${r} / 10000<sup>${k}/8</sup>) ≈ ${f1(P[r][c])}`;
+  } },
+
+{ short: "Entrada al bloque", keys: ["block"],
+  title: "3 · Los vectores entran en el bloque transformer",
+  text: `<p>Los 6 vectores e${sub("i")} se apilan como filas de una matriz <b>E</b> (6×8) y entran <b>todos a la vez</b> en el
+         primer bloque transformer. Nada se procesa token a token: todo son productos de matrices, lo que permite usar la GPU a fondo.</p>
+         <p>Dentro del bloque, lo primero es la <b>autoatención</b>: cada token va a recoger información de los demás tokens
+         que tiene permitido ver.</p>`,
+  formula: `E = [e${sub(1)}; e${sub(2)}; … ; e${sub(6)}] ∈ ℝ<sup>6×8</sup><span class="c">Una fila por token, una columna por dimensión del embedding.</span>`,
+  render() {
+    const rows = E.map((row, i) => `<div class="vrow rise" style="animation-delay:${(i * .09).toFixed(2)}s; --from:${200 + i * 14}px">
+        <span class="mx-rl">e${sub(i + 1)} · ${TOK[i]}</span>${row.map(v => `<span class="cell" style="${cellStyle(v, 2)}" title="${f1(v)}">${f1(v)}</span>`).join("")}</div>`).join("");
+    viz.innerHTML = `<div class="enter">
+        <div class="tblock"><div class="a-tag">Bloque transformer · capa 1 → autoatención</div>
+          <div class="vrows">${rows}</div>
+          <span class="flowtag">E · 6 filas × 8 columnas</span></div>
+        <div class="src"><span>Los vectores suben desde la capa de embedding.</span>
+          <span>Cada bloque devuelve otra matriz 6×8 que entra al bloque siguiente: GPT-2 pequeño apila 12.</span>
+          <button class="sm" id="replay">↻ Repetir animación</button></div>
+      </div>`;
+    $("#replay").onclick = () => viz.querySelectorAll(".vrow").forEach(el => { el.classList.remove("rise"); void el.offsetWidth; el.classList.add("rise"); });
+  } },
+
+{ short: "Q, K, V", keys: ["qkv"],
+  title: "4 · Consultas, claves y valores",
+  text: `<p>Cada vector e${sub("i")} se multiplica por tres matrices de pesos aprendidas y produce tres vectores más cortos
+         (d${sub("k")} = 4):</p>
+         <p><b>q · consulta</b>: lo que este token busca en los demás.<br>
+            <b>k · clave</b>: cómo se anuncia este token a los demás.<br>
+            <b>v · valor</b>: la información que entrega si alguien le presta atención.</p>`,
+  formula: `Q = E · W${sub("Q")}<br>K = E · W${sub("K")}<br>V = E · W${sub("V")}<span class="c">W${sub("Q")}, W${sub("K")}, W${sub("V")} ∈ ℝ<sup>8×4</sup> son parámetros que se ajustan durante el entrenamiento.</span>`,
+  sel: ["Q", 2, 0],
+  render() {
+    const c4 = ["1", "2", "3", "4"];
+    const line = (Wn, W, Mn, M, lbl) => `<div class="eq" style="gap:8px">${op("·")}${matrix(Wn, W, { mini: true, fmt: f1, title: `W${sub(lbl)}`, max: .8 })}
+       ${op("=")}${matrix(Mn, M, { cols: c4, title: `${Mn} <small>${{ Q: "consultas", K: "claves", V: "valores" }[Mn]}</small>`, max: 2.5 })}</div>`;
+    viz.innerHTML = `<div class="eq" style="align-items:center; gap:16px">
+       ${matrix("E", E, { rows: TOK, cols: [...Array(D)].map((_, k) => k + 1), title: "E", max: 2 })}
+       <div style="display:grid; gap:10px">${line("WQ", WQ, "Q", Q, "Q")}${line("WK", WK, "K", K, "K")}${line("WV", WV, "V", V, "V")}</div></div>
+       <div class="calc" id="calc"></div>`;
+    this.show(...this.sel);
+  },
+  onCell(m, r, c) { if (["Q", "K", "V"].includes(m)) this.show(m, r, c); },
+  show(m, r, c) {
+    this.sel = [m, r, c]; clearHL();
+    const W = { Q: WQ, K: WK, V: WV }[m], wn = "W" + m;
+    addHL(q("E", r)); addHL(q(wn, null, c)); addHL(q(m, r, c));
+    const exact = E[r].reduce((s, v, k) => s + v * W[k][c], 0);
+    $("#calc").innerHTML = `<span class="h">${m.toLowerCase()}${sub(TOK[r])}, componente ${c + 1} = fila «${TOK[r]}» de E · columna ${c + 1} de W${sub(m)}</span>
+      ${dotTerms(E[r], W.map(w => w[c]))} = ${f2(exact)} ≈ <b>${f1({ Q, K, V }[m][r][c])}</b>`;
+  } },
+
+{ short: "Q · Kᵀ", keys: ["qk"],
+  title: "5 · Puntuación de cada par: Q · Kᵀ",
+  text: `<p>Para saber cuánto debe atender el token i al token j se compara su consulta con la clave del otro mediante el
+         <b>producto escalar</b> q${sub("i")} · k${sub("j")}. Si apuntan en direcciones parecidas, la puntuación es alta.</p>
+         <p>Hacerlo para todos los pares a la vez es un único producto de matrices: Q (6×4) por Kᵀ (4×6) da una matriz
+         <b>S</b> de 6×6. Fila = quien pregunta, columna = a quien se mira.</p>
+         <p>Observa que de momento se calculan <b>todos</b> los pares, también los que miran al futuro.</p>`,
+  formula: `S = Q · Kᵀ<br>s${sub("ij")} = q${sub("i")} · k${sub("j")} = Σ${sub("c")} q${sub("ic")} k${sub("jc")}<span class="c">S ∈ ℝ<sup>6×6</sup>: una puntuación por cada pareja (consulta, clave).</span>`,
+  sel: [3, 1],
+  render() {
+    viz.innerHTML = `<div class="eq">${matrix("Q", Q, { rows: TOK, cols: ["1", "2", "3", "4"], title: "Q", max: 2.5 })}
+      ${op("·")}${matrix("KT", KT, { rows: ["1", "2", "3", "4"], cols: TOK.map(t => t.slice(0, 5)), title: "Kᵀ", max: 2.5 })}
+      ${op("=")}${matrix("S", S, { rows: TOK, cols: TOK.map(t => t.slice(0, 5)), title: `S <small>puntuaciones</small>`, fmt: f2 })}</div>
+      <div class="calc" id="calc"></div>`;
+    this.show(...this.sel);
+  },
+  onCell(m, r, c) { if (m === "S") this.show(r, c); },
+  show(i, j) {
+    this.sel = [i, j]; clearHL(); addHL(q("Q", i)); addHL(q("KT", null, j)); addHL(q("S", i, j));
+    $("#calc").innerHTML = `<span class="h">¿Cuánto encaja la consulta de «${TOK[i]}» con la clave de «${TOK[j]}»?</span>
+      s = q${sub(TOK[i])} · k${sub(TOK[j])} = ${dotTerms(Q[i], K[j])} = <b>${f2(S[i][j])}</b>`;
+  } },
+
+{ short: "÷ √dₖ", keys: ["scale"],
+  title: "6 · Escalado por √dₖ",
+  text: `<p>Un producto escalar suma d${sub("k")} términos, así que su tamaño crece con la dimensión. Con puntuaciones muy grandes,
+         la softmax se satura: casi todo el peso va a una sola columna y los gradientes se vuelven diminutos.</p>
+         <p>Por eso se divide por √d${sub("k")}. Aquí d${sub("k")} = 4, así que se divide por 2; en GPT-2, d${sub("k")} = 64 y se divide por 8.</p>
+         <p>A la derecha puedes comparar la distribución de atención de una fila con y sin escalar (sin máscara todavía).</p>`,
+  formula: `S' = S / √d${sub("k")} = S / 2<span class="c">Mantiene la varianza de las puntuaciones cerca de 1, sea cual sea d${sub("k")}.</span>`,
+  sel: [3, 1],
+  render() {
+    viz.innerHTML = `<div class="split"><div class="eq">${matrix("S", S, { rows: TOK, cols: TOK.map(t => t.slice(0, 5)), title: "S", fmt: f2 })}
+      ${op("÷ 2")}${matrix("SC", SC, { cols: TOK.map(t => t.slice(0, 5)), title: "S' = S / √4", fmt: f2, max: Math.max(...S.flat().map(Math.abs)) })}</div>
+      <div style="min-width:260px; flex:1"><p class="panel-t" id="rowt"></p>
+        <div class="split" style="gap:18px"><div style="flex:1; min-width:220px"><p class="note" style="margin:0 0 6px">softmax(S) · sin escalar</p><div class="rowbars" id="b1"></div></div>
+        <div style="flex:1; min-width:220px"><p class="note" style="margin:0 0 6px">softmax(S') · escalada</p><div class="rowbars" id="b2"></div></div></div></div></div>
+      <div class="calc" id="calc"></div>`;
+    this.show(...this.sel);
+  },
+  onCell(m, r, c) { if (m === "S" || m === "SC") this.show(r, c); },
+  show(i, j) {
+    this.sel = [i, j]; clearHL(); addHL(q("S", i, j)); addHL(q("SC", i, j)); addHL(q("S", i) + ".mx-rl");
+    $("#rowt").textContent = `Fila «${TOK[i]}»`;
+    $("#b1").innerHTML = bars(AS[i], i, false); $("#b2").innerHTML = bars(AU[i], i, false);
+    $("#calc").innerHTML = `<span class="h">Fila «${TOK[i]}», columna «${TOK[j]}»</span>
+      s' = ${f2(S[i][j])} / √4 = ${f2(S[i][j])} / 2 = <b>${f2(SC[i][j])}</b>`;
+  } },
+
+{ short: "Máscara", keys: ["mask"],
+  title: "7 · La matriz de enmascaramiento causal",
+  text: `<p>Aquí está la clave del entrenamiento de un GPT. Se suma una matriz <b>M</b> que vale 0 en la diagonal y por debajo,
+         y <b>−∞</b> por encima. La fila i conserva sus puntuaciones con los tokens 1…i y pierde las de i+1…6.</p>
+         <p>El punto naranja marca, en cada fila, el token que esa posición debe predecir: siempre es la <b>primera celda tapada</b>.
+         Sin la máscara, el modelo aprendería a copiarlo en lugar de predecirlo.</p>
+         <p>Gracias a M, las 6 predicciones se entrenan en paralelo y cada una ve exactamente lo que vería al generar texto.</p>`,
+  formula: `S'' = S' + M<br>M${sub("ij")} = 0 &nbsp;&nbsp;si j ≤ i<br>M${sub("ij")} = −∞ si j &gt; i<span class="c">Matriz triangular: la mitad superior queda anulada.</span>`,
+  sel: [2],
+  render() {
+    const cols = TOK.map(t => t.slice(0, 5)), tgt = (i, j) => j === i + 1 ? "target" : "";
+    viz.innerHTML = `<div class="eq">${matrix("SC", SC, { rows: TOK, cols, title: "S'", fmt: f2, cls: tgt })}
+      ${op("+")}${matrix("M", MASK, { cols, title: "M <small>máscara</small>", fmt: v => "0", kind: "plain", stampMasked: true })}
+      ${op("=")}${matrix("SM", SM, { cols, title: "S'' <small>enmascarada</small>", fmt: f2, cls: tgt, stampMasked: true, max: Math.max(...SC.flat().map(Math.abs)) })}</div>
+      <div class="calc" id="calc"></div>`;
+    this.show(...this.sel);
+  },
+  onCell(m, r) { if (["SC", "M", "SM"].includes(m)) this.show(r); },
+  show(i) {
+    this.sel = [i]; clearHL(); ["SC", "M", "SM"].forEach(m => addHL(q(m, i)));
+    const seen = TOK.slice(0, i + 1).map(t => `«${t}»`).join(", "), hid = TOK.slice(i + 1).map(t => `«${t}»`).join(", ");
+    $("#calc").innerHTML = `<span class="h">Fila ${i + 1} · «${TOK[i]}» debe predecir «${NEXT[i]}»</span>
+      ve: ${seen}${hid ? `<br>tapado: ${hid}` : "<br>es la última posición: puede verlo todo"}`;
+  } },
+
+{ short: "Softmax", keys: ["soft"],
+  title: "8 · Softmax por filas: pesos de atención",
+  text: `<p>Cada fila se pasa por una <b>softmax</b>, que convierte puntuaciones en pesos positivos que suman 1. Como
+         e<sup>−∞</sup> = 0, las posiciones tapadas reciben <b>peso exactamente cero</b>.</p>
+         <p>El resultado es la matriz de atención <b>A</b>, triangular inferior. La primera fila solo puede mirarse a sí misma, así que vale 100 %.</p>
+         <p>Activa «Quitar la máscara» para ver qué aprendería el modelo si se la saltara.</p>`,
+  formula: `A = softmax(S'')  (por filas)<br>a${sub("ij")} = e<sup>s''${sub("ij")}</sup> / Σ${sub("k")} e<sup>s''${sub("ik")}</sup><span class="c">e<sup>−∞</sup> = 0 → a${sub("ij")} = 0 para j &gt; i. Cada fila suma 1.</span>`,
+  sel: [2], noMask: false,
+  render() {
+    viz.innerHTML = `<div class="split"><div>
+        <label class="toggle"><input type="checkbox" id="nomask" ${this.noMask ? "checked" : ""}> Quitar la máscara (hacer trampa)</label>
+        <div id="amat" style="margin-top:12px"></div></div>
+        <div style="flex:1; min-width:280px"><p class="panel-t" id="rowt"></p><div class="rowbars" id="bars"></div><div id="msg"></div></div></div>`;
+    $("#nomask").onchange = e => { this.noMask = e.target.checked; this.draw(); };
+    this.draw();
+  },
+  draw() {
+    const M = this.noMask ? AU : A, i0 = this.sel[0];
+    $("#amat").innerHTML = matrix("A", M, { rows: TOK, cols: TOK.map(t => t.slice(0, 5)), title: `A <small>${this.noMask ? "sin máscara" : "con máscara"}</small>`,
+      fmt: pct, kind: "prob", isMasked: (i, j) => !this.noMask && j > i, maskTxt: "0",
+      cls: (i, j) => j === i + 1 ? (this.noMask ? "target cheat" : "target") : "" });
+    this.show(i0);
+  },
+  onCell(m, r) { if (m === "A") this.show(r); },
+  show(i) {
+    this.sel = [i]; clearHL(); addHL(q("A", i));
+    const M = this.noMask ? AU : A;
+    $("#rowt").textContent = `Fila «${TOK[i]}» · debe predecir «${NEXT[i]}»`;
+    $("#bars").innerHTML = bars(M[i], i, !this.noMask, this.noMask) +
+      `<span class="t" style="font-weight:600">Σ</span><span></span><span class="v"><b>100 %</b></span>`;
+    if (this.noMask && i < N - 1) {
+      $("#msg").innerHTML = `<div class="warn">Sin máscara, «${TOK[i]}» dedica un <b>${pct(AU[i][i + 1])}</b> de su atención a «${TOK[i + 1]}», que es
+        precisamente el token que tiene que predecir. El modelo aprendería a copiar en vez de a predecir, y al generar texto
+        ese token todavía no existe.</div>`;
+    } else if (this.noMask) {
+      $("#msg").innerHTML = `<div class="ok">La última fila ya podía verlo todo; para ella la máscara no cambia nada. Prueba otra fila.</div>`;
+    } else {
+      $("#msg").innerHTML = `<div class="ok">Con la máscara, «${TOK[i]}» reparte su atención solo entre ${i === 0 ? "sí mismo" : "los " + (i + 1) + " primeros tokens"}.
+        Las celdas tapadas reciben 0 %.</div>`;
+    }
+  } },
+
+{ short: "A · V", keys: ["av"],
+  title: "9 · Mezcla de valores: Z = A · V",
+  text: `<p>Por último, cada token construye su nuevo vector como una <b>media ponderada de los valores</b> v${sub("j")} de los
+         tokens que puede ver, usando los pesos de su fila de A.</p>
+         <p>Así, «comió» recoge sobre todo información de «gato» (quién come). Arriba se dibuja cada aportación: cuanto más
+         gruesa la línea, más peso. Nunca hay líneas hacia la derecha: es la máscara en acción.</p>
+         <p>Pulsa una salida z${sub("i")} o una celda de Z para cambiar de fila.</p>`,
+  formula: `Z = A · V<br>z${sub("i")} = Σ${sub("j ≤ i")} a${sub("ij")} v${sub("j")}<span class="c">Z ∈ ℝ<sup>6×4</sup>: una salida por token, con el contexto anterior ya incorporado.</span>`,
+  sel: [3, 0],
+  render() {
+    const cols = TOK.map(t => t.slice(0, 5));
+    viz.innerHTML = `<div id="arcs"></div>
+      <div class="eq" style="margin-top:10px">${matrix("A", A, { rows: TOK, cols, title: "A", fmt: pct, kind: "prob", isMasked: (i, j) => j > i, maskTxt: "0" })}
+      ${op("·")}${matrix("V", V, { rows: TOK, cols: ["1", "2", "3", "4"], title: "V", max: 2.5 })}
+      ${op("=")}${matrix("Z", Z, { rows: TOK, cols: ["1", "2", "3", "4"], title: "Z <small>salida de la atención</small>", fmt: f2, max: 2.5 })}</div>
+      <div class="calc" id="calc"></div>`;
+    this.show(...this.sel);
+  },
+  onCell(m, r, c) { if (m === "Z") this.show(r, c); else if (m === "A") this.show(r, this.sel[1]); },
+  show(i, c) {
+    this.sel = [i, c]; clearHL(); addHL(q("A", i)); addHL(q("V", null, c)); addHL(q("Z", i, c));
+    for (let j = 0; j <= i; j++) addHL(q("V", j) + ".mx-rl");
+    this.arcs(i);
+    const terms = A[i].slice(0, i + 1).map((a, j) => `${a.toFixed(2)}·${V[j][c] < 0 ? "(" + f1(V[j][c]) + ")" : f1(V[j][c])}`).join(" + ");
+    $("#calc").innerHTML = `<span class="h">z de «${TOK[i]}», componente ${c + 1}: media de la columna ${c + 1} de V con los pesos de la fila «${TOK[i]}»</span>
+      ${terms} = <b>${f2(Z[i][c])}</b>`;
+  },
+  arcs(i) {
+    const W = 640, gap = W / N, x = j => gap / 2 + j * gap, H = 190;
+    let s = `<svg class="arcs" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Aportaciones de cada valor a la salida">`;
+    for (let j = 0; j < N; j++) {
+      if (j > i) continue;
+      const w = A[i][j];
+      s += `<path d="M ${x(j)} 54 C ${x(j)} 104, ${x(i)} 100, ${x(i)} 146" fill="none" stroke="#0266a2" stroke-linecap="round"
+            stroke-width="${(1.5 + w * 16).toFixed(1)}" stroke-opacity="${(.25 + w * .7).toFixed(2)}"/>`;
+    }
+    for (let j = 0; j < N; j++) {
+      const on = j <= i;
+      s += `<g opacity="${on ? 1 : .45}"><rect x="${x(j) - 42}" y="6" width="84" height="26" rx="7" fill="${on ? "#e8f1f8" : "#eef1f4"}" stroke="${on ? "#c9dbea" : "#d3dae1"}"/>
+            <text x="${x(j)}" y="23" text-anchor="middle" font-size="13" font-weight="600" fill="${on ? "#014d7a" : "#5d6875"}">v · ${TOK[j]}</text>
+            <text x="${x(j)}" y="44" text-anchor="middle" font-size="11" fill="${on ? "#b86b00" : "#5d6875"}" font-weight="700">${on ? pct(A[i][j]) : "tapado"}</text></g>`;
+      s += `<g class="zbtn" data-i="${j}" style="cursor:pointer"><rect x="${x(j) - 34}" y="150" width="68" height="28" rx="7" fill="${j === i ? "#ff9600" : "#ffffff"}" stroke="${j === i ? "#b86b00" : "#e1e6eb"}"/>
+            <text x="${x(j)}" y="168" text-anchor="middle" font-size="13" font-weight="600" fill="${j === i ? "#fff" : "#1b2430"}">z · ${TOK[j]}</text></g>`;
+    }
+    s += "</svg>";
+    $("#arcs").innerHTML = s;
+    $("#arcs").querySelectorAll(".zbtn").forEach(g => g.onclick = () => this.show(+g.dataset.i, this.sel[1]));
+  } },
+
+{ short: "Entrenamiento", keys: ["add1", "ffn", "add2", "out"],
+  title: "10 · Del bloque a la predicción: 6 ejemplos en una pasada",
+  text: `<p>La salida Z se proyecta de vuelta a 8 dimensiones, se <b>suma a la entrada</b> (conexión residual), se normaliza y
+         pasa por una red feed-forward que actúa sobre cada token por separado. Esto se repite en N bloques.</p>
+         <p>Al final, cada posición produce una distribución sobre todo el vocabulario y se compara con su objetivo mediante
+         la <b>entropía cruzada</b>. Gracias a la máscara, la escalera de abajo se entrena entera con un único paso hacia delante.</p>
+         <p>En la práctica hay varias <b>cabezas</b> de atención en paralelo, cada una con sus W${sub("Q")}, W${sub("K")}, W${sub("V")}
+         y todas con la misma máscara.</p>`,
+  formula: `H = Norm(E + Z·W${sub("O")})<br>salida = Norm(H + FFN(H))<br>pérdida = −(1/6) Σ${sub("i")} log p(t${sub("i+1")} | t${sub(1)}…t${sub("i")})<span class="c">Una pérdida por posición, todas calculadas a la vez.</span>`,
+  render() {
+    let st = `<div class="stair"><span></span>${TOK.map((_, j) => `<span class="pos" style="font-size:11px;color:var(--muted);text-align:center">${j + 1}</span>`).join("")}<span></span><span class="lab">objetivo</span>`;
+    for (let i = 0; i < N; i++) {
+      st += `<span class="lab">ejemplo ${i + 1}</span>` + TOK.map((t, j) => `<span class="chip ${j > i ? "hid" : ""}">${t}</span>`).join("")
+          + `<span class="arr">→</span><span class="chip tgt">${NEXT[i]}</span>`;
+    }
+    st += `</div>`;
+    viz.innerHTML = `<p class="panel-t">Lo que ve cada posición durante el entrenamiento</p>${st}
+      <p class="panel-t" style="margin-top:20px">Resto del recorrido</p>
+      <div class="flow"><span class="f k">Z</span><span class="ar">→</span><span class="f">· W<sub>O</sub> (une las cabezas)</span><span class="ar">→</span>
+        <span class="f">+ E (residual)</span><span class="ar">→</span><span class="f">normalización</span><span class="ar">→</span>
+        <span class="f">feed-forward</span><span class="ar">→</span><span class="f">+ residual, normalización</span><span class="ar">→</span>
+        <span class="f k">×N bloques</span><span class="ar">→</span><span class="f">lineal → vocabulario</span><span class="ar">→</span>
+        <span class="f">softmax</span><span class="ar">→</span><span class="f o">pérdida en las 6 posiciones</span></div>
+      <div class="facts"><div class="fact"><b>12</b><span>bloques en GPT-2 pequeño</span></div>
+        <div class="fact"><b>12</b><span>cabezas por bloque</span></div>
+        <div class="fact"><b>768 / 64</b><span>d<sub>model</sub> / d<sub>k</sub> por cabeza</span></div>
+        <div class="fact"><b>1024</b><span>tokens de contexto: 1024 ejemplos por secuencia</span></div></div>`;
+  } }
+];
+
+function bars(row, i, masked, cheat) {
+  return row.map((p, j) => {
+    const hide = masked && j > i, isC = cheat && j === i + 1;
+    return `<span class="t">${TOK[j]}</span><span class="track ${hide ? "masked" : ""}"><span class="fill ${isC ? "cheat" : ""}" style="width:${hide ? 0 : (p * 100).toFixed(1)}%"></span></span>
+            <span class="v">${hide ? "0 %" : pct(p)}</span>`;
+  }).join("");
+}
+
+/* ======================= Navegación ======================= */
+let cur = 0;
+const stepsNav = $("#steps");
+stepsNav.innerHTML = STEPS.map((s, i) => `<button data-i="${i}"><span class="n">${i + 1}</span><span class="lbl">${s.short}</span></button>`).join("");
+stepsNav.querySelectorAll("button").forEach(b => b.onclick = () => go(+b.dataset.i));
+const order = ["tok", "emb", "block", "qkv", "qk", "scale", "mask", "soft", "av", "add1", "ffn", "add2", "out"];
+function go(i) {
+  cur = Math.max(0, Math.min(STEPS.length - 1, i));
+  const s = STEPS[cur];
+  $("#st-title").textContent = s.title; $("#st-no").textContent = `paso ${cur + 1} de ${STEPS.length}`;
+  $("#st-text").innerHTML = s.text; $("#st-formula").innerHTML = s.formula;
+  s.render();
+  stepsNav.querySelectorAll("button").forEach((b, k) => { b.classList.toggle("cur", k === cur); b.classList.toggle("done", k < cur); });
+  const firstOn = Math.min(...s.keys.map(k => order.indexOf(k)));
+  document.querySelectorAll("#arch [data-k]").forEach(el => {
+    const k = el.dataset.k, idx = order.indexOf(k);
+    el.classList.toggle("on", s.keys.includes(k) || (k === "block" && cur >= 2 && cur <= 9 && s.keys[0] !== "tok" && s.keys[0] !== "emb"));
+    el.classList.toggle("done", !s.keys.includes(k) && k !== "block" && idx < firstOn);
+  });
+  $("#prev").disabled = cur === 0; $("#next").disabled = cur === STEPS.length - 1;
+  try { localStorage.setItem("gpt-att-step", cur); } catch (e) {}
+}
+const stepOfKey = k => { const i = STEPS.findIndex(s => s.keys.includes(k)); return i; };
+document.querySelectorAll("#arch [data-k]").forEach(el => el.addEventListener("click", e => {
+  e.stopPropagation(); const i = stepOfKey(el.dataset.k); if (i >= 0) go(i); }));
+$("#prev").onclick = () => go(cur - 1); $("#next").onclick = () => go(cur + 1);
+document.addEventListener("keydown", e => {
+  if (e.target.tagName === "INPUT") return;
+  if (e.key === "ArrowRight") go(cur + 1); else if (e.key === "ArrowLeft") go(cur - 1);
+});
+function cellEvt(e) {
+  const c = e.target.closest(".cell, .mx-rl"); if (!c || !viz.contains(c)) return;
+  const s = STEPS[cur]; if (!s.onCell) return;
+  const r = c.dataset.r != null ? +c.dataset.r : null, col = c.dataset.c != null ? +c.dataset.c : (s.sel ? s.sel[s.sel.length - 1] : 0);
+  if (r == null) return;
+  s.onCell(c.dataset.m, r, col);
+}
+viz.addEventListener("pointerover", e => { if (e.pointerType === "mouse") cellEvt(e); });
+viz.addEventListener("click", cellEvt);
+let start = 0; try { start = +(localStorage.getItem("gpt-att-step") || 0); } catch (e) {}
+go(isFinite(start) ? start : 0);
+</script>
+</body>
+</html>

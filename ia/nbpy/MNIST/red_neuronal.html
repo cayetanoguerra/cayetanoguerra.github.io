@@ -1,0 +1,737 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Red neuronal binaria</title>
+<style>
+  :root {
+    color-scheme: light;
+    /* Colores institucionales ULPGC */
+    --blue: #0266a2; --blue-dark: #014d7a; --blue-soft: #e8f1f8;
+    --orange: #ff9600; --orange-dark: #b86b00; --orange-soft: #fff3e0;
+    --bg: #f4f6f8; --panel: #ffffff; --ink: #1b2430; --muted: #5d6875;
+    --line: #e1e6eb;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .topbar { background: var(--panel); border-top: 4px solid var(--blue);
+            border-bottom: 1px solid var(--line); }
+  header { max-width: 1240px; margin: 0 auto; padding: 18px 16px 20px;
+           display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; }
+  .logo { height: 30px; width: auto; opacity: .9; flex-shrink: 0; margin-top: 4px; }
+  h1 { font-size: 26px; margin: 0 0 6px; letter-spacing: -.01em; color: var(--blue); }
+  h1::after { content: ""; display: block; width: 48px; height: 3px; background: var(--orange);
+              border-radius: 2px; margin-top: 6px; }
+  header p { margin: 0; color: var(--muted); max-width: 76ch; }
+  main { max-width: 1240px; margin: 0 auto; padding: 16px; display: grid; align-items: start;
+         grid-template-columns: minmax(0, 472px) minmax(0, 1fr); gap: 16px; }
+  .col { display: grid; gap: 16px; min-width: 0; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px;
+          box-shadow: 0 1px 2px rgba(16, 40, 64, .04); min-width: 0; }
+  .card h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .08em;
+             color: var(--blue); margin: 0 0 12px; font-weight: 700;
+             display: flex; align-items: center; gap: 8px; }
+  .card h2::before { content: ""; width: 4px; height: 14px; background: var(--orange); border-radius: 2px; }
+  .note { color: var(--muted); font-size: 13px; margin: 8px 0 0; }
+  .note b { color: var(--ink); }
+  kbd { font: 12px ui-monospace, monospace; background: var(--blue-soft); color: var(--blue);
+        border-radius: 4px; padding: 1px 5px; }
+
+  button, select { font: inherit; padding: 7px 14px; border-radius: 8px; border: 1px solid var(--line);
+           background: var(--bg); color: var(--ink); cursor: pointer; transition: background .15s, border-color .15s; }
+  button:hover { border-color: #c4ccd4; }
+  button:disabled { opacity: .4; cursor: default; }
+  button.primary { background: var(--blue); color: #fff; border-color: var(--blue); font-weight: 600; }
+  button.primary:hover { background: var(--blue-dark); border-color: var(--blue-dark); }
+  button.primary.running { background: var(--orange-dark); border-color: var(--orange-dark); }
+  button:focus-visible, select:focus-visible { outline: 3px solid var(--orange); outline-offset: 2px; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 12px; }
+  .lbl { color: var(--muted); font-size: 13px; }
+
+  /* Selector de clase */
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 9px; overflow: hidden; }
+  .seg button { border: 0; border-radius: 0; background: var(--panel); display: flex; align-items: center; gap: 7px; }
+  .seg button + button { border-left: 1px solid var(--line); }
+  .seg button .dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.25); }
+  .seg button[aria-pressed="true"] { background: var(--blue-soft); font-weight: 600; }
+  .seg button[data-c="1"][aria-pressed="true"] { background: var(--orange-soft); }
+
+  /* Plano */
+  #plane { display: block; width: 100%; aspect-ratio: 1; border-radius: 8px; cursor: crosshair;
+           touch-action: none; border: 1px solid var(--line); }
+  .showing { font-size: 13px; color: var(--muted); margin: 0 0 8px; min-height: 20px; }
+  .showing b { color: var(--orange-dark); }
+  .datasets button { padding: 5px 11px; font-size: 13px; }
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--muted); margin-top: 8px; align-items: center; }
+  .legend i { display: inline-block; vertical-align: middle; margin-right: 5px; }
+  .legend .scale { width: 120px; height: 10px; border-radius: 5px; border: 1px solid var(--line);
+                   background: linear-gradient(90deg, #0266a2, #fff 50%, #ff9600); margin: 0 4px; }
+
+  /* Red */
+  .netctl { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; margin-bottom: 10px; }
+  .stepper { display: inline-flex; align-items: center; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--panel); }
+  .stepper button { border: 0; border-radius: 0; padding: 4px 11px; background: var(--panel); font-weight: 700; color: var(--blue); }
+  .stepper button:hover { background: var(--blue-soft); }
+  .stepper span { min-width: 22px; text-align: center; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .netwrap { position: relative; }
+  #net { display: block; width: 100%; height: auto; touch-action: none; }
+  .layerctl { position: absolute; top: 0; transform: translateX(-50%); display: flex; flex-direction: column;
+              align-items: center; gap: 3px; font-size: 11px; color: var(--muted); white-space: nowrap; }
+  .layerctl .stepper button { padding: 1px 8px; }
+  .layerctl .stepper span { min-width: 16px; font-size: 13px; }
+
+  /* Entrenamiento */
+  .train-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 16px; align-items: start; }
+  .ctlgrid { display: grid; grid-template-columns: auto auto; justify-content: start; gap: 8px 12px; align-items: center; margin-top: 12px; }
+  .stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 12px; }
+  .stat { background: var(--bg); border-radius: 8px; padding: 6px 10px; }
+  .stat span { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+  .stat b { font-size: 20px; font-variant-numeric: tabular-nums; }
+  #loss { width: 100%; height: auto; display: block; }
+
+  .explain { display: grid; gap: 14px; }
+  .explain h3 { font-size: 14px; margin: 0 0 4px; color: var(--ink); }
+  .explain p { margin: 0; color: var(--muted); font-size: 13px; }
+
+  @media (max-width: 980px) {
+    header { flex-direction: column-reverse; gap: 14px; }
+    .logo { height: 24px; }
+    main { grid-template-columns: minmax(0, 1fr); }
+  }
+  @media (max-width: 640px) {
+    .train-grid { grid-template-columns: minmax(0, 1fr); }
+    .layerctl span.t { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="topbar">
+<header>
+  <div>
+    <h1>Red neuronal binaria</h1>
+    <p>Una red con dos entradas (e₁, e₂), varias capas ocultas y una única neurona de salida que da un valor
+       entre 0 y 1. Coloca puntos de dos clases y observa cómo la red aprende fronteras que una sola neurona
+       no podría trazar. Pasa el ratón por cualquier neurona de la red para ver qué ha aprendido.</p>
+  </div>
+  <img class="logo" src="logo-ulpgc.jpg" alt="ULPGC · Universidad de Las Palmas de Gran Canaria">
+</header>
+</div>
+
+<main>
+  <div class="col">
+    <section class="card">
+      <h2>Plano de entrada (e₁, e₂)</h2>
+      <div class="row" style="margin:0 0 10px">
+        <span class="lbl">Añadir puntos de</span>
+        <div class="seg" role="group" aria-label="Clase de los nuevos puntos">
+          <button data-c="0" aria-pressed="true"><span class="dot" style="background:#0266a2"></span>Clase 0</button>
+          <button data-c="1" aria-pressed="false"><span class="dot" style="background:#ff9600"></span>Clase 1</button>
+        </div>
+      </div>
+      <p class="showing" id="showing"></p>
+      <canvas id="plane" width="440" height="440"></canvas>
+      <div class="legend">
+        <span><i style="width:18px;height:0;border-top:2.5px solid #1b2430"></i>frontera (salida = 0,5)</span>
+        <span>clase 0</span><span class="scale"></span><span>clase 1</span>
+      </div>
+      <p class="note"><b>Clic</b>: añadir un punto · <b>Clic sobre un punto</b>: borrarlo ·
+        <kbd>Mayús</kbd>+clic o clic derecho: añadir de la otra clase.</p>
+      <div class="row datasets">
+        <span class="lbl">Ejemplos:</span>
+        <button data-set="sep">Separables</button>
+        <button data-set="xor">XOR</button>
+        <button data-set="circle">Círculo</button>
+        <button data-set="spiral">Espiral</button>
+        <button data-set="clear">Borrar puntos</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>¿Qué está pasando?</h2>
+      <div class="explain">
+        <div><h3>Cada neurona, una recta</h3>
+          <p>Cada neurona de la primera capa oculta es como la neurona de la página anterior: divide el plano
+             con una recta. Pasa el ratón por ellas y lo verás.</p></div>
+        <div><h3>Las capas combinan</h3>
+          <p>Las neuronas de las capas siguientes reciben como entrada las salidas de la capa anterior y las
+             combinan. Así la red puede formar regiones curvas, cerradas o con varias partes.</p></div>
+        <div><h3>Retropropagación</h3>
+          <p>Para entrenar, el error de la salida se propaga hacia atrás capa a capa (<i>backpropagation</i>)
+             y cada peso se ajusta un poco en la dirección que reduce el error.</p></div>
+      </div>
+    </section>
+  </div>
+
+  <div class="col">
+    <section class="card">
+      <h2>Arquitectura de la red</h2>
+      <div class="netctl">
+        <span class="lbl">Capas ocultas</span>
+        <div class="stepper"><button id="lminus" aria-label="Quitar capa">−</button><span id="nlayers">2</span><button id="lplus" aria-label="Añadir capa">+</button></div>
+        <label class="lbl" for="act">Activación de las capas ocultas</label>
+        <select id="act">
+          <option value="sigmoid" selected>sigmoide</option>
+          <option value="tanh">tanh</option>
+          <option value="relu">ReLU</option>
+        </select>
+      </div>
+      <div class="netwrap" id="netwrap">
+        <canvas id="net" width="700" height="400"></canvas>
+      </div>
+      <p class="note">Cada neurona muestra en miniatura su salida para todos los puntos del plano
+        (azul: valor bajo, naranja: valor alto). Las conexiones naranjas son pesos positivos y las azules,
+        negativos; el grosor indica su magnitud. <b>Pasa el ratón por una neurona</b> para verla en grande en el plano.</p>
+    </section>
+
+    <section class="card">
+      <h2>Entrenamiento</h2>
+      <div class="train-grid">
+        <div>
+          <div class="row" style="margin-top:0">
+            <button id="train" class="primary">▶ Entrenar</button>
+            <button id="step">Una época</button>
+            <button id="reset">Reiniciar</button>
+          </div>
+          <div class="ctlgrid">
+            <label class="lbl" for="lr">Tasa de aprendizaje</label>
+            <select id="lr">
+              <option value="0.03">0,03</option><option value="0.1">0,1</option>
+              <option value="0.3" selected>0,3</option><option value="1">1</option>
+            </select>
+            <label class="lbl" for="speed">Velocidad</label>
+            <select id="speed">
+              <option value="1">lenta</option><option value="4" selected>normal</option><option value="20">rápida</option>
+            </select>
+          </div>
+          <div class="stats">
+            <div class="stat"><span>Época</span><b id="epoch">0</b></div>
+            <div class="stat"><span>Error</span><b id="lossv">–</b></div>
+            <div class="stat"><span>Aciertos</span><b id="acc">–</b></div>
+            <div class="stat"><span>Parámetros</span><b id="nparams">–</b></div>
+          </div>
+        </div>
+        <div>
+          <svg id="loss" viewBox="0 0 340 170" aria-label="Evolución del error"></svg>
+          <p class="note" style="margin-top:4px">Error: entropía cruzada media. En cada época la red
+            recorre todos los puntos en orden aleatorio y ajusta los pesos tras cada uno.</p>
+        </div>
+      </div>
+    </section>
+  </div>
+</main>
+
+<script>
+// =====================================================================
+//  Red neuronal: 2 entradas → capas ocultas → 1 neurona de salida (sigmoide)
+// =====================================================================
+const XMIN = -2, XMAX = 2;
+const MAXN = 8, MAXL = 4;
+const sigmoid = z => 1 / (1 + Math.exp(-z));
+const ACT = {
+  sigmoid: { f: sigmoid, d: a => a * (1 - a), mid: 0.5, range: a => 2 * a - 1 },
+  tanh:    { f: Math.tanh, d: a => 1 - a * a, mid: 0, range: a => a },
+  relu:    { f: z => (z > 0 ? z : 0), d: a => (a > 0 ? 1 : 0), mid: null, range: null }
+};
+
+let hidden = [4, 4];            // neuronas por capa oculta
+let act = 'sigmoid';
+let net;                        // { sizes, W[l][j][i], B[l][j] }
+let points = [];                // {e1, e2, y}
+let epoch = 0, history = [];
+
+function buildNet() {
+  const sizes = [2, ...hidden, 1];
+  const W = [], B = [];
+  for (let l = 0; l < sizes.length - 1; l++) {
+    const a = Math.sqrt(6 / (sizes[l] + sizes[l + 1]));          // inicialización de Glorot
+    W.push(Array.from({ length: sizes[l + 1] }, () => Float64Array.from({ length: sizes[l] }, () => (Math.random() * 2 - 1) * a)));
+    B.push(Float64Array.from({ length: sizes[l + 1] }, () => act === 'relu' ? 0.1 : 0));
+  }
+  net = { sizes, W, B };
+  epoch = 0; history = [];
+}
+const nParams = () => net.W.reduce((s, w, l) => s + w.length * (w[0].length + 1), 0);
+
+// Propagación hacia delante: devuelve las activaciones de todas las capas
+function forward(e1, e2) {
+  const A = [[e1, e2]];
+  const L = net.W.length;
+  for (let l = 0; l < L; l++) {
+    const f = l === L - 1 ? sigmoid : ACT[act].f;
+    const prev = A[l], out = new Float64Array(net.sizes[l + 1]);
+    for (let j = 0; j < out.length; j++) {
+      const w = net.W[l][j];
+      let z = net.B[l][j];
+      for (let i = 0; i < prev.length; i++) z += w[i] * prev[i];
+      out[j] = f(z);
+    }
+    A.push(out);
+  }
+  return A;
+}
+
+// Una época de descenso del gradiente estocástico con retropropagación (entropía cruzada)
+function trainEpoch(lr) {
+  if (!points.length) return;
+  const order = points.map((_, i) => i);
+  for (let i = order.length - 1; i > 0; i--) { const k = Math.floor(Math.random() * (i + 1)); [order[i], order[k]] = [order[k], order[i]]; }
+  const dAct = ACT[act].d;
+  for (const k of order) {
+    const p = points[k];
+    const A = forward(p.e1, p.e2);
+    let delta = Float64Array.of(A[A.length - 1][0] - p.y);       // dL/dz en la salida
+    for (let l = net.W.length - 1; l >= 0; l--) {
+      const prev = A[l], nd = new Float64Array(prev.length);
+      for (let j = 0; j < delta.length; j++) {
+        const w = net.W[l][j], d = delta[j];
+        for (let i = 0; i < prev.length; i++) { nd[i] += w[i] * d; w[i] -= lr * d * prev[i]; }
+        net.B[l][j] -= lr * d;
+      }
+      if (l > 0) for (let i = 0; i < nd.length; i++) nd[i] *= dAct(prev[i]);
+      delta = nd;
+    }
+  }
+  epoch++;
+  history.push(lossAcc().loss);
+  if (history.length > 4000) history = history.filter((_, i) => i % 2 === 0);
+}
+
+function lossAcc() {
+  if (!points.length) return { loss: NaN, acc: NaN };
+  let L = 0, ok = 0;
+  for (const p of points) {
+    const q = Math.min(1 - 1e-7, Math.max(1e-7, forward(p.e1, p.e2).at(-1)[0]));
+    L -= p.y ? Math.log(q) : Math.log(1 - q);
+    if ((q > 0.5) === (p.y === 1)) ok++;
+  }
+  return { loss: L / points.length, acc: ok / points.length };
+}
+
+// =====================================================================
+//  Conjuntos de ejemplo
+// =====================================================================
+function gauss() { let u = 0, v = 0; while (!u) u = Math.random(); while (!v) v = Math.random();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); }
+const inside = p => p.e1 > XMIN + .05 && p.e1 < XMAX - .05 && p.e2 > XMIN + .05 && p.e2 < XMAX - .05;
+function blob(cx, cy, s, n, y) {
+  const out = [];
+  while (out.length < n) { const p = { e1: cx + gauss() * s, e2: cy + gauss() * s, y }; if (inside(p)) out.push(p); }
+  return out;
+}
+function ring(r0, r1, n, y) {
+  const out = [];
+  for (let i = 0; i < n; i++) { const a = Math.random() * 2 * Math.PI, r = r0 + Math.random() * (r1 - r0); out.push({ e1: r * Math.cos(a), e2: r * Math.sin(a), y }); }
+  return out;
+}
+const DATASETS = {
+  sep: () => [...blob(-0.9, -0.6, 0.35, 14, 0), ...blob(0.8, 0.7, 0.35, 14, 1)],
+  xor: () => [...blob(-1, -1, 0.28, 9, 0), ...blob(1, 1, 0.28, 9, 0), ...blob(-1, 1, 0.28, 9, 1), ...blob(1, -1, 0.28, 9, 1)],
+  circle: () => [...ring(0, 0.6, 24, 1), ...ring(1.15, 1.75, 32, 0)],
+  spiral: () => {
+    const out = [];
+    for (let c = 0; c < 2; c++) for (let i = 0; i < 32; i++) {
+      const t = i / 32 * 1.75 * Math.PI + 0.4, r = t / (1.75 * Math.PI + 0.4) * 1.8, a = t + c * Math.PI;
+      out.push({ e1: r * Math.cos(a) + gauss() * .04, e2: r * Math.sin(a) + gauss() * .04, y: c });
+    }
+    return out;
+  },
+  clear: () => []
+};
+
+// =====================================================================
+//  Rejilla: activaciones de TODAS las neuronas en G×G puntos del plano
+// =====================================================================
+const G = 64;
+let grid = null;                 // grid[l][j] = Float32Array(G*G)
+function computeGrid() {
+  grid = net.sizes.map(n => Array.from({ length: n }, () => new Float32Array(G * G)));
+  for (let r = 0; r < G; r++) {
+    const e2 = XMAX - (r + .5) / G * (XMAX - XMIN);
+    for (let c = 0; c < G; c++) {
+      const e1 = XMIN + (c + .5) / G * (XMAX - XMIN);
+      const A = forward(e1, e2), k = r * G + c;
+      for (let l = 0; l < A.length; l++) for (let j = 0; j < A[l].length; j++) grid[l][j][k] = A[l][j];
+    }
+  }
+}
+
+// Valor de una neurona llevado a [-1, 1] para colorearlo (azul ↔ blanco ↔ naranja)
+function normalizer(l, j) {
+  const L = net.sizes.length - 1;
+  if (l === 0) return v => v / XMAX;                               // entradas
+  if (l === L) return v => 2 * v - 1;                              // salida (sigmoide)
+  if (ACT[act].range) return ACT[act].range;
+  let m = 1e-6; for (const v of grid[l][j]) m = Math.max(m, v);    // ReLU: escala por su máximo
+  return v => v / m;
+}
+const C0 = [2, 102, 162], C1 = [255, 150, 0];
+function paintTo(img, vals, norm, soft) {
+  const d = img.data;
+  for (let k = 0; k < vals.length; k++) {
+    const t = Math.max(-1, Math.min(1, norm(vals[k])));
+    const col = t >= 0 ? C1 : C0, a = Math.pow(Math.abs(t), 0.75) * (soft ? 0.55 : 1);
+    d[4 * k] = 255 + (col[0] - 255) * a; d[4 * k + 1] = 255 + (col[1] - 255) * a; d[4 * k + 2] = 255 + (col[2] - 255) * a; d[4 * k + 3] = 255;
+  }
+}
+
+// =====================================================================
+//  Plano principal
+// =====================================================================
+const plane = document.getElementById('plane'), pctx = plane.getContext('2d');
+const S = 440;
+const fcan = document.createElement('canvas'); fcan.width = fcan.height = G;
+const fctx = fcan.getContext('2d'), fimg = fctx.createImageData(G, G);
+let hover = null, focus = null, newClass = 0;   // focus = {l, j} neurona resaltada
+const toPx = v => (v - XMIN) / (XMAX - XMIN) * S;
+const toPy = v => (XMAX - v) / (XMAX - XMIN) * S;
+const fromPx = px => XMIN + px / S * (XMAX - XMIN);
+const fromPy = py => XMAX - py / S * (XMAX - XMIN);
+const INK = '#1b2430', MUTED = '#5d6875';
+const fmt = (v, d = 2) => (Object.is(v, -0) ? 0 : v).toLocaleString('es-ES', { minimumFractionDigits: d, maximumFractionDigits: d });
+
+// Curva de nivel (marching squares) de la rejilla a un umbral dado
+function contour(vals, th) {
+  const segs = [];
+  const cx = c => toPx(XMIN + (c + .5) / G * (XMAX - XMIN)), cy = r => toPy(XMAX - (r + .5) / G * (XMAX - XMIN));
+  const lerp = (a, b) => (th - a) / (b - a);
+  for (let r = 0; r < G - 1; r++) for (let c = 0; c < G - 1; c++) {
+    const a = vals[r * G + c], b = vals[r * G + c + 1], d = vals[(r + 1) * G + c], e = vals[(r + 1) * G + c + 1];
+    const pts = [];
+    if ((a > th) !== (b > th)) pts.push([cx(c + lerp(a, b)), cy(r)]);
+    if ((b > th) !== (e > th)) pts.push([cx(c + 1), cy(r + lerp(b, e))]);
+    if ((d > th) !== (e > th)) pts.push([cx(c + lerp(d, e)), cy(r + 1)]);
+    if ((a > th) !== (d > th)) pts.push([cx(c), cy(r + lerp(a, d))]);
+    if (pts.length >= 2) segs.push([pts[0], pts[1]]);
+    if (pts.length === 4) segs.push([pts[2], pts[3]]);
+  }
+  return segs;
+}
+
+function setupHiDPI() {
+  const dpr = Math.min(3, window.devicePixelRatio || 1);
+  plane.width = plane.height = Math.round(S * dpr);
+  pctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+
+function drawAxes() {
+  pctx.save();
+  pctx.strokeStyle = 'rgba(27,36,48,.07)'; pctx.lineWidth = 1;
+  for (let v = XMIN; v <= XMAX; v += 0.5) {
+    pctx.beginPath(); pctx.moveTo(toPx(v), 0); pctx.lineTo(toPx(v), S); pctx.stroke();
+    pctx.beginPath(); pctx.moveTo(0, toPy(v)); pctx.lineTo(S, toPy(v)); pctx.stroke();
+  }
+  pctx.strokeStyle = 'rgba(27,36,48,.3)';
+  pctx.beginPath(); pctx.moveTo(toPx(0), 0); pctx.lineTo(toPx(0), S); pctx.moveTo(0, toPy(0)); pctx.lineTo(S, toPy(0)); pctx.stroke();
+  pctx.fillStyle = MUTED; pctx.font = '11px system-ui, sans-serif';
+  for (let v = XMIN + 1; v < XMAX; v++) {
+    if (!v) continue;
+    pctx.textAlign = 'center'; pctx.fillText(String(v).replace('-', '−'), toPx(v), toPy(0) + 14);
+    pctx.textAlign = 'left'; pctx.fillText(String(v).replace('-', '−'), toPx(0) + 5, toPy(v) + 4);
+  }
+  pctx.font = 'italic 13px system-ui, sans-serif';
+  pctx.textAlign = 'right'; pctx.fillText('e₁', S - 6, toPy(0) - 6);
+  pctx.textAlign = 'left'; pctx.fillText('e₂', toPx(0) + 6, 14);
+  pctx.restore();
+}
+
+function drawPlane() {
+  const L = net.sizes.length - 1;
+  const f = focus || { l: L, j: 0 };
+  const vals = grid[f.l][f.j];
+  paintTo(fimg, vals, normalizer(f.l, f.j), !focus || focus.l === L);
+  fctx.putImageData(fimg, 0, 0);
+  pctx.clearRect(0, 0, S, S);
+  pctx.imageSmoothingEnabled = true; pctx.imageSmoothingQuality = 'high';
+  pctx.drawImage(fcan, 0, 0, S, S);
+  drawAxes();
+
+  // Frontera: salida = 0,5 (o el punto medio de la neurona resaltada)
+  let th = 0.5;
+  if (focus && focus.l < L) th = focus.l === 0 ? 0 : ACT[act].mid;
+  if (th !== null) {
+    pctx.save(); pctx.strokeStyle = INK; pctx.lineWidth = 2.5; pctx.lineCap = 'round';
+    if (focus && focus.l < L) { pctx.setLineDash([6, 4]); pctx.lineWidth = 2; }
+    pctx.beginPath();
+    for (const [a, b] of contour(vals, th)) { pctx.moveTo(a[0], a[1]); pctx.lineTo(b[0], b[1]); }
+    pctx.stroke(); pctx.restore();
+  }
+
+  for (const p of points) {
+    const x = toPx(p.e1), y = toPy(p.e2);
+    const wrong = (forward(p.e1, p.e2).at(-1)[0] > .5) !== (p.y === 1);
+    pctx.beginPath(); pctx.arc(x, y, 6, 0, 2 * Math.PI);
+    pctx.fillStyle = p.y ? '#ff9600' : '#0266a2'; pctx.fill();
+    pctx.lineWidth = 2; pctx.strokeStyle = '#fff'; pctx.stroke();
+    pctx.beginPath(); pctx.arc(x, y, 7.5, 0, 2 * Math.PI); pctx.lineWidth = 1; pctx.strokeStyle = 'rgba(27,36,48,.7)'; pctx.stroke();
+    if (wrong && !focus) { pctx.beginPath(); pctx.arc(x, y, 10, 0, 2 * Math.PI); pctx.lineWidth = 1.5; pctx.strokeStyle = INK; pctx.stroke(); }
+  }
+
+  if (hover) {
+    const x = toPx(hover.e1), y = toPy(hover.e2);
+    const A = forward(hover.e1, hover.e2);
+    const v = A[f.l][f.j];
+    const txt = focus ? `${neuronName(f.l, f.j)} = ${fmt(v)}` : `salida = ${fmt(v)}`;
+    pctx.save();
+    pctx.beginPath(); pctx.arc(x, y, 5, 0, 2 * Math.PI); pctx.fillStyle = INK; pctx.fill();
+    pctx.font = '600 12px system-ui, sans-serif';
+    const tw = pctx.measureText(txt).width + 12;
+    const bx = Math.min(S - tw - 4, x + 10), by = Math.max(4, y - 28);
+    pctx.fillStyle = 'rgba(255,255,255,.93)'; pctx.strokeStyle = '#c4ccd4';
+    pctx.beginPath(); pctx.roundRect(bx, by, tw, 20, 5); pctx.fill(); pctx.stroke();
+    pctx.fillStyle = INK; pctx.fillText(txt, bx + 6, by + 14);
+    pctx.restore();
+  }
+}
+
+function neuronName(l, j) {
+  const L = net.sizes.length - 1;
+  if (l === 0) return `e${'₁₂'[j]}`;
+  if (l === L) return 'salida';
+  return `capa ${l} · n${j + 1}`;
+}
+
+// =====================================================================
+//  Diagrama de la red con miniaturas de cada neurona
+// =====================================================================
+const ncan = document.getElementById('net'), nctx = ncan.getContext('2d');
+const NW = 700, NH = 400, TOP = 46;
+let layout = [];                  // layout[l][j] = {x, y, s}
+let thumbs = [];                  // canvases G×G por neurona
+function computeLayout() {
+  const L = net.sizes.length;
+  const maxN = Math.max(...net.sizes);
+  const s = Math.min(44, (NH - TOP - 14) / maxN - 8);
+  const gap = (NH - TOP - 10) / maxN;
+  const x0 = 50, x1 = NW - 50;
+  layout = net.sizes.map((n, l) => {
+    const x = L === 1 ? NW / 2 : x0 + (x1 - x0) * l / (L - 1);
+    const h = n * gap, y0 = TOP + (NH - TOP - 10 - h) / 2 + gap / 2;
+    return Array.from({ length: n }, (_, j) => ({ x, y: y0 + j * gap, s: l === L - 1 ? s * 1.25 : s }));
+  });
+  thumbs = net.sizes.map(n => Array.from({ length: n }, () => {
+    const c = document.createElement('canvas'); c.width = c.height = G; return c;
+  }));
+  placeLayerControls();
+}
+function setupNetHiDPI() {
+  const dpr = Math.min(3, window.devicePixelRatio || 1);
+  ncan.width = Math.round(NW * dpr); ncan.height = Math.round(NH * dpr);
+  nctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+
+function drawNet() {
+  nctx.clearRect(0, 0, NW, NH);
+  const L = net.sizes.length - 1;
+  // Escala de grosor según el mayor peso
+  let wmax = 1e-6;
+  for (const Wl of net.W) for (const w of Wl) for (const v of w) wmax = Math.max(wmax, Math.abs(v));
+  // Conexiones
+  for (let l = 0; l < L; l++) for (let j = 0; j < net.sizes[l + 1]; j++) for (let i = 0; i < net.sizes[l]; i++) {
+    const w = net.W[l][j][i], a = layout[l][i], b = layout[l + 1][j];
+    const rel = Math.abs(w) / wmax;
+    const hl = focus && ((focus.l === l + 1 && focus.j === j) || (focus.l === l && focus.j === i));
+    nctx.strokeStyle = w >= 0 ? `rgba(255,150,0,${0.15 + 0.75 * rel})` : `rgba(2,102,162,${0.15 + 0.75 * rel})`;
+    nctx.lineWidth = 0.6 + rel * 5 + (hl ? 1 : 0);
+    if (focus && !hl) nctx.strokeStyle = w >= 0 ? `rgba(255,150,0,${0.06 + 0.2 * rel})` : `rgba(2,102,162,${0.06 + 0.2 * rel})`;
+    nctx.beginPath(); nctx.moveTo(a.x + a.s / 2, a.y); nctx.lineTo(b.x - b.s / 2, b.y); nctx.stroke();
+  }
+  // Salida
+  const o = layout[L][0];
+  nctx.strokeStyle = MUTED; nctx.lineWidth = 1.5;
+  nctx.beginPath(); nctx.moveTo(o.x + o.s / 2, o.y); nctx.lineTo(o.x + o.s / 2 + 18, o.y); nctx.stroke();
+  // Neuronas (miniaturas)
+  for (let l = 0; l <= L; l++) for (let j = 0; j < net.sizes[l]; j++) {
+    const { x, y, s } = layout[l][j];
+    const tc = thumbs[l][j], tctx = tc.getContext('2d'), img = tctx.createImageData(G, G);
+    paintTo(img, grid[l][j], normalizer(l, j), false);
+    tctx.putImageData(img, 0, 0);
+    nctx.save();
+    nctx.beginPath(); nctx.roundRect(x - s / 2, y - s / 2, s, s, 5); nctx.clip();
+    nctx.imageSmoothingEnabled = true;
+    nctx.drawImage(tc, x - s / 2, y - s / 2, s, s);
+    nctx.restore();
+    const isF = focus && focus.l === l && focus.j === j;
+    nctx.lineWidth = isF ? 3 : 1.2;
+    nctx.strokeStyle = isF ? '#ff9600' : (l === 0 ? '#0266a2' : 'rgba(27,36,48,.45)');
+    nctx.beginPath(); nctx.roundRect(x - s / 2, y - s / 2, s, s, 5); nctx.stroke();
+    if (hover) {   // punto bajo el ratón en cada miniatura
+      const px = x - s / 2 + (hover.e1 - XMIN) / (XMAX - XMIN) * s, py = y - s / 2 + (XMAX - hover.e2) / (XMAX - XMIN) * s;
+      nctx.beginPath(); nctx.arc(px, py, 2, 0, 2 * Math.PI); nctx.fillStyle = INK; nctx.fill();
+    }
+    if (l === 0) {
+      nctx.fillStyle = '#014d7a'; nctx.font = 'italic 14px system-ui, sans-serif'; nctx.textAlign = 'right';
+      nctx.fillText(`e${'₁₂'[j]}`, x - s / 2 - 7, y + 5);
+    }
+  }
+  // Rótulos de las capas
+  nctx.fillStyle = MUTED; nctx.font = '12px system-ui, sans-serif'; nctx.textAlign = 'center';
+  nctx.fillText('Entradas', layout[0][0].x, 14);
+  nctx.fillText('Salida', layout[L][0].x, 14);
+  const ov = forward(...(hover ? [hover.e1, hover.e2] : [NaN, NaN])).at(-1)[0];
+  if (hover && isFinite(ov)) {
+    nctx.font = '700 13px system-ui, sans-serif'; nctx.textAlign = 'center';
+    nctx.fillStyle = ov > .5 ? '#b86b00' : '#0266a2';
+    nctx.fillText(`${fmt(ov)} → clase ${ov > .5 ? 1 : 0}`, o.x, o.y + o.s / 2 + 18);
+  }
+}
+
+// Controles de número de neuronas encima de cada capa oculta
+const netwrap = document.getElementById('netwrap');
+function placeLayerControls() {
+  netwrap.querySelectorAll('.layerctl').forEach(e => e.remove());
+  hidden.forEach((n, h) => {
+    const d = document.createElement('div');
+    d.className = 'layerctl';
+    d.style.left = (layout[h + 1][0].x / NW * 100) + '%';
+    d.innerHTML = `<span class="t">Capa ${h + 1}</span><div class="stepper"><button aria-label="Quitar neurona">−</button><span>${n}</span><button aria-label="Añadir neurona">+</button></div>`;
+    const [minus, plus] = d.querySelectorAll('button');
+    minus.disabled = n <= 1; plus.disabled = n >= MAXN;
+    minus.addEventListener('click', () => { hidden[h]--; rebuild(); });
+    plus.addEventListener('click', () => { hidden[h]++; rebuild(); });
+    netwrap.appendChild(d);
+  });
+}
+
+function netHit(e) {
+  const r = ncan.getBoundingClientRect();
+  const x = (e.clientX - r.left) * NW / r.width, y = (e.clientY - r.top) * NH / r.height;
+  for (let l = 0; l < layout.length; l++) for (let j = 0; j < layout[l].length; j++) {
+    const n = layout[l][j];
+    if (Math.abs(x - n.x) <= n.s / 2 + 3 && Math.abs(y - n.y) <= n.s / 2 + 3) return { l, j };
+  }
+  return null;
+}
+let pinned = false;
+ncan.addEventListener('pointermove', e => {
+  if (pinned) return;
+  const h = netHit(e);
+  if (JSON.stringify(h) !== JSON.stringify(focus)) { focus = h; touch(); }
+  ncan.style.cursor = h ? 'pointer' : 'default';
+});
+ncan.addEventListener('pointerleave', () => { if (!pinned && focus) { focus = null; touch(); } });
+ncan.addEventListener('pointerdown', e => {      // en pantallas táctiles: tocar fija/suelta la neurona
+  const h = netHit(e);
+  if (h && (!pinned || JSON.stringify(h) !== JSON.stringify(focus))) { focus = h; pinned = true; }
+  else { focus = null; pinned = false; }
+  touch();
+});
+
+// =====================================================================
+//  Curva de error
+// =====================================================================
+const lsvg = document.getElementById('loss');
+function drawLoss() {
+  const X0 = 34, X1 = 332, Y0 = 145, Y1 = 10;
+  let top = Math.max(0.8, ...history.slice(0, 30));
+  top = Math.ceil(top * 5) / 5;
+  let path = '';
+  const n = history.length;
+  if (n > 1) {
+    const step = Math.max(1, Math.floor(n / 300));
+    for (let i = 0; i < n; i += step) {
+      const x = X0 + (X1 - X0) * i / (n - 1), y = Y0 - (Y0 - Y1) * Math.min(1, history[i] / top);
+      path += (path ? 'L' : 'M') + x.toFixed(1) + ' ' + y.toFixed(1);
+    }
+    path += 'L' + X1 + ' ' + (Y0 - (Y0 - Y1) * Math.min(1, history[n - 1] / top)).toFixed(1);
+  }
+  lsvg.innerHTML = `
+    <g font-family="system-ui, sans-serif" font-size="11" fill="${MUTED}">
+      <line x1="${X0}" x2="${X1}" y1="${Y0}" y2="${Y0}" stroke="#9aa5b1"/>
+      <line x1="${X0}" x2="${X1}" y1="${(Y0 + Y1) / 2}" y2="${(Y0 + Y1) / 2}" stroke="#e1e6eb"/>
+      <line x1="${X0}" x2="${X1}" y1="${Y1}" y2="${Y1}" stroke="#e1e6eb"/>
+      <text x="${X0 - 5}" y="${Y0 + 4}" text-anchor="end">0</text>
+      <text x="${X0 - 5}" y="${(Y0 + Y1) / 2 + 4}" text-anchor="end">${fmt(top / 2, 1)}</text>
+      <text x="${X0 - 5}" y="${Y1 + 4}" text-anchor="end">${fmt(top, 1)}</text>
+      <text x="${X0}" y="${Y0 + 16}">0</text>
+      <text x="${X1}" y="${Y0 + 16}" text-anchor="end">${n ? epoch.toLocaleString('es-ES') + ' épocas' : 'épocas'}</text>
+      ${n ? '' : `<text x="${(X0 + X1) / 2}" y="${(Y0 + Y1) / 2 - 6}" text-anchor="middle">Pulsa «Entrenar» para ver cómo baja el error</text>`}
+    </g>
+    <path d="${path}" fill="none" stroke="#0266a2" stroke-width="2" stroke-linejoin="round"/>`;
+}
+
+// =====================================================================
+//  Controles y bucle
+// =====================================================================
+const $ = id => document.getElementById(id);
+function updateStats() {
+  const { loss, acc } = lossAcc();
+  $('epoch').textContent = epoch.toLocaleString('es-ES');
+  $('lossv').textContent = isNaN(loss) ? '–' : fmt(loss, 3);
+  $('acc').textContent = isNaN(acc) ? '–' : Math.round(acc * 100) + ' %';
+  $('nparams').textContent = nParams().toLocaleString('es-ES');
+  $('nlayers').textContent = hidden.length;
+  $('lminus').disabled = hidden.length <= 1; $('lplus').disabled = hidden.length >= MAXL;
+  const L = net.sizes.length - 1;
+  $('showing').innerHTML = focus && focus.l !== L
+    ? `Mostrando la salida de <b>${focus.l === 0 ? 'la entrada ' + neuronName(focus.l, focus.j) : 'la neurona ' + (focus.j + 1) + ' de la capa oculta ' + focus.l}</b>${pinned ? ' · toca de nuevo para volver' : ''}`
+    : 'Mostrando la <b>salida de la red</b>';
+}
+
+let dirty = true;
+const touch = () => { dirty = true; };
+function render() { computeGrid(); drawPlane(); drawNet(); drawLoss(); updateStats(); }
+
+function rebuild() { focus = null; pinned = false; buildNet(); computeLayout(); touch(); }
+
+let training = false;
+function setTraining(on) {
+  training = on && points.length > 0;
+  $('train').textContent = training ? '❚❚ Pausa' : '▶ Entrenar';
+  $('train').classList.toggle('running', training);
+}
+$('train').addEventListener('click', () => setTraining(!training));
+$('step').addEventListener('click', () => { setTraining(false); trainEpoch(+$('lr').value); touch(); });
+$('reset').addEventListener('click', () => { buildNet(); touch(); });
+$('lminus').addEventListener('click', () => { if (hidden.length > 1) { hidden.pop(); rebuild(); } });
+$('lplus').addEventListener('click', () => { if (hidden.length < MAXL) { hidden.push(hidden.at(-1)); rebuild(); } });
+$('act').addEventListener('change', e => { act = e.target.value; rebuild(); });
+
+document.querySelectorAll('.seg button').forEach(btn => btn.addEventListener('click', () => {
+  newClass = +btn.dataset.c;
+  document.querySelectorAll('.seg button').forEach(b2 => b2.setAttribute('aria-pressed', b2 === btn));
+}));
+document.querySelectorAll('[data-set]').forEach(btn => btn.addEventListener('click', () => {
+  points = DATASETS[btn.dataset.set]();
+  epoch = 0; history = [];
+  if (!points.length) setTraining(false);
+  touch();
+}));
+
+function evPos(e) {
+  const r = plane.getBoundingClientRect();
+  return { px: (e.clientX - r.left) * S / r.width, py: (e.clientY - r.top) * S / r.height };
+}
+plane.addEventListener('pointermove', e => { const { px, py } = evPos(e); hover = { e1: fromPx(px), e2: fromPy(py) }; touch(); });
+plane.addEventListener('pointerleave', () => { hover = null; touch(); });
+plane.addEventListener('contextmenu', e => e.preventDefault());
+plane.addEventListener('pointerdown', e => {
+  const { px, py } = evPos(e);
+  let idx = -1, best = 11;
+  points.forEach((p, i) => { const d = Math.hypot(toPx(p.e1) - px, toPy(p.e2) - py); if (d < best) { best = d; idx = i; } });
+  if (idx >= 0) points.splice(idx, 1);
+  else points.push({ e1: fromPx(px), e2: fromPy(py), y: (e.shiftKey || e.button === 2) ? 1 - newClass : newClass });
+  epoch = 0; history = [];
+  if (!points.length) setTraining(false);
+  touch();
+});
+
+function loop() {
+  if (training) {
+    const n = +$('speed').value, lr = +$('lr').value;
+    for (let i = 0; i < n; i++) trainEpoch(lr);
+    dirty = true;
+  }
+  if (dirty) { dirty = false; render(); }
+  requestAnimationFrame(loop);
+}
+
+setupHiDPI(); setupNetHiDPI();
+window.addEventListener('resize', () => { setupHiDPI(); setupNetHiDPI(); touch(); });
+buildNet(); computeLayout();
+points = DATASETS.xor();
+loop();
+</script>
+</body>
+</html>

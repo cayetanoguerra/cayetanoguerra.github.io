@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reconocedor de dígitos MNIST</title>
+<style>
+  :root {
+    color-scheme: light;
+    /* Colores institucionales ULPGC */
+    --blue: #0266a2; --blue-dark: #014d7a; --blue-soft: #e8f1f8;
+    --orange: #ff9600; --orange-dark: #b86b00;
+    --bg: #f4f6f8; --panel: #ffffff; --ink: #1b2430; --muted: #5d6875;
+    --line: #e1e6eb; --bar: #c7d6e3; --canvas: #111;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .topbar { background: var(--panel); border-top: 4px solid var(--blue);
+            border-bottom: 1px solid var(--line); }
+  header { max-width: 1100px; margin: 0 auto; padding: 18px 16px 20px;
+           display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; }
+  .logo { height: 30px; width: auto; opacity: .9; flex-shrink: 0; margin-top: 4px; }
+  h1 { font-size: 26px; margin: 0 0 6px; letter-spacing: -.01em; color: var(--blue); }
+  h1::after { content: ""; display: block; width: 48px; height: 3px; background: var(--orange);
+              border-radius: 2px; margin-top: 6px; }
+  header p { margin: 0; color: var(--muted); max-width: 70ch; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 8px 16px 28px; color: var(--muted); font-size: 13px; }
+  main { max-width: 1100px; margin: 0 auto; padding: 16px; display: grid; align-items: start;
+         grid-template-columns: auto 1fr; gap: 16px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px;
+          box-shadow: 0 1px 2px rgba(16, 40, 64, .04); }
+  .card h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .08em;
+             color: var(--blue); margin: 0 0 12px; font-weight: 700;
+             display: flex; align-items: center; gap: 8px; }
+  .card h2::before { content: ""; width: 4px; height: 14px; background: var(--orange); border-radius: 2px; }
+  #draw { display: block; width: 280px; height: 280px; background: var(--canvas);
+          border-radius: 8px; touch-action: none; cursor: crosshair; }
+  .row { display: flex; gap: 8px; margin-top: 12px; align-items: center; }
+  button { font: inherit; padding: 8px 18px; border-radius: 8px; border: 1px solid var(--line);
+           background: var(--bg); color: var(--ink); cursor: pointer; transition: background .15s; }
+  button.primary { background: var(--blue); color: #fff; border-color: var(--blue); font-weight: 600; }
+  button.primary:hover { background: var(--blue-dark); border-color: var(--blue-dark); }
+  button:focus-visible { outline: 3px solid var(--orange); outline-offset: 2px; }
+  label.small { color: var(--muted); font-size: 13px; display: flex; align-items: center; gap: 6px; }
+  input[type=range] { accent-color: var(--orange); }
+  kbd { font: 12px ui-monospace, monospace; background: var(--blue-soft); color: var(--blue);
+        border-radius: 4px; padding: 1px 5px; }
+  .right { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-content: start; }
+  .result { display: flex; align-items: center; gap: 20px; }
+  #digit { font-size: 96px; font-weight: 700; line-height: 1; min-width: 70px; text-align: center;
+           color: var(--blue); font-variant-numeric: tabular-nums; }
+  #conf { color: var(--muted); }
+  .bars { display: grid; gap: 4px; margin-top: 8px; }
+  .bar { display: grid; grid-template-columns: 16px 1fr 62px; gap: 8px; align-items: center;
+         font-variant-numeric: tabular-nums; font-size: 13px; }
+  .bar .track { height: 14px; background: var(--line); border-radius: 3px; overflow: hidden; }
+  .bar .fill { height: 100%; background: var(--bar); width: 0; transition: width .12s; }
+  .bar .track { background: var(--bg); }
+  .bar.top .fill { background: var(--orange); }
+  .bar.top b, .bar.top span:last-child { color: var(--orange-dark); font-weight: 700; }
+  .bar span:last-child { white-space: nowrap; text-align: right; color: var(--muted); }
+  #input28 { width: 168px; height: 168px; image-rendering: pixelated; background: #000;
+             border-radius: 6px; display: block; }
+  .maps { display: grid; grid-template-columns: repeat(8, 1fr); gap: 3px; }
+  .maps canvas { width: 100%; aspect-ratio: 1; image-rendering: pixelated; background: #000;
+                 border-radius: 2px; display: block; }
+  .note { color: var(--muted); font-size: 13px; margin: 8px 0 0; }
+  .wide { grid-column: 1 / -1; }
+  .arch { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 13px; }
+  .arch span { border: 1px solid #cfe0ee; border-radius: 6px; padding: 3px 8px;
+               background: var(--blue-soft); color: var(--blue-dark); }
+  .arch i { color: var(--orange); font-style: normal; font-weight: 700; }
+  @media (max-width: 860px) {
+    header { flex-direction: column-reverse; gap: 14px; }
+    .logo { height: 24px; }
+    main { grid-template-columns: 1fr; }
+    .right { grid-template-columns: 1fr; }
+    #draw { width: 100%; max-width: 280px; height: auto; aspect-ratio: 1; }
+  }
+</style>
+</head>
+<body>
+<div class="topbar">
+<header>
+  <div>
+    <h1>Reconocedor de dígitos manuscritos</h1>
+    <p>Dibuja un dígito del 0 al 9. Una red neuronal convolucional entrenada con MNIST
+       (60 000 dígitos escritos a mano) lo clasifica en tiempo real, directamente en tu navegador.</p>
+  </div>
+  <img class="logo" src="logo-ulpgc.jpg" alt="ULPGC · Universidad de Las Palmas de Gran Canaria">
+</header>
+</div>
+
+<main>
+  <section class="card">
+    <h2>Zona de dibujo</h2>
+    <canvas id="draw" width="280" height="280"></canvas>
+    <div class="row">
+      <button id="clear" class="primary">Borrar</button>
+      <label class="small">Grosor <input id="thick" type="range" min="12" max="32" value="20"></label>
+    </div>
+    <p class="note">Escribe el dígito grande, ocupando casi toda<br>la altura del recuadro.<br>Tecla <kbd>Supr</kbd> o <kbd>Esc</kbd> para borrar.</p>
+  </section>
+
+  <div class="right">
+    <section class="card">
+      <h2>Predicción</h2>
+      <div class="result">
+        <div id="digit">–</div>
+        <div id="conf">Dibuja un número para empezar.</div>
+      </div>
+      <div class="bars" id="bars"></div>
+    </section>
+
+    <section class="card">
+      <h2>Lo que ve la red (28 × 28)</h2>
+      <canvas id="input28" width="28" height="28"></canvas>
+      <p class="note">La zona de dibujo se reduce siempre con el mismo factor (280 → 28 píxeles, ÷10)
+        y la imagen solo se desplaza para que el centro de masas del trazo quede en el centro,
+        igual que se preparó el conjunto MNIST. Estos 784 valores de gris son la entrada de la red.</p>
+    </section>
+
+    <section class="card wide">
+      <h2>Mapas de activación · capa convolucional 1 (16 filtros 3×3)</h2>
+      <div class="maps" id="maps1"></div>
+      <h2 style="margin-top:16px">Mapas de activación · capa convolucional 2 (32 filtros 3×3)</h2>
+      <div class="maps" id="maps2"></div>
+      <p class="note">Cada recuadro muestra qué zonas de la imagen activan un filtro aprendido.
+        La primera capa detecta bordes y trazos simples; la segunda combina esos rasgos en formas más complejas.</p>
+    </section>
+
+    <section class="card wide">
+      <h2>Arquitectura</h2>
+      <div class="arch">
+        <span>Entrada 28×28×1</span><i>→</i>
+        <span>Conv 3×3 ×16 + ReLU</span><i>→</i><span>MaxPool 2×2 → 14×14×16</span><i>→</i>
+        <span>Conv 3×3 ×32 + ReLU</span><i>→</i><span>MaxPool 2×2 → 7×7×32</span><i>→</i>
+        <span>Densa 1568→128 + ReLU</span><i>→</i><span>Densa 128→10 + Softmax</span>
+      </div>
+      <p class="note" id="info"></p>
+    </section>
+  </div>
+</main>
+
+<script src="weights.js"></script>
+<script src="cnn.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,581 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clasificador de iris</title>
+<style>
+  :root {
+    color-scheme: light;
+    /* Colores institucionales ULPGC */
+    --blue: #0266a2; --blue-dark: #014d7a; --blue-soft: #e8f1f8;
+    --orange: #ff9600; --orange-dark: #b86b00; --orange-soft: #fff3e0;
+    --bg: #f4f6f8; --panel: #ffffff; --ink: #1b2430; --muted: #5d6875;
+    --line: #e1e6eb;
+    --c0: #0266a2; --c1: #ff9600; --c2: #2f9e44;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .topbar { background: var(--panel); border-top: 4px solid var(--blue);
+            border-bottom: 1px solid var(--line); }
+  header { max-width: 1240px; margin: 0 auto; padding: 18px 16px 20px;
+           display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; }
+  .logo { height: 30px; width: auto; opacity: .9; flex-shrink: 0; margin-top: 4px; }
+  h1 { font-size: 26px; margin: 0 0 6px; letter-spacing: -.01em; color: var(--blue); }
+  h1::after { content: ""; display: block; width: 48px; height: 3px; background: var(--orange);
+              border-radius: 2px; margin-top: 6px; }
+  header p { margin: 0; color: var(--muted); max-width: 80ch; }
+  main { max-width: 1240px; margin: 0 auto; padding: 16px; display: grid; align-items: start;
+         grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 16px; }
+  .col { display: grid; gap: 16px; min-width: 0; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px;
+          box-shadow: 0 1px 2px rgba(16, 40, 64, .04); min-width: 0; }
+  .card h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .08em;
+             color: var(--blue); margin: 0 0 12px; font-weight: 700;
+             display: flex; align-items: center; gap: 8px; }
+  .card h2::before { content: ""; width: 4px; height: 14px; background: var(--orange); border-radius: 2px; }
+  .note { color: var(--muted); font-size: 13px; margin: 8px 0 0; }
+  .note b { color: var(--ink); }
+
+  button, select { font: inherit; padding: 7px 14px; border-radius: 8px; border: 1px solid var(--line);
+           background: var(--bg); color: var(--ink); cursor: pointer; transition: background .15s, border-color .15s; }
+  button:hover { border-color: #c4ccd4; }
+  button.primary { background: var(--blue); color: #fff; border-color: var(--blue); font-weight: 600; }
+  button.primary:hover { background: var(--blue-dark); border-color: var(--blue-dark); }
+  button.primary.running { background: var(--orange-dark); border-color: var(--orange-dark); }
+  button:focus-visible, select:focus-visible, input:focus-visible { outline: 3px solid var(--orange); outline-offset: 2px; }
+  select.sm { padding: 4px 8px; font-size: 13px; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .lbl { color: var(--muted); font-size: 13px; }
+
+  .classes { display: flex; gap: 16px; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+  .classes .dot { display: inline-block; width: 11px; height: 11px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; }
+
+  /* Red */
+  #net { width: 100%; height: auto; display: block; }
+
+  /* Flor de entrada */
+  .sliders { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 18px; }
+  .slider label { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); }
+  .slider label b { color: var(--ink); font-variant-numeric: tabular-nums; }
+  .slider input { width: 100%; accent-color: var(--orange); }
+  .verdict { display: flex; align-items: center; gap: 14px; margin-top: 12px; padding: 10px 12px;
+             background: var(--bg); border-radius: 10px; }
+  .verdict .big { font-size: 22px; font-weight: 800; }
+  .verdict .sub { font-size: 13px; color: var(--muted); }
+  .verdict .ok { color: #2f9e44; font-weight: 700; }
+  .verdict .bad { color: #c92a2a; font-weight: 700; }
+
+  /* Gráfico de dispersión */
+  #scatter { display: block; width: 100%; aspect-ratio: 1; border-radius: 8px; border: 1px solid var(--line); cursor: crosshair; touch-action: none; }
+  .axes { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 10px; }
+  .mk { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; color: var(--muted); margin-top: 8px; align-items: center; }
+  .mk svg { vertical-align: middle; margin-right: 4px; }
+
+  /* Entrenamiento */
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 12px 0 10px; }
+  .stat { background: var(--bg); border-radius: 8px; padding: 6px 10px; }
+  .stat span { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+  .stat b { font-size: 20px; font-variant-numeric: tabular-nums; }
+  .train-grid { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+  #loss { width: 100%; height: auto; display: block; }
+  table.cm { border-collapse: separate; border-spacing: 3px; font-size: 13px; font-variant-numeric: tabular-nums; margin-top: 4px; }
+  table.cm th { font-weight: 600; color: var(--muted); font-size: 11px; padding: 2px 4px; }
+  table.cm th.r { text-align: right; }
+  table.cm td { width: 46px; height: 34px; text-align: center; border-radius: 6px; background: var(--bg); font-weight: 700; }
+  .cm-title { font-size: 12px; color: var(--muted); margin: 0; }
+
+  .explain { display: grid; gap: 12px; }
+  .explain h3 { font-size: 14px; margin: 0 0 3px; color: var(--ink); }
+  .explain p { margin: 0; color: var(--muted); font-size: 13px; }
+  .explain b { color: var(--ink); }
+
+  @media (max-width: 980px) {
+    header { flex-direction: column-reverse; gap: 14px; }
+    .logo { height: 24px; }
+    main { grid-template-columns: minmax(0, 1fr); }
+  }
+  @media (max-width: 560px) {
+    .sliders { grid-template-columns: 1fr; }
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .train-grid { grid-template-columns: minmax(0, 1fr); }
+  }
+</style>
+</head>
+<body>
+<div class="topbar">
+<header>
+  <div>
+    <h1>Clasificador de flores iris</h1>
+    <p>Una red neuronal con 4 entradas, 5 neuronas ocultas y 3 neuronas de salida aprende a distinguir tres especies
+       de iris a partir de cuatro medidas de la flor. Es el conjunto de datos de Fisher (1936): 150 flores, 50 de cada especie.</p>
+    <div class="classes" style="margin-top:8px">
+      <span><span class="dot" style="background:var(--c0)"></span><i>Iris setosa</i></span>
+      <span><span class="dot" style="background:var(--c1)"></span><i>Iris versicolor</i></span>
+      <span><span class="dot" style="background:var(--c2)"></span><i>Iris virginica</i></span>
+    </div>
+  </div>
+  <img class="logo" src="logo-ulpgc.jpg" alt="ULPGC · Universidad de Las Palmas de Gran Canaria">
+</header>
+</div>
+
+<main>
+  <div class="col">
+    <section class="card">
+      <h2>La red 4 → 5 → 3</h2>
+      <svg id="net" viewBox="0 0 740 420" role="img" aria-label="Red neuronal con 4 entradas, 5 neuronas ocultas y 3 de salida"></svg>
+      <p class="note">Los valores corresponden a la <b>flor de entrada</b> (panel de la derecha). Las conexiones naranjas son
+        pesos positivos y las azules, negativos; el grosor indica su magnitud. El relleno de cada neurona oculta indica
+        su activación (de 0 a 1).</p>
+    </section>
+
+    <section class="card">
+      <h2>Entrenamiento</h2>
+      <div class="row">
+        <button id="train" class="primary">▶ Entrenar</button>
+        <button id="step">Una época</button>
+        <button id="reset">Reiniciar pesos</button>
+        <button id="split">Nueva división de datos</button>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <label class="lbl" for="lr">Tasa de aprendizaje</label>
+        <select id="lr" class="sm">
+          <option value="0.01">0,01</option><option value="0.05" selected>0,05</option>
+          <option value="0.2">0,2</option><option value="1">1</option>
+        </select>
+        <label class="lbl" for="speed">Velocidad</label>
+        <select id="speed" class="sm">
+          <option value="slow">lenta (4 épocas/s)</option>
+          <option value="med" selected>normal (30 épocas/s)</option>
+          <option value="fast">rápida</option>
+        </select>
+      </div>
+      <div class="stats">
+        <div class="stat"><span>Época</span><b id="epoch">0</b></div>
+        <div class="stat"><span>Error (entren.)</span><b id="lossv">–</b></div>
+        <div class="stat"><span>Aciertos entren.</span><b id="acctr">–</b></div>
+        <div class="stat"><span>Aciertos test</span><b id="accte">–</b></div>
+      </div>
+      <div class="train-grid">
+        <div>
+          <svg id="loss" viewBox="0 0 360 190" aria-label="Evolución del error"></svg>
+          <div class="mk" style="margin-top:2px">
+            <span><svg width="22" height="8"><line x1="0" y1="4" x2="22" y2="4" stroke="#0266a2" stroke-width="2.5"/></svg>entrenamiento (120 flores)</span>
+            <span><svg width="22" height="8"><line x1="0" y1="4" x2="22" y2="4" stroke="#ff9600" stroke-width="2.5"/></svg>test (30 flores)</span>
+          </div>
+        </div>
+        <div>
+          <p class="cm-title"><b style="color:#1b2430">Matriz de confusión</b> (flores de test)</p>
+          <div id="cm"></div>
+          <p class="note" style="margin-top:4px">Filas: especie real. Columnas: predicción de la red.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>¿Qué está pasando?</h2>
+      <div class="explain">
+        <div><h3>1 · Entradas normalizadas</h3>
+          <p>Las cuatro medidas (en cm) se <b>normalizan</b> antes de entrar a la red: se les resta la media y se dividen
+             por la desviación típica de las flores de entrenamiento. Así todas tienen una escala parecida y ninguna domina
+             por ser un número más grande.</p></div>
+        <div><h3>2 · Capa oculta</h3>
+          <p>Cada una de las 5 neuronas ocultas calcula una suma ponderada de las 4 entradas más un sesgo y le aplica la
+             sigmoide. Son 5 «rasgos» que la red inventa para separar las especies.</p></div>
+        <div><h3>3 · Salida con softmax</h3>
+          <p>Las 3 neuronas de salida dan una puntuación por especie. La función <b>softmax</b> las convierte en
+             probabilidades que suman 1, y la red elige la mayor. El error es la entropía cruzada: −ln de la probabilidad
+             que la red da a la especie correcta.</p></div>
+        <div><h3>4 · Entrenamiento y test</h3>
+          <p>La red aprende con 120 flores y se evalúa con otras 30 que nunca ha visto. Si acierta también con estas,
+             ha <b>generalizado</b> en lugar de memorizar. <i>Setosa</i> se separa enseguida; la dificultad está entre
+             <i>versicolor</i> y <i>virginica</i>.</p></div>
+      </div>
+    </section>
+  </div>
+
+  <div class="col">
+    <section class="card">
+      <h2>Flor de entrada</h2>
+      <div class="sliders" id="sliders"></div>
+      <div class="verdict" id="verdict"></div>
+      <div class="row" style="margin-top:10px">
+        <button id="rand" class="sm" style="padding:5px 11px;font-size:13px">Flor al azar del conjunto</button>
+        <span class="lbl">o haz clic en un punto del gráfico de abajo</span>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Las flores en dos de sus medidas</h2>
+      <div class="axes">
+        <label class="lbl" for="ax">Eje horizontal</label><select id="ax" class="sm"></select>
+        <label class="lbl" for="ay">Eje vertical</label><select id="ay" class="sm"></select>
+      </div>
+      <canvas id="scatter" width="440" height="440"></canvas>
+      <div class="mk">
+        <span><svg width="14" height="14"><circle cx="7" cy="7" r="5" fill="#5d6875" stroke="#fff" stroke-width="1.5"/></svg>entrenamiento</span>
+        <span><svg width="14" height="14"><circle cx="7" cy="7" r="4.5" fill="#fff" stroke="#5d6875" stroke-width="2.5"/></svg>test</span>
+        <span><svg width="16" height="16"><circle cx="8" cy="8" r="7" fill="none" stroke="#c92a2a" stroke-width="1.8"/></svg>mal clasificada</span>
+        <span><svg width="16" height="16"><path d="M8 1 L8 15 M1 8 L15 8" stroke="#1b2430" stroke-width="2"/></svg>flor de entrada</span>
+      </div>
+      <p class="note">El fondo muestra qué especie predice la red en cada punto del plano, manteniendo las otras dos medidas
+        fijas en los valores de la flor de entrada. Es un <b>corte</b> de un espacio de 4 dimensiones: si mueves las otras
+        medidas, el corte cambia. Haz clic en el fondo para mover la flor de entrada.</p>
+    </section>
+  </div>
+</main>
+
+<script>
+// =====================================================================
+//  Datos: conjunto Iris de Fisher (1936). [long. sépalo, anch. sépalo, long. pétalo, anch. pétalo (cm), especie]
+// =====================================================================
+const IRIS = [[5.1,3.5,1.4,0.2,0],[4.9,3.0,1.4,0.2,0],[4.7,3.2,1.3,0.2,0],[4.6,3.1,1.5,0.2,0],[5.0,3.6,1.4,0.2,0],[5.4,3.9,1.7,0.4,0],[4.6,3.4,1.4,0.3,0],[5.0,3.4,1.5,0.2,0],[4.4,2.9,1.4,0.2,0],[4.9,3.1,1.5,0.1,0],[5.4,3.7,1.5,0.2,0],[4.8,3.4,1.6,0.2,0],[4.8,3.0,1.4,0.1,0],[4.3,3.0,1.1,0.1,0],[5.8,4.0,1.2,0.2,0],[5.7,4.4,1.5,0.4,0],[5.4,3.9,1.3,0.4,0],[5.1,3.5,1.4,0.3,0],[5.7,3.8,1.7,0.3,0],[5.1,3.8,1.5,0.3,0],[5.4,3.4,1.7,0.2,0],[5.1,3.7,1.5,0.4,0],[4.6,3.6,1.0,0.2,0],[5.1,3.3,1.7,0.5,0],[4.8,3.4,1.9,0.2,0],[5.0,3.0,1.6,0.2,0],[5.0,3.4,1.6,0.4,0],[5.2,3.5,1.5,0.2,0],[5.2,3.4,1.4,0.2,0],[4.7,3.2,1.6,0.2,0],[4.8,3.1,1.6,0.2,0],[5.4,3.4,1.5,0.4,0],[5.2,4.1,1.5,0.1,0],[5.5,4.2,1.4,0.2,0],[4.9,3.1,1.5,0.2,0],[5.0,3.2,1.2,0.2,0],[5.5,3.5,1.3,0.2,0],[4.9,3.6,1.4,0.1,0],[4.4,3.0,1.3,0.2,0],[5.1,3.4,1.5,0.2,0],[5.0,3.5,1.3,0.3,0],[4.5,2.3,1.3,0.3,0],[4.4,3.2,1.3,0.2,0],[5.0,3.5,1.6,0.6,0],[5.1,3.8,1.9,0.4,0],[4.8,3.0,1.4,0.3,0],[5.1,3.8,1.6,0.2,0],[4.6,3.2,1.4,0.2,0],[5.3,3.7,1.5,0.2,0],[5.0,3.3,1.4,0.2,0],[7.0,3.2,4.7,1.4,1],[6.4,3.2,4.5,1.5,1],[6.9,3.1,4.9,1.5,1],[5.5,2.3,4.0,1.3,1],[6.5,2.8,4.6,1.5,1],[5.7,2.8,4.5,1.3,1],[6.3,3.3,4.7,1.6,1],[4.9,2.4,3.3,1.0,1],[6.6,2.9,4.6,1.3,1],[5.2,2.7,3.9,1.4,1],[5.0,2.0,3.5,1.0,1],[5.9,3.0,4.2,1.5,1],[6.0,2.2,4.0,1.0,1],[6.1,2.9,4.7,1.4,1],[5.6,2.9,3.6,1.3,1],[6.7,3.1,4.4,1.4,1],[5.6,3.0,4.5,1.5,1],[5.8,2.7,4.1,1.0,1],[6.2,2.2,4.5,1.5,1],[5.6,2.5,3.9,1.1,1],[5.9,3.2,4.8,1.8,1],[6.1,2.8,4.0,1.3,1],[6.3,2.5,4.9,1.5,1],[6.1,2.8,4.7,1.2,1],[6.4,2.9,4.3,1.3,1],[6.6,3.0,4.4,1.4,1],[6.8,2.8,4.8,1.4,1],[6.7,3.0,5.0,1.7,1],[6.0,2.9,4.5,1.5,1],[5.7,2.6,3.5,1.0,1],[5.5,2.4,3.8,1.1,1],[5.5,2.4,3.7,1.0,1],[5.8,2.7,3.9,1.2,1],[6.0,2.7,5.1,1.6,1],[5.4,3.0,4.5,1.5,1],[6.0,3.4,4.5,1.6,1],[6.7,3.1,4.7,1.5,1],[6.3,2.3,4.4,1.3,1],[5.6,3.0,4.1,1.3,1],[5.5,2.5,4.0,1.3,1],[5.5,2.6,4.4,1.2,1],[6.1,3.0,4.6,1.4,1],[5.8,2.6,4.0,1.2,1],[5.0,2.3,3.3,1.0,1],[5.6,2.7,4.2,1.3,1],[5.7,3.0,4.2,1.2,1],[5.7,2.9,4.2,1.3,1],[6.2,2.9,4.3,1.3,1],[5.1,2.5,3.0,1.1,1],[5.7,2.8,4.1,1.3,1],[6.3,3.3,6.0,2.5,2],[5.8,2.7,5.1,1.9,2],[7.1,3.0,5.9,2.1,2],[6.3,2.9,5.6,1.8,2],[6.5,3.0,5.8,2.2,2],[7.6,3.0,6.6,2.1,2],[4.9,2.5,4.5,1.7,2],[7.3,2.9,6.3,1.8,2],[6.7,2.5,5.8,1.8,2],[7.2,3.6,6.1,2.5,2],[6.5,3.2,5.1,2.0,2],[6.4,2.7,5.3,1.9,2],[6.8,3.0,5.5,2.1,2],[5.7,2.5,5.0,2.0,2],[5.8,2.8,5.1,2.4,2],[6.4,3.2,5.3,2.3,2],[6.5,3.0,5.5,1.8,2],[7.7,3.8,6.7,2.2,2],[7.7,2.6,6.9,2.3,2],[6.0,2.2,5.0,1.5,2],[6.9,3.2,5.7,2.3,2],[5.6,2.8,4.9,2.0,2],[7.7,2.8,6.7,2.0,2],[6.3,2.7,4.9,1.8,2],[6.7,3.3,5.7,2.1,2],[7.2,3.2,6.0,1.8,2],[6.2,2.8,4.8,1.8,2],[6.1,3.0,4.9,1.8,2],[6.4,2.8,5.6,2.1,2],[7.2,3.0,5.8,1.6,2],[7.4,2.8,6.1,1.9,2],[7.9,3.8,6.4,2.0,2],[6.4,2.8,5.6,2.2,2],[6.3,2.8,5.1,1.5,2],[6.1,2.6,5.6,1.4,2],[7.7,3.0,6.1,2.3,2],[6.3,3.4,5.6,2.4,2],[6.4,3.1,5.5,1.8,2],[6.0,3.0,4.8,1.8,2],[6.9,3.1,5.4,2.1,2],[6.7,3.1,5.6,2.4,2],[6.9,3.1,5.1,2.3,2],[5.8,2.7,5.1,1.9,2],[6.8,3.2,5.9,2.3,2],[6.7,3.3,5.7,2.5,2],[6.7,3.0,5.2,2.3,2],[6.3,2.5,5.0,1.9,2],[6.5,3.0,5.2,2.0,2],[6.2,3.4,5.4,2.3,2],[5.9,3.0,5.1,1.8,2]];
+const FEAT = ['Longitud del sépalo', 'Anchura del sépalo', 'Longitud del pétalo', 'Anchura del pétalo'];
+const FEAT_S = ['Long. sépalo', 'Anch. sépalo', 'Long. pétalo', 'Anch. pétalo'];
+const CLS = ['setosa', 'versicolor', 'virginica'];
+const COL = ['#0266a2', '#ff9600', '#2f9e44'];
+const RGB = [[2, 102, 162], [255, 150, 0], [47, 158, 68]];
+const RANGE = [0, 1, 2, 3].map(j => {
+  const v = IRIS.map(r => r[j]);
+  return [Math.floor(Math.min(...v) * 2) / 2 - 0.5, Math.ceil(Math.max(...v) * 2) / 2 + 0.5];
+});
+
+// División estratificada: 40 flores de cada especie para entrenar, 10 para test
+let trainIdx = [], testIdx = [], isTest = new Array(IRIS.length).fill(false);
+let MU = [0, 0, 0, 0], SD = [1, 1, 1, 1];
+function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+function splitData() {
+  trainIdx = []; testIdx = []; isTest.fill(false);
+  for (let c = 0; c < 3; c++) {
+    const idx = shuffle(IRIS.map((r, i) => i).filter(i => IRIS[i][4] === c));
+    testIdx.push(...idx.slice(0, 10)); trainIdx.push(...idx.slice(10));
+  }
+  testIdx.forEach(i => isTest[i] = true);
+  for (let j = 0; j < 4; j++) {
+    MU[j] = trainIdx.reduce((a, i) => a + IRIS[i][j], 0) / trainIdx.length;
+    SD[j] = Math.sqrt(trainIdx.reduce((a, i) => a + (IRIS[i][j] - MU[j]) ** 2, 0) / trainIdx.length);
+  }
+}
+const norm = x => x.map((v, j) => (v - MU[j]) / SD[j]);
+
+// =====================================================================
+//  Red 4 → 5 → 3 (sigmoide en la capa oculta, softmax en la salida)
+// =====================================================================
+const NI = 4, NH = 5, NO = 3;
+const sigmoid = z => 1 / (1 + Math.exp(-z));
+let W1, b1, W2, b2;
+let epoch = 0, hist = [];
+function initNet() {
+  const a1 = Math.sqrt(6 / (NI + NH)), a2 = Math.sqrt(6 / (NH + NO));
+  W1 = Array.from({ length: NH }, () => Float64Array.from({ length: NI }, () => (Math.random() * 2 - 1) * a1));
+  W2 = Array.from({ length: NO }, () => Float64Array.from({ length: NH }, () => (Math.random() * 2 - 1) * a2));
+  b1 = new Float64Array(NH); b2 = new Float64Array(NO);
+  epoch = 0; hist = [];
+}
+function forward(xn) {
+  const h = new Float64Array(NH), z = new Float64Array(NO), p = new Float64Array(NO);
+  for (let j = 0; j < NH; j++) { let s = b1[j]; for (let i = 0; i < NI; i++) s += W1[j][i] * xn[i]; h[j] = sigmoid(s); }
+  for (let k = 0; k < NO; k++) { let s = b2[k]; for (let j = 0; j < NH; j++) s += W2[k][j] * h[j]; z[k] = s; }
+  const m = Math.max(...z); let S = 0;
+  for (let k = 0; k < NO; k++) { p[k] = Math.exp(z[k] - m); S += p[k]; }
+  for (let k = 0; k < NO; k++) p[k] /= S;
+  return { h, z, p };
+}
+const argmax = p => p.indexOf(Math.max(...p));
+// Una época: recorre las flores de entrenamiento en orden aleatorio y ajusta los pesos tras cada una
+function trainEpoch(lr) {
+  for (const i of shuffle([...trainIdx])) {
+    const x = norm(IRIS[i]), y = IRIS[i][4];
+    const { h, p } = forward(x);
+    const d2 = Array.from(p, (v, k) => v - (k === y ? 1 : 0));                  // dL/dz en la salida
+    const d1 = Array.from(h, (hv, j) => hv * (1 - hv) * d2.reduce((s, d, k) => s + d * W2[k][j], 0));
+    for (let k = 0; k < NO; k++) { for (let j = 0; j < NH; j++) W2[k][j] -= lr * d2[k] * h[j]; b2[k] -= lr * d2[k]; }
+    for (let j = 0; j < NH; j++) { for (let q = 0; q < NI; q++) W1[j][q] -= lr * d1[j] * x[q]; b1[j] -= lr * d1[j]; }
+  }
+  epoch++;
+  const e = evaluate();
+  hist.push([e.tr.loss, e.te.loss]);
+  if (hist.length > 3000) hist = hist.filter((_, i) => i % 2 === 0);
+}
+function evalSet(idx) {
+  let L = 0, ok = 0;
+  const cm = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
+  for (const i of idx) {
+    const p = forward(norm(IRIS[i])).p, y = IRIS[i][4], k = argmax(Array.from(p));
+    L -= Math.log(Math.max(1e-9, p[y])); if (k === y) ok++; cm[y][k]++;
+  }
+  return { loss: L / idx.length, acc: ok / idx.length, cm };
+}
+const evaluate = () => ({ tr: evalSet(trainIdx), te: evalSet(testIdx) });
+
+// =====================================================================
+//  Utilidades
+// =====================================================================
+const $ = id => document.getElementById(id);
+const fmt = (v, d = 2) => (Object.is(v, -0) ? 0 : v).toLocaleString('es-ES', { minimumFractionDigits: d, maximumFractionDigits: d });
+const pct = v => Math.round(v * 100) + ' %';
+const INK = '#1b2430', MUTED = '#5d6875';
+
+// =====================================================================
+//  Flor de entrada (deslizadores)
+// =====================================================================
+let flower = [5.8, 2.8, 4.4, 1.3];   // valores en cm
+let flowerIdx = null;                // índice si procede del conjunto
+const sl = [];
+$('sliders').innerHTML = FEAT.map((f, j) => `<div class="slider"><label for="s${j}">${f} <b id="v${j}"></b></label>
+  <input id="s${j}" type="range" min="${RANGE[j][0]}" max="${RANGE[j][1]}" step="0.1"></div>`).join('');
+for (let j = 0; j < 4; j++) {
+  sl[j] = $('s' + j);
+  sl[j].addEventListener('input', () => { flower[j] = +sl[j].value; flowerIdx = null; touch(); });
+}
+function syncSliders() {
+  for (let j = 0; j < 4; j++) { sl[j].value = flower[j]; $('v' + j).textContent = fmt(flower[j], 1) + ' cm'; }
+}
+$('rand').addEventListener('click', () => { loadFlower(Math.floor(Math.random() * IRIS.length)); });
+function loadFlower(i) { flowerIdx = i; flower = IRIS[i].slice(0, 4); touch(); }
+
+function drawVerdict(p) {
+  const k = argmax(Array.from(p));
+  let sub = `Probabilidad ${pct(p[k])}`;
+  if (flowerIdx !== null) {
+    const y = IRIS[flowerIdx][4];
+    sub += ` · flor nº ${flowerIdx + 1} (${isTest[flowerIdx] ? 'test' : 'entrenamiento'}), especie real: <i>${CLS[y]}</i> ` +
+      (k === y ? '<span class="ok">✓ acierto</span>' : '<span class="bad">✗ error</span>');
+  } else sub += ' · flor inventada con los deslizadores';
+  $('verdict').innerHTML = `<svg width="38" height="38" viewBox="0 0 38 38" aria-hidden="true">${petals(19, 19, COL[k])}</svg>
+    <div><div class="big" style="color:${COL[k]}">Iris ${CLS[k]}</div><div class="sub">${sub}</div></div>`;
+}
+function petals(cx, cy, c) {
+  let s = '';
+  for (let a = 0; a < 6; a++) {
+    const t = a * Math.PI / 3;
+    s += `<ellipse cx="${cx + 9 * Math.cos(t)}" cy="${cy + 9 * Math.sin(t)}" rx="8" ry="4.5" transform="rotate(${a * 60} ${cx + 9 * Math.cos(t)} ${cy + 9 * Math.sin(t)})" fill="${c}" fill-opacity="${a % 2 ? .55 : .9}"/>`;
+  }
+  return s + `<circle cx="${cx}" cy="${cy}" r="4" fill="#fff" stroke="${c}" stroke-width="1.5"/>`;
+}
+
+// =====================================================================
+//  Diagrama de la red
+// =====================================================================
+const XI = 170, XH = 380, XO = 555;
+const YI = j => 70 + j * 84, YH = j => 40 + j * 80, YO = k => 105 + k * 95;
+function drawNet(xn, f) {
+  const { h, z, p } = f;
+  const k = argmax(Array.from(p));
+  let wmax = 1e-6;
+  for (const r of W1) for (const v of r) wmax = Math.max(wmax, Math.abs(v));
+  for (const r of W2) for (const v of r) wmax = Math.max(wmax, Math.abs(v));
+  const edge = (x1, y1, x2, y2, w) => {
+    const a = Math.abs(w) / wmax;
+    return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${w >= 0 ? '#ff9600' : '#0266a2'}" stroke-opacity="${(0.2 + 0.7 * a).toFixed(2)}" stroke-width="${(0.6 + 5 * a).toFixed(2)}"/>`;
+  };
+  let s = `<g font-family="system-ui, sans-serif" font-size="12">
+    <text x="${XI}" y="14" text-anchor="middle" fill="${MUTED}" font-weight="600">Entradas (normalizadas)</text>
+    <text x="${XH}" y="14" text-anchor="middle" fill="${MUTED}" font-weight="600">Capa oculta · sigmoide</text>
+    <text x="${XO + 60}" y="14" text-anchor="middle" fill="${MUTED}" font-weight="600">Salida · softmax</text>`;
+  for (let j = 0; j < NH; j++) for (let i = 0; i < NI; i++) s += edge(XI + 20, YI(i), XH - 22, YH(j), W1[j][i]);
+  for (let o = 0; o < NO; o++) for (let j = 0; j < NH; j++) s += edge(XH + 22, YH(j), XO - 22, YO(o), W2[o][j]);
+  // Entradas
+  for (let i = 0; i < NI; i++) {
+    s += `<text x="${XI - 30}" y="${YI(i) - 4}" text-anchor="end" fill="${INK}" font-weight="600">${FEAT_S[i]}</text>
+          <text x="${XI - 30}" y="${YI(i) + 12}" text-anchor="end" fill="${MUTED}">${fmt(flower[i], 1)} cm</text>
+          <circle cx="${XI}" cy="${YI(i)}" r="20" fill="#e8f1f8" stroke="#0266a2" stroke-width="1.5"/>
+          <text x="${XI}" y="${YI(i) + 4}" text-anchor="middle" fill="#014d7a" font-weight="700" font-size="11">${fmt(xn[i])}</text>`;
+  }
+  // Ocultas
+  for (let j = 0; j < NH; j++) {
+    const a = h[j];
+    s += `<circle cx="${XH}" cy="${YH(j)}" r="22" fill="#fff" stroke="#b86b00" stroke-width="1.5"/>
+          <clipPath id="cp${j}"><circle cx="${XH}" cy="${YH(j)}" r="21"/></clipPath>
+          <rect x="${XH - 22}" y="${YH(j) + 22 - 44 * a}" width="44" height="${44 * a}" fill="#ffd29a" clip-path="url(#cp${j})"/>
+          <text x="${XH}" y="${YH(j) + 4}" text-anchor="middle" fill="${INK}" font-weight="700" font-size="11">${fmt(a)}</text>`;
+  }
+  // Salidas
+  for (let o = 0; o < NO; o++) {
+    const y = YO(o), win = o === k;
+    s += `<circle cx="${XO}" cy="${y}" r="22" fill="${win ? COL[o] : '#fff'}" stroke="${COL[o]}" stroke-width="${win ? 3 : 2}"/>
+          <text x="${XO}" y="${y + 4}" text-anchor="middle" font-weight="700" font-size="11" fill="${win ? '#fff' : COL[o]}">${fmt(z[o], 1)}</text>
+          <text x="${XO + 34}" y="${y - 8}" fill="${COL[o]}" font-weight="700" font-style="italic">${CLS[o]}</text>
+          <rect x="${XO + 34}" y="${y}" width="110" height="12" rx="3" fill="#f4f6f8"/>
+          <rect x="${XO + 34}" y="${y}" width="${(110 * p[o]).toFixed(1)}" height="12" rx="3" fill="${COL[o]}"/>
+          <text x="${XO + 152}" y="${y + 11}" fill="${INK}" font-weight="${win ? 700 : 400}">${pct(p[o])}</text>`;
+  }
+  s += `<text x="${XO}" y="${YO(2) + 46}" text-anchor="middle" fill="${MUTED}" font-size="11">puntuación z</text>
+        <text x="${XO + 89}" y="${YO(2) + 46}" text-anchor="middle" fill="${MUTED}" font-size="11">probabilidad</text>
+        <text x="${XH}" y="${YH(4) + 42}" text-anchor="middle" fill="${MUTED}" font-size="11">activación σ(z)</text></g>`;
+  $('net').innerHTML = s;
+}
+
+// =====================================================================
+//  Gráfico de dispersión con regiones de decisión
+// =====================================================================
+const sc = $('scatter'), sctx = sc.getContext('2d');
+const S = 440, PADL = 44, PADB = 38, PADT = 10, PADR = 10;
+let ax = 2, ay = 3;
+['ax', 'ay'].forEach(id => $(id).innerHTML = FEAT.map((f, j) => `<option value="${j}">${f}</option>`).join(''));
+$('ax').value = ax; $('ay').value = ay;
+$('ax').addEventListener('change', e => { ax = +e.target.value; touch(); });
+$('ay').addEventListener('change', e => { ay = +e.target.value; touch(); });
+const GR = 70;
+const bg = document.createElement('canvas'); bg.width = bg.height = GR;
+const bctx = bg.getContext('2d'), bimg = bctx.createImageData(GR, GR);
+const PX = v => PADL + (v - RANGE[ax][0]) / (RANGE[ax][1] - RANGE[ax][0]) * (S - PADL - PADR);
+const PY = v => S - PADB - (v - RANGE[ay][0]) / (RANGE[ay][1] - RANGE[ay][0]) * (S - PADB - PADT);
+const IX = px => RANGE[ax][0] + (px - PADL) / (S - PADL - PADR) * (RANGE[ax][1] - RANGE[ax][0]);
+const IY = py => RANGE[ay][0] + (S - PADB - py) / (S - PADB - PADT) * (RANGE[ay][1] - RANGE[ay][0]);
+function setupHiDPI() {
+  const dpr = Math.min(3, window.devicePixelRatio || 1);
+  sc.width = sc.height = Math.round(S * dpr);
+  sctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+function drawScatter() {
+  sctx.clearRect(0, 0, S, S);
+  sctx.fillStyle = '#fff'; sctx.fillRect(0, 0, S, S);
+  // Regiones de decisión (corte con las otras dos medidas fijas)
+  if (ax !== ay) {
+    const d = bimg.data, x = flower.slice();
+    for (let r = 0; r < GR; r++) for (let c = 0; c < GR; c++) {
+      x[ax] = RANGE[ax][0] + (c + .5) / GR * (RANGE[ax][1] - RANGE[ax][0]);
+      x[ay] = RANGE[ay][1] - (r + .5) / GR * (RANGE[ay][1] - RANGE[ay][0]);
+      const p = forward(norm(x)).p, q = 4 * (r * GR + c);
+      const conf = Math.max(...p), a = 0.12 + 0.3 * (conf - 1 / 3) * 1.5;
+      for (let ch = 0; ch < 3; ch++) {
+        const mix = p[0] * RGB[0][ch] + p[1] * RGB[1][ch] + p[2] * RGB[2][ch];
+        d[q + ch] = 255 + (mix - 255) * a;
+      }
+      d[q + 3] = 255;
+    }
+    bctx.putImageData(bimg, 0, 0);
+    sctx.imageSmoothingEnabled = true;
+    sctx.drawImage(bg, PADL, PADT, S - PADL - PADR, S - PADT - PADB);
+  }
+  // Ejes
+  sctx.save();
+  sctx.strokeStyle = 'rgba(27,36,48,.08)'; sctx.fillStyle = MUTED; sctx.font = '11px system-ui, sans-serif'; sctx.lineWidth = 1;
+  for (let v = Math.ceil(RANGE[ax][0]); v <= RANGE[ax][1]; v++) {
+    sctx.beginPath(); sctx.moveTo(PX(v), PADT); sctx.lineTo(PX(v), S - PADB); sctx.stroke();
+    sctx.textAlign = 'center'; sctx.fillText(String(v), PX(v), S - PADB + 14);
+  }
+  for (let v = Math.ceil(RANGE[ay][0]); v <= RANGE[ay][1]; v++) {
+    sctx.beginPath(); sctx.moveTo(PADL, PY(v)); sctx.lineTo(S - PADR, PY(v)); sctx.stroke();
+    sctx.textAlign = 'right'; sctx.fillText(String(v), PADL - 6, PY(v) + 4);
+  }
+  sctx.strokeStyle = '#9aa5b1';
+  sctx.strokeRect(PADL, PADT, S - PADL - PADR, S - PADT - PADB);
+  sctx.fillStyle = INK; sctx.font = '12px system-ui, sans-serif'; sctx.textAlign = 'center';
+  sctx.fillText(FEAT[ax] + ' (cm)', (PADL + S - PADR) / 2, S - 8);
+  sctx.save(); sctx.translate(13, (PADT + S - PADB) / 2); sctx.rotate(-Math.PI / 2); sctx.fillText(FEAT[ay] + ' (cm)', 0, 0); sctx.restore();
+  sctx.restore();
+  // Flores
+  IRIS.forEach((r, i) => {
+    const x = PX(r[ax]) + (((i * 7919) % 13) - 6) * 0.35, y = PY(r[ay]) + (((i * 104729) % 13) - 6) * 0.35;  // pequeño desplazamiento para ver flores repetidas
+    const k = argmax(Array.from(forward(norm(r)).p)), c = COL[r[4]];
+    sctx.beginPath(); sctx.arc(x, y, isTest[i] ? 4.5 : 5, 0, 2 * Math.PI);
+    if (isTest[i]) { sctx.fillStyle = '#fff'; sctx.fill(); sctx.lineWidth = 2.5; sctx.strokeStyle = c; sctx.stroke(); }
+    else { sctx.fillStyle = c; sctx.fill(); sctx.lineWidth = 1.2; sctx.strokeStyle = '#fff'; sctx.stroke(); }
+    if (k !== r[4] && epoch > 0) { sctx.beginPath(); sctx.arc(x, y, 8.5, 0, 2 * Math.PI); sctx.lineWidth = 1.8; sctx.strokeStyle = '#c92a2a'; sctx.stroke(); }
+    if (i === flowerIdx) { sctx.beginPath(); sctx.arc(x, y, 11, 0, 2 * Math.PI); sctx.lineWidth = 2; sctx.strokeStyle = INK; sctx.stroke(); }
+  });
+  // Flor de entrada
+  const fx = PX(flower[ax]), fy = PY(flower[ay]);
+  sctx.save(); sctx.strokeStyle = INK; sctx.lineWidth = 2.2;
+  sctx.beginPath(); sctx.moveTo(fx - 9, fy); sctx.lineTo(fx + 9, fy); sctx.moveTo(fx, fy - 9); sctx.lineTo(fx, fy + 9); sctx.stroke();
+  sctx.restore();
+}
+function evPos(e) { const r = sc.getBoundingClientRect(); return { px: (e.clientX - r.left) * S / r.width, py: (e.clientY - r.top) * S / r.height }; }
+sc.addEventListener('pointerdown', e => {
+  const { px, py } = evPos(e);
+  let best = 9, bi = -1;
+  IRIS.forEach((r, i) => { const d = Math.hypot(PX(r[ax]) - px, PY(r[ay]) - py); if (d < best) { best = d; bi = i; } });
+  if (bi >= 0) { loadFlower(bi); return; }
+  if (px < PADL || px > S - PADR || py < PADT || py > S - PADB) return;
+  flower[ax] = Math.round(IX(px) * 10) / 10; flower[ay] = Math.round(IY(py) * 10) / 10; flowerIdx = null; touch();
+});
+
+// =====================================================================
+//  Curva de error y matriz de confusión
+// =====================================================================
+function drawLoss() {
+  const X0 = 34, X1 = 352, Y0 = 165, Y1 = 10;
+  const top = Math.max(1.2, Math.ceil(Math.max(...hist.slice(0, 5).flat(), 0) * 2) / 2);
+  const Y = v => Y0 - (Y0 - Y1) * Math.min(1, v / top);
+  const n = hist.length;
+  const line = c => {
+    if (n < 2) return '';
+    let d = '';
+    const step = Math.max(1, Math.floor(n / 300));
+    for (let i = 0; i < n; i += step) d += (d ? 'L' : 'M') + (X0 + (X1 - X0) * i / (n - 1)).toFixed(1) + ' ' + Y(hist[i][c]).toFixed(1);
+    return d + 'L' + X1 + ' ' + Y(hist[n - 1][c]).toFixed(1);
+  };
+  const ticks = [0, top / 2, top];
+  $('loss').innerHTML = `<g font-family="system-ui, sans-serif" font-size="11" fill="${MUTED}">
+    ${ticks.map(v => `<line x1="${X0}" x2="${X1}" y1="${Y(v)}" y2="${Y(v)}" stroke="${v ? '#eef1f4' : '#9aa5b1'}"/><text x="${X0 - 5}" y="${Y(v) + 4}" text-anchor="end">${fmt(v, 1)}</text>`).join('')}
+    <text x="${X0}" y="${Y0 + 16}">0</text>
+    <text x="${X1}" y="${Y0 + 16}" text-anchor="end">${epoch ? epoch.toLocaleString('es-ES') + ' épocas' : 'épocas'}</text>
+    ${n ? '' : `<text x="${(X0 + X1) / 2}" y="${(Y0 + Y1) / 2}" text-anchor="middle">Pulsa «Entrenar» para ver cómo baja el error</text>`}
+  </g>
+  <path d="${line(1)}" fill="none" stroke="#ff9600" stroke-width="2" stroke-linejoin="round"/>
+  <path d="${line(0)}" fill="none" stroke="#0266a2" stroke-width="2" stroke-linejoin="round"/>`;
+}
+function drawCM(cm) {
+  let s = `<table class="cm"><tr><th></th>${CLS.map((c, k) => `<th style="color:${COL[k]}">${c}</th>`).join('')}</tr>`;
+  cm.forEach((row, y) => {
+    s += `<tr><th class="r" style="color:${COL[y]}">${CLS[y]}</th>`;
+    row.forEach((v, k) => {
+      const diag = y === k;
+      const bgc = v === 0 ? '#f4f6f8' : diag ? `rgba(47,158,68,${0.15 + 0.06 * v})` : `rgba(201,42,42,${0.15 + 0.12 * v})`;
+      s += `<td style="background:${bgc};color:${v === 0 ? '#9aa5b1' : INK}">${v}</td>`;
+    });
+    s += '</tr>';
+  });
+  $('cm').innerHTML = s + '</table>';
+}
+
+// =====================================================================
+//  Bucle
+// =====================================================================
+let dirty = true;
+const touch = () => { dirty = true; };
+function render() {
+  syncSliders();
+  const xn = norm(flower), f = forward(xn);
+  drawNet(xn, f); drawVerdict(f.p); drawScatter(); drawLoss();
+  const e = evaluate();
+  $('epoch').textContent = epoch.toLocaleString('es-ES');
+  $('lossv').textContent = fmt(e.tr.loss, 3);
+  $('acctr').textContent = pct(e.tr.acc);
+  $('accte').textContent = pct(e.te.acc);
+  drawCM(e.te.cm);
+}
+let training = false, acc = 0, lastT = 0;
+function setTraining(on) {
+  training = on;
+  $('train').textContent = on ? '❚❚ Pausa' : '▶ Entrenar';
+  $('train').classList.toggle('running', on);
+}
+$('train').addEventListener('click', () => setTraining(!training));
+$('step').addEventListener('click', () => { setTraining(false); trainEpoch(+$('lr').value); touch(); });
+$('reset').addEventListener('click', () => { initNet(); touch(); });
+$('split').addEventListener('click', () => { splitData(); initNet(); touch(); });
+function loop(ts) {
+  if (training) {
+    const lr = +$('lr').value, sp = $('speed').value;
+    if (sp === 'fast') { for (let i = 0; i < 10; i++) trainEpoch(lr); dirty = true; }
+    else {
+      const per = 1000 / (sp === 'slow' ? 4 : 30);
+      acc += Math.min(200, ts - (lastT || ts));
+      while (acc >= per) { trainEpoch(lr); acc -= per; dirty = true; }
+    }
+  }
+  lastT = ts;
+  if (dirty) { dirty = false; render(); }
+  requestAnimationFrame(loop);
+}
+setupHiDPI();
+window.addEventListener('resize', () => { setupHiDPI(); touch(); });
+splitData(); initNet();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

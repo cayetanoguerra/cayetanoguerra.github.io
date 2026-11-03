@@ -1,0 +1,452 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Una neurona: ¿5 o 7?</title>
+<style>
+  :root {
+    color-scheme: light;
+    /* Colores institucionales ULPGC */
+    --blue: #0266a2; --blue-dark: #014d7a; --blue-soft: #e8f1f8;
+    --orange: #ff9600; --orange-dark: #b86b00; --orange-soft: #fff3e0;
+    --bg: #f4f6f8; --panel: #ffffff; --ink: #1b2430; --muted: #5d6875;
+    --line: #e1e6eb; --canvas: #111;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .topbar { background: var(--panel); border-top: 4px solid var(--blue);
+            border-bottom: 1px solid var(--line); }
+  header { max-width: 1100px; margin: 0 auto; padding: 18px 16px 20px;
+           display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; }
+  .logo { height: 30px; width: auto; opacity: .9; flex-shrink: 0; margin-top: 4px; }
+  h1 { font-size: 26px; margin: 0 0 6px; letter-spacing: -.01em; color: var(--blue); }
+  h1::after { content: ""; display: block; width: 48px; height: 3px; background: var(--orange);
+              border-radius: 2px; margin-top: 6px; }
+  header p { margin: 0; color: var(--muted); max-width: 70ch; }
+  main { max-width: 1100px; margin: 0 auto; padding: 16px; display: grid; align-items: start;
+         grid-template-columns: auto 1fr; gap: 16px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px;
+          box-shadow: 0 1px 2px rgba(16, 40, 64, .04); min-width: 0; }
+  .card h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .08em;
+             color: var(--blue); margin: 0 0 12px; font-weight: 700;
+             display: flex; align-items: center; gap: 8px; }
+  .card h2::before { content: ""; width: 4px; height: 14px; background: var(--orange); border-radius: 2px; }
+  #draw { display: block; width: 280px; height: 280px; background: var(--canvas);
+          border-radius: 8px; touch-action: none; cursor: crosshair; }
+  .row { display: flex; gap: 8px; margin-top: 12px; align-items: center; }
+  button { font: inherit; padding: 8px 18px; border-radius: 8px; border: 1px solid var(--line);
+           background: var(--bg); color: var(--ink); cursor: pointer; transition: background .15s; }
+  button.primary { background: var(--blue); color: #fff; border-color: var(--blue); font-weight: 600; }
+  button.primary:hover { background: var(--blue-dark); border-color: var(--blue-dark); }
+  button:focus-visible { outline: 3px solid var(--orange); outline-offset: 2px; }
+  label.small { color: var(--muted); font-size: 13px; display: flex; align-items: center; gap: 6px; }
+  input[type=range] { accent-color: var(--orange); }
+  kbd { font: 12px ui-monospace, monospace; background: var(--blue-soft); color: var(--blue);
+        border-radius: 4px; padding: 1px 5px; }
+  .note { color: var(--muted); font-size: 13px; margin: 8px 0 0; }
+  .right { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-content: start; }
+  .wide { grid-column: 1 / -1; }
+
+  /* Predicción */
+  .result { display: flex; align-items: center; gap: 20px; }
+  #digit { font-size: 96px; font-weight: 700; line-height: 1; min-width: 70px; text-align: center;
+           color: var(--muted); font-variant-numeric: tabular-nums; transition: color .15s; }
+  #digit.is5 { color: var(--blue); }
+  #digit.is7 { color: var(--orange-dark); }
+  #conf { color: var(--muted); }
+  .gauge { margin-top: 14px; }
+  .gauge .ends { display: flex; justify-content: space-between; font-weight: 700; font-size: 20px; }
+  .gauge .ends span:first-child { color: var(--blue); }
+  .gauge .ends span:last-child { color: var(--orange-dark); }
+  .gauge .track { position: relative; height: 16px; border-radius: 8px; margin: 4px 0;
+                  background: linear-gradient(90deg, var(--blue), #dfe6ec 50%, var(--orange)); }
+  .gauge .track::after { content: ""; position: absolute; left: 50%; top: -4px; bottom: -4px;
+                         width: 2px; background: var(--ink); opacity: .35; }
+  #needle { position: absolute; top: 50%; left: 50%; width: 22px; height: 22px; border-radius: 50%;
+            background: #fff; border: 3px solid var(--ink); transform: translate(-50%, -50%);
+            transition: left .12s; display: none; }
+  .gauge .lbl { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted);
+                font-variant-numeric: tabular-nums; }
+
+  /* Neurona */
+  .eq { font: 14px ui-monospace, "SF Mono", Menlo, monospace; background: var(--bg); border-radius: 8px;
+        padding: 10px 12px; line-height: 1.9; overflow-x: auto; white-space: nowrap; }
+  .eq .pos { color: var(--orange-dark); font-weight: 700; }
+  .eq .neg { color: var(--blue); font-weight: 700; }
+  .eq b { color: var(--ink); }
+  #sigmoid { width: 100%; height: auto; display: block; margin-top: 10px; }
+
+  /* Mapas 28x28 */
+  .maps3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .maps3 figure { margin: 0; }
+  .maps3 canvas { width: 100%; aspect-ratio: 1; image-rendering: pixelated; display: block;
+                  border-radius: 6px; background: #000; }
+  .maps3 figcaption { font-size: 13px; color: var(--muted); margin-top: 6px; }
+  .maps3 figcaption b { color: var(--ink); display: block; }
+  .legend { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); margin-top: 12px; }
+  .legend .scale { flex: 1; max-width: 260px; height: 10px; border-radius: 5px;
+                   background: linear-gradient(90deg, var(--blue), #fff 50%, var(--orange)); border: 1px solid var(--line); }
+  .legend .b5 { color: var(--blue); font-weight: 700; }
+  .legend .b7 { color: var(--orange-dark); font-weight: 700; }
+
+  .diagram { width: 100%; height: auto; display: block; }
+
+  @media (max-width: 860px) {
+    header { flex-direction: column-reverse; gap: 14px; }
+    .logo { height: 24px; }
+    main { grid-template-columns: 1fr; }
+    .right { grid-template-columns: 1fr; }
+    #draw { width: 100%; max-width: 280px; height: auto; aspect-ratio: 1; }
+    .maps3 { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="topbar">
+<header>
+  <div>
+    <h1>¿Es un 5 o un 7? Con una sola neurona</h1>
+    <p>Dibuja un <b>5</b> o un <b>7</b>. Esta vez no hay una red profunda: solo hay <b>una neurona</b>
+       con 784 pesos (uno por píxel) y un sesgo, entrenada con los cincos y sietes de MNIST.
+       Calcula una suma ponderada de los píxeles y la pasa por una función sigmoide.</p>
+  </div>
+  <img class="logo" src="logo-ulpgc.jpg" alt="ULPGC · Universidad de Las Palmas de Gran Canaria">
+</header>
+</div>
+
+<main>
+  <section class="card">
+    <h2>Zona de dibujo</h2>
+    <canvas id="draw" width="280" height="280"></canvas>
+    <div class="row">
+      <button id="clear" class="primary">Borrar</button>
+      <label class="small">Grosor <input id="thick" type="range" min="12" max="32" value="20"></label>
+    </div>
+    <p class="note">Escribe un 5 o un 7 grande, ocupando casi<br>toda la altura del recuadro.<br>Tecla <kbd>Supr</kbd> o <kbd>Esc</kbd> para borrar.</p>
+    <p class="note" style="max-width:280px">La neurona solo conoce estos dos dígitos: si dibujas
+      cualquier otro, igualmente responderá «5» o «7».</p>
+  </section>
+
+  <div class="right">
+    <section class="card">
+      <h2>Predicción</h2>
+      <div class="result">
+        <div id="digit">–</div>
+        <div id="conf">Dibuja un 5 o un 7 para empezar.</div>
+      </div>
+      <div class="gauge">
+        <div class="ends"><span>5</span><span>7</span></div>
+        <div class="track"><div id="needle"></div></div>
+        <div class="lbl"><span>p = 0</span><span>0,5</span><span>p = 1</span></div>
+      </div>
+      <p class="note">La salida de la neurona, <i>p</i>, es la probabilidad de que sea un 7.
+        Si <i>p</i> &gt; 0,5 responde «7»; si no, «5».</p>
+    </section>
+
+    <section class="card">
+      <h2>Cálculo de la neurona</h2>
+      <div class="eq" id="eq">
+        z = Σ w<sub>i</sub>·e<sub>i</sub> + b<br>
+        p = σ(z) = 1 / (1 + e<sup>−z</sup>)
+      </div>
+      <svg id="sigmoid" viewBox="0 0 320 130" aria-label="Función sigmoide"></svg>
+    </section>
+
+    <section class="card wide">
+      <h2>Dentro de la neurona: píxeles × pesos</h2>
+      <div class="maps3">
+        <figure>
+          <canvas id="mapX" width="28" height="28"></canvas>
+          <figcaption><b>Entrada e (28 × 28)</b>Lo que ve la neurona: 784 valores de gris entre 0 y 1.</figcaption>
+        </figure>
+        <figure>
+          <canvas id="mapW" width="28" height="28"></canvas>
+          <figcaption><b>Pesos w aprendidos</b>Naranja: tinta ahí hace pensar en un 7. Azul: hace pensar en un 5.</figcaption>
+        </figure>
+        <figure>
+          <canvas id="mapC" width="28" height="28"></canvas>
+          <figcaption><b>Contribución w·e</b>Producto píxel a píxel. Su suma (más el sesgo) es z.</figcaption>
+        </figure>
+      </div>
+      <div class="legend"><span class="b5">→ 5</span><div class="scale"></div><span class="b7">→ 7</span></div>
+      <p class="note">En el mapa de pesos se adivinan los dos dígitos: en naranja, la franja diagonal del centro
+        por donde baja el trazo del 7; en azul, el trazo vertical de la izquierda y la barriga inferior del 5,
+        zonas donde un 7 casi nunca tiene tinta. Las zonas blancas (los bordes) no influyen.
+        Una única neurona es un clasificador <b>lineal</b>: solo puede trazar una frontera recta
+        (un hiperplano) en el espacio de 784 dimensiones de las imágenes.</p>
+    </section>
+
+    <section class="card wide">
+      <h2>Arquitectura</h2>
+      <svg class="diagram" viewBox="0 0 760 170" role="img" aria-label="Esquema de la neurona">
+        <defs>
+          <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+            <path d="M0,0 L10,5 L0,10 z" fill="#5d6875"/>
+          </marker>
+        </defs>
+        <g font-family="system-ui, sans-serif" font-size="13" fill="#1b2430">
+          <!-- entradas -->
+          <g fill="#e8f1f8" stroke="#0266a2">
+            <circle cx="60" cy="25" r="13"/><circle cx="60" cy="60" r="13"/><circle cx="60" cy="95" r="13"/>
+            <circle cx="60" cy="145" r="13"/>
+          </g>
+          <g text-anchor="middle" font-size="11" fill="#014d7a">
+            <text x="60" y="29">e₁</text><text x="60" y="64">e₂</text><text x="60" y="99">e₃</text>
+            <text x="60" y="149">e₇₈₄</text>
+          </g>
+          <text x="60" y="124" text-anchor="middle" fill="#5d6875">⋮</text>
+          <text x="10" y="90" font-size="12" fill="#5d6875" transform="rotate(-90 14 85)">784 píxeles</text>
+          <!-- conexiones -->
+          <g stroke="#5d6875" stroke-width="1.2" marker-end="url(#arr)">
+            <line x1="74" y1="27" x2="300" y2="80"/><line x1="74" y1="61" x2="300" y2="83"/>
+            <line x1="74" y1="95" x2="300" y2="87"/><line x1="74" y1="143" x2="300" y2="92"/>
+          </g>
+          <g font-size="12" fill="#5d6875" text-anchor="middle">
+            <text x="190" y="45">w₁</text><text x="190" y="68">w₂</text><text x="190" y="97">w₃</text>
+            <text x="190" y="128">w₇₈₄</text>
+          </g>
+          <!-- sesgo -->
+          <text x="330" y="22" text-anchor="middle" fill="#5d6875">b (sesgo)</text>
+          <line x1="330" y1="28" x2="330" y2="52" stroke="#5d6875" stroke-width="1.2" marker-end="url(#arr)"/>
+          <!-- suma -->
+          <circle cx="330" cy="85" r="30" fill="#fff" stroke="#0266a2" stroke-width="2"/>
+          <text x="330" y="94" text-anchor="middle" font-size="26" fill="#0266a2">Σ</text>
+          <line x1="360" y1="85" x2="438" y2="85" stroke="#5d6875" stroke-width="1.2" marker-end="url(#arr)"/>
+          <text x="398" y="77" text-anchor="middle" fill="#5d6875">z</text>
+          <!-- sigmoide -->
+          <rect x="440" y="58" width="80" height="54" rx="10" fill="#fff3e0" stroke="#ff9600" stroke-width="2"/>
+          <line x1="448" y1="85" x2="512" y2="85" stroke="#b86b00" stroke-opacity=".3" stroke-dasharray="2 2"/>
+          <polyline points="450.0,103.9 451.2,103.9 452.5,103.8 453.8,103.8 455.0,103.7 456.2,103.7 457.5,103.6 458.8,103.5 460.0,103.3 461.2,103.1 462.5,102.9 463.8,102.6 465.0,102.2 466.2,101.7 467.5,101.1 468.8,100.4 470.0,99.5 471.2,98.4 472.5,97.1 473.8,95.5 475.0,93.8 476.2,91.8 477.5,89.7 478.8,87.4 480.0,85.0 481.2,82.6 482.5,80.3 483.8,78.2 485.0,76.2 486.2,74.5 487.5,72.9 488.8,71.6 490.0,70.5 491.2,69.6 492.5,68.9 493.8,68.3 495.0,67.8 496.2,67.4 497.5,67.1 498.8,66.9 500.0,66.7 501.2,66.5 502.5,66.4 503.8,66.3 505.0,66.3 506.2,66.2 507.5,66.2 508.8,66.1 510.0,66.1" fill="none" stroke="#b86b00" stroke-width="2.5" stroke-linejoin="round"/>
+          <text x="480" y="128" text-anchor="middle" font-size="12" fill="#b86b00">sigmoide σ</text>
+          <line x1="520" y1="85" x2="590" y2="85" stroke="#5d6875" stroke-width="1.2" marker-end="url(#arr)"/>
+          <text x="555" y="77" text-anchor="middle" fill="#5d6875">p</text>
+          <!-- salida -->
+          <text x="600" y="72" font-weight="700" fill="#b86b00">p &gt; 0,5 → «7»</text>
+          <text x="600" y="104" font-weight="700" fill="#0266a2">p ≤ 0,5 → «5»</text>
+        </g>
+      </svg>
+      <p class="note" id="info"></p>
+    </section>
+  </div>
+</main>
+
+<script>
+// Pesos de UNA neurona (regresión logística) entrenada con los 5 y 7 de MNIST.
+// Generados con entrenar_una_neurona.py. w: 784 pesos (fila a fila, 28×28), b: sesgo.
+const NEURON = {"w": [0.0, 0.0, 0.0, 0.0, -0.0, 0.00464, 0.0021, 0.00144, 0.00248, 0.00401, 0.00283, 0.00406, 0.01924, 0.02287, 0.02001, 0.02025, 0.01515, 0.01008, 0.00738, 0.00746, 0.02839, 0.03206, 0.03204, 0.02424, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -0.0, 0.0, 0.00269, 0.00605, 0.00085, 0.00054, 0.00025, 5e-05, 1e-05, -0.00088, -0.00375, -0.00012, 0.00164, 0.00013, -0.00506, -0.00201, 0.00325, 0.0257, 0.02659, 0.03099, 0.02499, -7e-05, -7e-05, 0.0, -0.0, 0.0, -0.0, -0.0, 0.0, 0.0, -0.0, 1e-05, -0.00019, -0.0098, -0.01108, -0.00883, -0.01194, -0.01346, -0.01857, -0.0277, -0.03932, -0.0447, -0.03697, -0.02447, -0.01504, -0.01127, -0.0094, -0.00684, -0.00481, -0.00047, 0.00022, -3e-05, 0.0, 0.0, -0.0, 0.0, 0.0, 1e-05, -6e-05, -0.00418, -0.01176, -0.01897, -0.02571, -0.02832, -0.03773, -0.0513, -0.06447, -0.08355, -0.10446, -0.11888, -0.10785, -0.08793, -0.07271, -0.06703, -0.05378, -0.03799, -0.02491, -0.01183, -0.00281, 0.0008, -0.00013, 0.0, 0.00131, 0.00107, 0.03107, 0.02949, 0.02338, 0.00728, 0.00213, -0.0104, -0.01631, -0.02511, -0.05617, -0.08727, -0.11886, -0.1409, -0.15152, -0.16005, -0.12973, -0.11656, -0.09503, -0.09383, -0.08458, -0.06175, -0.0479, -0.03689, -0.02254, -0.00737, -0.00684, -0.00109, 0.00093, 0.00085, 0.02517, 0.01418, -0.00184, -0.00659, 0.0035, 0.01579, 0.01098, -0.01258, -0.05587, -0.08784, -0.10268, -0.10236, -0.10274, -0.09988, -0.092, -0.09761, -0.08937, -0.09075, -0.09717, -0.08625, -0.07298, -0.0727, -0.05176, -0.03035, -0.01137, -0.00031, 0.00065, -0.00437, 0.02821, 0.01842, 0.01399, 0.01467, 0.02865, 0.03113, 0.03773, 0.03126, 0.00262, -0.02248, -0.02, -0.00842, -0.00175, 0.00121, -0.01698, -0.05139, -0.07039, -0.08169, -0.11304, -0.12052, -0.116, -0.11049, -0.08148, -0.04345, -0.01542, -4e-05, 0.0008, 0.01075, 0.04358, 0.04919, 0.04196, 0.04338, 0.05278, 0.06543, 0.07438, 0.06689, 0.03041, 0.01588, 0.02317, 0.03936, 0.06834, 0.07684, 0.06188, 0.02363, -0.02275, -0.07567, -0.11868, -0.15266, -0.16951, -0.16237, -0.13415, -0.06619, -0.02356, -0.00153, 0.00167, 0.0189, 0.05319, 0.05818, 0.06489, 0.06087, 0.05762, 0.06791, 0.07407, 0.06627, 0.04694, 0.03861, 0.04812, 0.06911, 0.11172, 0.13592, 0.11996, 0.09598, 0.03212, -0.04519, -0.087, -0.142, -0.20005, -0.19962, -0.16319, -0.07656, -0.03108, 0.00085, 0.00352, 0.02598, 0.06432, 0.08212, 0.08147, 0.07413, 0.06494, 0.05628, 0.04434, 0.05533, 0.04119, 0.01088, -0.00568, 0.04413, 0.13508, 0.18849, 0.19957, 0.17649, 0.12019, 0.03282, -0.01914, -0.10373, -0.18949, -0.22621, -0.19959, -0.12216, -0.06088, 0.00311, 0.00505, 0.02673, 0.06618, 0.08573, 0.08906, 0.07307, 0.05219, 0.02607, 0.01111, 0.03103, -0.01538, -0.06245, -0.06353, 0.01738, 0.15555, 0.23294, 0.24931, 0.25676, 0.22313, 0.17344, 0.10388, -0.00097, -0.10887, -0.18927, -0.18829, -0.10943, -0.06462, 0.03073, 0.02552, 0.02681, 0.0492, 0.08833, 0.08081, 0.06698, 0.04015, 0.00188, -0.01302, -0.03095, -0.08883, -0.16008, -0.1512, -0.03712, 0.1248, 0.21091, 0.25407, 0.27366, 0.27765, 0.26216, 0.22269, 0.12171, 0.01209, -0.09191, -0.10722, -0.06532, -0.04535, 0.02728, 0.02105, 0.01404, 0.03781, 0.06299, 0.06558, 0.0458, -0.00115, -0.03469, -0.04698, -0.108, -0.2004, -0.2926, -0.24047, -0.08176, 0.08054, 0.1721, 0.23446, 0.26285, 0.2747, 0.28267, 0.26972, 0.18709, 0.10206, -0.01226, -0.04078, -0.03705, -0.03672, 0.0255, 0.0199, 0.01899, 0.02359, 0.03345, 0.03842, 0.02533, -0.02092, -0.05295, -0.09229, -0.19303, -0.30752, -0.36373, -0.26758, -0.07629, 0.09001, 0.16482, 0.2176, 0.24194, 0.24319, 0.24744, 0.22769, 0.19941, 0.12998, 0.0466, 0.01343, 0.00222, -0.02292, 0.01767, 0.02095, 0.02082, 0.01286, 0.00664, 0.01228, 0.01183, -0.017, -0.05513, -0.11044, -0.2132, -0.32329, -0.31806, -0.1874, -0.00815, 0.11478, 0.17791, 0.20942, 0.21277, 0.19677, 0.18697, 0.15598, 0.11125, 0.07141, 0.0441, 0.02204, 0.01416, 3e-05, 0.00046, 0.00474, 0.01026, 0.00934, -0.00076, -0.00422, -0.01447, -0.01494, -0.02948, -0.08565, -0.19685, -0.24216, -0.18739, -0.04677, 0.09129, 0.13599, 0.1693, 0.18709, 0.14232, 0.10745, 0.10746, 0.07661, 0.03094, 0.01223, 0.00852, 0.02254, 0.00243, -3e-05, 9e-05, 0.00124, 0.00566, -0.00014, -0.01434, -0.04713, -0.06758, -0.05896, -0.03823, -0.06934, -0.11585, -0.11011, -0.02383, 0.10003, 0.17034, 0.15777, 0.13281, 0.1195, 0.06783, 0.03436, 0.02762, 0.01955, -0.00799, -0.01975, -0.01495, 0.0081, 0.00053, -2e-05, 0.00067, 0.00046, 0.00518, -0.00767, -0.03382, -0.07624, -0.11654, -0.12784, -0.10292, -0.08079, -0.04688, 0.01977, 0.09661, 0.14115, 0.14019, 0.08727, 0.05526, 0.03226, 0.00854, -0.03186, -0.04022, -0.03358, -0.05524, -0.04897, -0.05222, -0.0141, -0.00052, 7e-05, 0.00073, 0.00036, 0.00173, -0.0123, -0.04002, -0.10175, -0.17278, -0.20381, -0.19242, -0.13885, -0.03318, 0.07293, 0.10984, 0.08768, 0.03287, 0.00777, -0.01333, -0.01861, -0.04227, -0.08064, -0.08666, -0.09814, -0.08826, -0.08323, -0.06949, -0.02636, 4e-05, -0.0001, 0.00064, 0.00015, 0.00014, -0.02003, -0.05172, -0.11792, -0.18732, -0.24271, -0.23949, -0.19055, -0.1004, 0.00709, 0.05752, 0.05361, 0.00598, -0.02506, -0.04759, -0.07538, -0.10145, -0.11027, -0.14443, -0.15396, -0.13161, -0.10794, -0.07431, -0.03081, 0.00077, -0.00018, 4e-05, -1e-05, -0.0012, -0.02608, -0.06676, -0.10758, -0.17046, -0.22629, -0.2409, -0.20351, -0.14696, -0.04666, 0.00944, 0.01514, -0.02884, -0.05418, -0.0982, -0.13292, -0.14597, -0.14263, -0.18516, -0.19099, -0.15152, -0.11373, -0.06938, -0.03762, 9e-05, 1e-05, -0.0, -0.00011, -0.0044, -0.02044, -0.05553, -0.08514, -0.14247, -0.19077, -0.19501, -0.18179, -0.1589, -0.10264, -0.05602, -0.03403, -0.06223, -0.0969, -0.14152, -0.15022, -0.15611, -0.16279, -0.19032, -0.18457, -0.14332, -0.10747, -0.06413, -0.03015, -0.00121, -6e-05, -0.0, 0.00025, -0.00779, -0.01749, -0.01501, -0.04368, -0.09487, -0.1444, -0.16291, -0.14598, -0.1449, -0.12164, -0.06798, -0.0529, -0.08164, -0.09655, -0.12408, -0.12261, -0.13775, -0.15047, -0.1629, -0.16592, -0.1212, -0.0819, -0.05009, -0.02636, -0.00172, -1e-05, 0.0, 0.00027, -0.00117, -0.00726, 0.02039, 0.02524, -0.00606, -0.06567, -0.07944, -0.0869, -0.10043, -0.09996, -0.06362, -0.05121, -0.06117, -0.07473, -0.07612, -0.09007, -0.07509, -0.09251, -0.11187, -0.10491, -0.0703, -0.04804, -0.03054, -0.02436, 0.00039, -0.0, -0.0, -3e-05, 0.00062, 0.0041, 0.03231, 0.05595, 0.03992, 0.00981, 0.00238, -0.00939, -0.03847, -0.05234, -0.03529, -0.028, -0.03105, -0.01332, -0.00877, -0.01176, -0.00322, -0.04454, -0.06807, -0.05704, -0.02516, -0.01927, -0.02328, -0.01504, 0.00235, 0.0, -0.0, 0.0, 0.00629, 0.00681, 0.02211, 0.04095, 0.05264, 0.05269, 0.05026, 0.03249, 0.0272, 0.02282, 0.02959, 0.03242, 0.0361, 0.05104, 0.06278, 0.06268, 0.05507, 0.02373, -0.0152, -0.0125, -0.00624, -0.00698, -0.02162, -0.01187, 0.00386, 1e-05, -0.0, 0.0, 0.01092, 0.01225, 0.00828, 0.00343, 0.02123, 0.0358, 0.05253, 0.04462, 0.05703, 0.05545, 0.07863, 0.09499, 0.08907, 0.09127, 0.10518, 0.09451, 0.08955, 0.05856, 0.00854, 0.00126, 0.00372, 0.00296, -0.01898, -0.00896, -0.00032, -1e-05, 0.0, -0.0, -0.0, 8e-05, 0.00069, 0.00051, 0.00666, 0.0279, 0.05175, 0.07382, 0.08443, 0.08712, 0.09377, 0.08899, 0.0807, 0.0732, 0.08581, 0.10077, 0.08751, 0.06787, 0.03913, 0.02595, 0.02519, 0.01323, 0.0, -0.0, 1e-05, -1e-05], "b": -0.46954, "acc": 99.43, "ntrain": 11686, "ntest": 1920};
+</script>
+<script>
+// ---------- La neurona ----------
+const W = Float32Array.from(NEURON.w), B = NEURON.b;
+const sigmoid = z => 1 / (1 + Math.exp(-z));
+function neuron(x) {
+  let z = B;
+  const contrib = new Float32Array(784);
+  for (let i = 0; i < 784; i++) { contrib[i] = W[i] * x[i]; z += contrib[i]; }
+  return { z, p: sigmoid(z), contrib };
+}
+
+const fmt = (v, d = 2) => v.toLocaleString('es-ES', { minimumFractionDigits: d, maximumFractionDigits: d });
+document.getElementById('info').textContent =
+  `785 parámetros entrenables (784 pesos + 1 sesgo), frente a los más de 200 000 de la red convolucional. ` +
+  `Entrenada con ${NEURON.ntrain.toLocaleString('es-ES')} imágenes de 5 y 7 de MNIST (con pequeños desplazamientos ` +
+  `y cambios de grosor como aumento de datos). Precisión con los ${NEURON.ntest.toLocaleString('es-ES')} cincos y sietes ` +
+  `de test: ${fmt(NEURON.acc)} %.`;
+
+// ---------- Mapas de color ----------
+// Divergente: azul ULPGC (negativo → 5), blanco (0), naranja ULPGC (positivo → 7).
+const C5 = [2, 102, 162], C7 = [255, 150, 0];
+function paintDiverging(id, vals, scale) {
+  const c = document.getElementById(id).getContext('2d');
+  const img = c.createImageData(28, 28);
+  for (let i = 0; i < 784; i++) {
+    const t = Math.max(-1, Math.min(1, vals[i] / scale));
+    const col = t >= 0 ? C7 : C5, a = Math.abs(t);
+    for (let k = 0; k < 3; k++) img.data[4 * i + k] = Math.round(255 + (col[k] - 255) * a);
+    img.data[4 * i + 3] = 255;
+  }
+  c.putImageData(img, 0, 0);
+}
+let wMax = 0;
+for (const v of W) wMax = Math.max(wMax, Math.abs(v));
+paintDiverging('mapW', W, wMax * 0.8);
+
+// ---------- Curva sigmoide ----------
+const svg = document.getElementById('sigmoid');
+const ZR = 8, SX = z => 20 + (z + ZR) / (2 * ZR) * 290, SY = p => 112 - p * 96;
+(function drawSigmoid() {
+  let d = '';
+  for (let z = -ZR; z <= ZR + 1e-9; z += 0.25) d += (d ? 'L' : 'M') + SX(z).toFixed(1) + ' ' + SY(sigmoid(z)).toFixed(1);
+  svg.innerHTML = `
+    <rect x="${SX(-ZR)}" y="${SY(1)}" width="${SX(0) - SX(-ZR)}" height="${SY(0) - SY(1)}" fill="#e8f1f8"/>
+    <rect x="${SX(0)}" y="${SY(1)}" width="${SX(ZR) - SX(0)}" height="${SY(0) - SY(1)}" fill="#fff3e0"/>
+    <line x1="${SX(-ZR)}" x2="${SX(ZR)}" y1="${SY(0)}" y2="${SY(0)}" stroke="#c4ccd4"/>
+    <line x1="${SX(-ZR)}" x2="${SX(ZR)}" y1="${SY(.5)}" y2="${SY(.5)}" stroke="#c4ccd4" stroke-dasharray="3 3"/>
+    <line x1="${SX(0)}" x2="${SX(0)}" y1="${SY(0)}" y2="${SY(1)}" stroke="#c4ccd4"/>
+    <g font-family="system-ui, sans-serif" font-size="11" fill="#5d6875">
+      <text x="${SX(-ZR) + 6}" y="${SY(1) + 14}" fill="#0266a2" font-weight="700">«5»</text>
+      <text x="${SX(ZR) - 6}" y="${SY(1) + 14}" text-anchor="end" fill="#b86b00" font-weight="700">«7»</text>
+      <text x="${SX(ZR)}" y="${SY(0) + 14}" text-anchor="end">z →</text>
+      <text x="${SX(0)}" y="${SY(0) + 14}" text-anchor="middle">0</text>
+      <text x="${SX(-ZR) - 4}" y="${SY(1) + 4}" text-anchor="end">1</text>
+      <text x="${SX(-ZR) - 4}" y="${SY(0) + 4}" text-anchor="end">0</text>
+    </g>
+    <path d="${d}" fill="none" stroke="#1b2430" stroke-width="2"/>
+    <g id="pt" style="display:none">
+      <line id="ptl" stroke="#1b2430" stroke-dasharray="2 2" opacity=".5"/>
+      <circle id="ptc" r="6" fill="#fff" stroke="#1b2430" stroke-width="3"/>
+    </g>`;
+})();
+function placePoint(z, p) {
+  const g = document.getElementById('pt');
+  if (z === null) { g.style.display = 'none'; return; }
+  const zc = Math.max(-ZR, Math.min(ZR, z));
+  const x = SX(zc), y = SY(sigmoid(zc));
+  const l = document.getElementById('ptl'), c = document.getElementById('ptc');
+  l.setAttribute('x1', x); l.setAttribute('x2', x); l.setAttribute('y1', SY(0)); l.setAttribute('y2', y);
+  c.setAttribute('cx', x); c.setAttribute('cy', y);
+  c.setAttribute('stroke', p > .5 ? '#b86b00' : '#0266a2');
+  g.style.display = '';
+}
+
+// ---------- Dibujo ----------
+const draw = document.getElementById('draw');
+const ctx = draw.getContext('2d');
+const thick = document.getElementById('thick');
+const digitEl = document.getElementById('digit');
+const confEl = document.getElementById('conf');
+const needle = document.getElementById('needle');
+const eqEl = document.getElementById('eq');
+const EQ0 = eqEl.innerHTML;
+
+function resetCanvas() {
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, draw.width, draw.height);
+}
+resetCanvas();
+
+let drawing = false, last = null, dirty = false, hasInk = false;
+function pos(e) {
+  const r = draw.getBoundingClientRect();
+  return { x: (e.clientX - r.left) * draw.width / r.width, y: (e.clientY - r.top) * draw.height / r.height };
+}
+function stroke(a, b) {
+  ctx.strokeStyle = '#fff';
+  ctx.lineWidth = +thick.value;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+  ctx.moveTo(a.x, a.y);
+  ctx.lineTo(b.x, b.y);
+  ctx.stroke();
+  hasInk = true;
+  dirty = true;
+}
+draw.addEventListener('pointerdown', e => {
+  drawing = true;
+  draw.setPointerCapture(e.pointerId);
+  last = pos(e);
+  stroke(last, last);
+});
+draw.addEventListener('pointermove', e => {
+  if (!drawing) return;
+  const p = pos(e);
+  stroke(last, p);
+  last = p;
+});
+['pointerup', 'pointercancel'].forEach(t => draw.addEventListener(t, () => { drawing = false; }));
+
+const blank = new Float32Array(784);
+function clearAll() {
+  resetCanvas();
+  hasInk = false;
+  digitEl.textContent = '–';
+  digitEl.className = '';
+  confEl.textContent = 'Dibuja un 5 o un 7 para empezar.';
+  needle.style.display = 'none';
+  eqEl.innerHTML = EQ0;
+  placePoint(null);
+  const cx = document.getElementById('mapX').getContext('2d');
+  cx.fillStyle = '#000'; cx.fillRect(0, 0, 28, 28);
+  paintDiverging('mapC', blank, 1);
+}
+document.getElementById('clear').addEventListener('click', clearAll);
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' || e.key === 'Delete' || e.key === 'Backspace') clearAll();
+});
+
+// ---------- Preprocesado (idéntico al de la versión con la red convolucional) ----------
+// Escala fija 280 → 28 (÷10) y traslación para llevar el centro de masas al centro (14,14),
+// igual que se preparó el conjunto MNIST.
+const tmp = document.createElement('canvas');
+tmp.width = tmp.height = 28;
+const tctx = tmp.getContext('2d', { willReadFrequently: true });
+const mid = document.createElement('canvas');
+mid.width = mid.height = 112;
+const mctx = mid.getContext('2d');
+
+function preprocess() {
+  mctx.imageSmoothingEnabled = true; mctx.imageSmoothingQuality = 'high';
+  mctx.drawImage(draw, 0, 0, 112, 112);
+  tctx.imageSmoothingEnabled = true; tctx.imageSmoothingQuality = 'high';
+  tctx.fillStyle = '#000'; tctx.fillRect(0, 0, 28, 28);
+  tctx.drawImage(mid, 0, 0, 28, 28);
+
+  let px = tctx.getImageData(0, 0, 28, 28).data;
+  let m = 0, cx = 0, cy = 0;
+  for (let y = 0; y < 28; y++)
+    for (let x = 0; x < 28; x++) {
+      const v = px[4 * (y * 28 + x)];
+      m += v; cx += v * x; cy += v * y;
+    }
+  if (m === 0) return null;
+  const sx = Math.round(13.5 - cx / m), sy = Math.round(13.5 - cy / m);
+
+  tctx.fillRect(0, 0, 28, 28);
+  tctx.drawImage(mid, 0, 0, 112, 112, sx, sy, 28, 28);
+
+  const data = tctx.getImageData(0, 0, 28, 28);
+  px = data.data;
+  const x = new Float32Array(784);
+  for (let i = 0; i < 784; i++) x[i] = px[4 * i] / 255;
+  document.getElementById('mapX').getContext('2d').putImageData(data, 0, 0);
+  return x;
+}
+
+// ---------- Predicción ----------
+function predict() {
+  const x = preprocess();
+  if (!x) return;
+  const { z, p, contrib } = neuron(x);
+  const is7 = p > 0.5;
+  digitEl.textContent = is7 ? '7' : '5';
+  digitEl.className = is7 ? 'is7' : 'is5';
+  const conf = is7 ? p : 1 - p;
+  confEl.textContent = `Confianza: ${(conf * 100).toLocaleString('es-ES', { maximumFractionDigits: 1 })} %`;
+  needle.style.display = 'block';
+  needle.style.left = (p * 100).toFixed(1) + '%';
+
+  let pos = 0, neg = 0;
+  for (const c of contrib) c > 0 ? pos += c : neg += c;
+  const s = v => (v < 0 ? '− ' : '+ ') + fmt(Math.abs(v));
+  eqEl.innerHTML =
+    `z = <span class="pos">${fmt(pos)}</span> <span class="neg">${s(neg)}</span> ${s(B)} <span style="color:#5d6875">(b)</span> = <b>${fmt(z)}</b><br>` +
+    `p = σ(${fmt(z)}) = <b>${fmt(p, 3)}</b> → <b class="${is7 ? 'pos' : 'neg'}">«${is7 ? 7 : 5}»</b>`;
+  placePoint(z, p);
+
+  let cMax = 1e-6;
+  for (const c of contrib) cMax = Math.max(cMax, Math.abs(c));
+  paintDiverging('mapC', contrib, cMax);
+}
+
+function loop() {
+  if (dirty && hasInk) { dirty = false; predict(); }
+  requestAnimationFrame(loop);
+}
+clearAll();
+loop();
+</script>
+</body>
+</html>

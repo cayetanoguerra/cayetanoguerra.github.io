@@ -1,0 +1,797 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cómo genera texto un GPT</title>
+<style>
+  :root {
+    color-scheme: light;
+    /* Colores institucionales ULPGC */
+    --blue: #0266a2; --blue-dark: #014d7a; --blue-soft: #e8f1f8;
+    --orange: #ff9600; --orange-dark: #b86b00; --orange-soft: #fff3e0;
+    --bg: #f4f6f8; --panel: #ffffff; --ink: #1b2430; --muted: #5d6875;
+    --line: #e1e6eb;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .topbar { background: var(--panel); border-top: 4px solid var(--blue); border-bottom: 1px solid var(--line); }
+  header { max-width: 1240px; margin: 0 auto; padding: 18px 16px 20px;
+           display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; }
+  .logo { height: 30px; width: auto; opacity: .9; flex-shrink: 0; margin-top: 4px; }
+  h1 { font-size: 26px; margin: 0 0 6px; letter-spacing: -.01em; color: var(--blue); }
+  h1::after { content: ""; display: block; width: 48px; height: 3px; background: var(--orange); border-radius: 2px; margin-top: 6px; }
+  header p { margin: 0; color: var(--muted); max-width: 82ch; }
+  main { max-width: 1240px; margin: 0 auto; padding: 16px; display: grid; gap: 16px;
+         grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; }
+  .wide { grid-column: 1 / -1; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px;
+          box-shadow: 0 1px 2px rgba(16, 40, 64, .04); min-width: 0; }
+  .card h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: var(--blue);
+             margin: 0 0 12px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  .card h2::before { content: ""; width: 4px; height: 14px; background: var(--orange); border-radius: 2px; }
+  .note { color: var(--muted); font-size: 13px; margin: 8px 0 0; }
+  .note b { color: var(--ink); }
+
+  button, select, input[type=text] { font: inherit; padding: 7px 14px; border-radius: 8px; border: 1px solid var(--line);
+           background: var(--bg); color: var(--ink); transition: background .15s, border-color .15s; }
+  button, select { cursor: pointer; }
+  button:hover { border-color: #c4ccd4; }
+  button:disabled { opacity: .45; cursor: default; }
+  button.primary { background: var(--blue); color: #fff; border-color: var(--blue); font-weight: 600; }
+  button.primary:hover { background: var(--blue-dark); border-color: var(--blue-dark); }
+  button.primary.running { background: var(--orange-dark); border-color: var(--orange-dark); }
+  button:focus-visible, select:focus-visible, input:focus-visible { outline: 3px solid var(--orange); outline-offset: 2px; }
+  input[type=text] { background: #fff; min-width: 0; }
+  input[type=range] { accent-color: var(--orange); }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .lbl { color: var(--muted); font-size: 13px; }
+  .sm { padding: 4px 10px; font-size: 13px; }
+
+  /* ---------- Controles ---------- */
+  .controls { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 14px 28px; }
+  .presets button { padding: 4px 11px; font-size: 13px; background: #fff; }
+  .presets button:hover { background: var(--blue-soft); }
+  .knob { display: grid; grid-template-columns: 110px minmax(0, 1fr) 64px; align-items: center; gap: 10px; }
+  .knob b { font-variant-numeric: tabular-nums; text-align: right; }
+  .warn { color: #c92a2a; font-size: 13px; min-height: 18px; margin: 4px 0 0; }
+
+  /* ---------- Escenario ---------- */
+  .phases { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+  .phase { display: flex; align-items: center; gap: 7px; padding: 5px 12px 5px 6px; border-radius: 999px;
+           background: var(--bg); color: var(--muted); font-size: 13px; transition: background .25s, color .25s; }
+  .phase span { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font-size: 11px;
+                font-weight: 700; background: #fff; border: 1px solid var(--line); }
+  .phase.on { background: var(--orange); color: #fff; font-weight: 600; }
+  .phase.on span { color: var(--orange-dark); border-color: #fff; }
+
+  .stage { position: relative; display: grid; gap: 22px 44px; padding-right: 46px;
+           grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr); grid-template-areas: "ctx ctx" "box out"; }
+  #overlay { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; z-index: 1; }
+
+  /* Contexto */
+  .ctx { grid-area: ctx; position: relative; background: var(--bg); border-radius: 12px; padding: 50px 14px 14px; }
+  .ctx-head { position: absolute; top: 10px; left: 14px; right: 14px; display: flex; justify-content: space-between;
+              font-size: 12px; color: var(--muted); }
+  .ctx-head b { color: var(--blue); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px 6px; align-items: flex-end; min-height: 48px; position: relative; z-index: 2; }
+  .chip { display: inline-flex; flex-direction: column; align-items: center; padding: 4px 9px 3px; border-radius: 8px;
+          background: #fff; border: 1.5px solid #cfdbe6; font-weight: 600; line-height: 1.15; transition: background .3s, border-color .3s, opacity .3s, transform .3s; }
+  .chip small { font-size: 10px; font-weight: 500; color: #9aa5b1; font-variant-numeric: tabular-nums; }
+  .chip.gen { border-color: #ffc56b; background: var(--orange-soft); }
+  .chip.special { color: var(--muted); font-style: italic; font-weight: 500; }
+  .chip.pulse { animation: pulse .5s ease; }
+  .chip.last { box-shadow: 0 0 0 2px var(--orange); }
+  @keyframes pulse { 50% { transform: translateY(-4px); background: var(--blue-soft); } }
+  .outside { font-size: 12px; color: var(--muted); align-self: center; padding: 0 6px; border-right: 2px dashed #c4ccd4; margin-right: 4px; }
+
+  /* Caja GPT */
+  .boxwrap { grid-area: box; display: flex; flex-direction: column; align-items: stretch; }
+  .gpt { position: relative; border-radius: 16px; background: linear-gradient(160deg, #0b3a5c, #012a44);
+         color: #fff; padding: 16px; min-height: 360px; overflow: hidden; box-shadow: inset 0 0 0 1px rgba(255,255,255,.08); }
+  .gpt-title { display: flex; justify-content: space-between; align-items: center; }
+  .gpt-title b { font-size: 26px; letter-spacing: .04em; }
+  .gpt-title button { background: rgba(255,255,255,.1); color: #fff; border-color: rgba(255,255,255,.25); padding: 4px 10px; font-size: 12px; }
+  .gpt-title button:hover { background: rgba(255,255,255,.2); }
+  .gpt .closed { position: absolute; inset: 60px 16px 16px; display: grid; place-items: center; text-align: center; transition: opacity .4s; }
+  .gpt .closed .q { font-size: 80px; font-weight: 800; color: rgba(255,255,255,.12); line-height: 1; }
+  .gpt .closed p { margin: 6px 0 0; font-size: 13px; color: rgba(255,255,255,.7); max-width: 30ch; }
+  .gpt .inside { margin-top: 12px; display: flex; flex-direction: column-reverse; gap: 6px; transition: opacity .4s; }
+  .gpt.isclosed .inside { opacity: 0; pointer-events: none; }
+  .gpt:not(.isclosed) .closed { opacity: 0; pointer-events: none; }
+  .layer { position: relative; border-radius: 8px; padding: 6px 10px; font-size: 12.5px; background: rgba(255,255,255,.08);
+           border: 1px solid rgba(255,255,255,.12); display: flex; justify-content: space-between; gap: 8px; transition: background .2s, box-shadow .2s; }
+  .layer small { color: rgba(255,255,255,.6); }
+  .layer.block { background: rgba(2,102,162,.45); }
+  .layer.hot { background: var(--orange); border-color: #ffd29a; box-shadow: 0 0 18px rgba(255,150,0,.6); color: #fff; }
+  .layer.hot small { color: #fff; }
+  .vecs { display: flex; gap: 3px; justify-content: center; align-items: flex-end; min-height: 46px; padding-top: 2px; }
+  .vec { display: grid; grid-template-rows: repeat(8, 4px); gap: 1px; width: 8px; opacity: 0; transform: translateY(10px); transition: opacity .3s, transform .3s; }
+  .vec.in { opacity: 1; transform: none; }
+  .vec i { display: block; border-radius: 1px; }
+  .vec.lastv { outline: 2px solid var(--orange); outline-offset: 1px; }
+  .gpt.busy { animation: glow 1.2s ease-in-out infinite; }
+  @keyframes glow { 50% { box-shadow: inset 0 0 0 1px rgba(255,255,255,.1), 0 0 26px rgba(255,150,0,.45); } }
+  .scan { position: absolute; left: 0; right: 0; height: 60px; pointer-events: none; opacity: 0;
+          background: linear-gradient(0deg, transparent, rgba(255,150,0,.35), transparent); }
+  .boxcap { font-size: 12px; color: var(--muted); margin-top: 6px; text-align: center; }
+
+  /* Salida */
+  .out { grid-area: out; display: flex; flex-direction: column; gap: 14px; }
+  .out h3 { margin: 0 0 6px; font-size: 13px; color: var(--muted); font-weight: 600; display: flex; justify-content: space-between; gap: 8px; }
+  .out h3 small { font-weight: 400; }
+  .bars { display: grid; gap: 3px; }
+  .bar { display: grid; grid-template-columns: 92px minmax(0, 1fr) 54px 68px; align-items: center; gap: 8px; font-size: 13px;
+         font-variant-numeric: tabular-nums; border-radius: 6px; padding: 1px 4px; transition: background .2s; }
+  .bar .w { text-align: right; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bar .track { height: 14px; background: var(--bg); border-radius: 3px; overflow: hidden; }
+  .bar .fill { height: 100%; width: 0; background: var(--blue); border-radius: 3px; transition: width .45s cubic-bezier(.2,.8,.2,1); }
+  .bar .pc { text-align: right; }
+  .bar .lg { color: #9aa5b1; font-size: 11px; text-align: right; white-space: nowrap; }
+  .bar.cut { opacity: .38; }
+  .bar.cut .fill { background: #9aa5b1; }
+  .bar.pick { background: var(--orange-soft); }
+  .bar.pick .fill { background: var(--orange); }
+  .bar.pick .w { color: var(--orange-dark); }
+  #vocab { width: 100%; height: 54px; display: block; }
+  .roulette { position: relative; height: 34px; border-radius: 8px; overflow: hidden; display: flex; background: var(--bg); }
+  .roulette div { height: 100%; display: grid; place-items: center; font-size: 11px; color: #fff; font-weight: 700; overflow: hidden;
+                  white-space: nowrap; border-right: 1px solid rgba(255,255,255,.7); }
+  .needle-wrap { position: relative; height: 12px; }
+  #needle { position: absolute; top: -2px; width: 0; height: 52px; left: 0; z-index: 3; }
+  #needle::before { content: ""; position: absolute; left: -1.5px; top: 6px; width: 3px; height: 42px; background: var(--ink); border-radius: 2px; }
+  #needle::after { content: ""; position: absolute; left: -7px; top: -4px; border: 7px solid transparent; border-top: 10px solid var(--ink); }
+  .rinfo { font-size: 13px; color: var(--muted); margin-top: 6px; min-height: 20px; font-variant-numeric: tabular-nums; }
+  .rinfo b { color: var(--orange-dark); }
+  .picked { display: flex; align-items: center; gap: 10px; min-height: 40px; }
+  .picked .slot { min-width: 90px; height: 36px; border: 2px dashed #c4ccd4; border-radius: 9px; display: grid; place-items: center; color: #9aa5b1; font-size: 12px; }
+  .fly { position: absolute; z-index: 5; pointer-events: none; margin: 0; background: var(--orange); color: #fff; border-color: var(--orange-dark);
+         box-shadow: 0 6px 18px rgba(184,107,0,.35); }
+  .fly small { color: #fff; }
+
+  /* Texto generado e historial */
+  .gentext { font-size: 19px; line-height: 1.7; min-height: 70px; }
+  .gentext span { border-radius: 4px; padding: 0 1px; }
+  .gentext .g { color: var(--orange-dark); background: var(--orange-soft); }
+  .gentext .old { opacity: .45; }
+  .gentext .cursor { display: inline-block; width: 2px; height: 1.1em; background: var(--orange); vertical-align: -3px; animation: blink 1s steps(2) infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+  .hist { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+  .hist th { text-align: left; color: var(--muted); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; padding: 4px 6px; border-bottom: 1px solid var(--line); }
+  .hist td { padding: 4px 6px; border-bottom: 1px solid #f0f2f4; }
+  .hist td.tok { font-weight: 700; color: var(--orange-dark); }
+  .hist .rk1 { color: #2f9e44; font-weight: 600; }
+  .hist .rkn { color: #c92a2a; font-weight: 600; }
+  .histwrap { max-height: 260px; overflow-y: auto; }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px; }
+  .stat { background: var(--bg); border-radius: 8px; padding: 6px 10px; }
+  .stat span { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+  .stat b { font-size: 18px; font-variant-numeric: tabular-nums; }
+
+  .explain { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+  .explain h3 { font-size: 14px; margin: 0 0 3px; }
+  .explain p { margin: 0; color: var(--muted); font-size: 13px; }
+  .explain b { color: var(--ink); }
+  .honest { margin-top: 14px; padding: 10px 14px; background: var(--blue-soft); border-radius: 10px; font-size: 13px; color: var(--blue-dark); }
+
+  @media (max-width: 980px) {
+    header { flex-direction: column-reverse; gap: 14px; }
+    .logo { height: 24px; }
+    main { grid-template-columns: minmax(0, 1fr); }
+    .controls { grid-template-columns: minmax(0, 1fr); }
+    .stage { grid-template-columns: minmax(0, 1fr); grid-template-areas: "ctx" "box" "out"; padding-right: 0; }
+    .explain { grid-template-columns: minmax(0, 1fr); }
+    #overlay .loop { display: none; }
+  }
+  @media (max-width: 520px) {
+    .knob { grid-template-columns: 90px minmax(0, 1fr) 54px; }
+    .bar { grid-template-columns: 76px minmax(0, 1fr) 46px; }
+    .bar .lg { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; } }
+</style>
+</head>
+<body>
+<div class="topbar">
+<header>
+  <div>
+    <h1>¿Cómo genera texto un modelo GPT?</h1>
+    <p>Un GPT es una caja que recibe un texto (el <b>contexto</b>) y devuelve una <b>distribución de probabilidad</b>
+       sobre todas las palabras de su vocabulario: qué probabilidad tiene cada una de ser la siguiente. Se elige una,
+       se añade al contexto y se vuelve a empezar. Repitiendo este ciclo, palabra a palabra, el modelo escribe.</p>
+  </div>
+  <img class="logo" src="logo-ulpgc.jpg" alt="ULPGC · Universidad de Las Palmas de Gran Canaria">
+</header>
+</div>
+
+<main>
+  <!-- ================= CONTROLES ================= -->
+  <section class="card wide">
+    <h2>Texto inicial y parámetros</h2>
+    <div class="controls">
+      <div>
+        <div class="row presets" id="presets"><span class="lbl">Empieza con:</span></div>
+        <div class="row" style="margin-top:10px">
+          <input type="text" id="prompt" placeholder="o escribe tu propio comienzo…" style="flex:1" aria-label="Texto inicial">
+          <button id="use">Usar este texto</button>
+        </div>
+        <p class="warn" id="warn"></p>
+        <div class="row">
+          <button id="step" class="primary">Siguiente token</button>
+          <button id="auto">▶ Generar</button>
+          <button id="restart">Reiniciar</button>
+          <label class="lbl" for="speed" style="margin-left:6px">Animación</label>
+          <select id="speed" class="sm">
+            <option value="2">lenta</option><option value="1" selected>normal</option><option value="0.35">rápida</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:grid;gap:8px">
+        <div class="knob"><label class="lbl" for="temp">Temperatura</label><input id="temp" type="range" min="0" max="2" step="0.05" value="1"><b id="vtemp"></b></div>
+        <div class="knob"><label class="lbl" for="topk">Top-k</label>
+          <select id="topk" class="sm"><option value="0" selected>todo el vocabulario</option><option value="20">20</option><option value="10">10</option><option value="5">5</option><option value="3">3</option><option value="1">1 (voraz)</option></select><span></span></div>
+        <div class="knob"><label class="lbl" for="win">Ventana de contexto</label>
+          <select id="win" class="sm"><option value="8">8 tokens</option><option value="12" selected>12 tokens</option><option value="20">20 tokens</option></select><span></span></div>
+        <p class="note" style="margin:0">Mueve la temperatura con el modelo parado y verás cómo cambia la distribución al instante.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= ESCENARIO ================= -->
+  <section class="card wide">
+    <h2>El ciclo de generación</h2>
+    <div class="phases" id="phases">
+      <div class="phase" data-p="1"><span>1</span>El contexto entra en la caja</div>
+      <div class="phase" data-p="2"><span>2</span>La red procesa (atención)</div>
+      <div class="phase" data-p="3"><span>3</span>Probabilidades de salida</div>
+      <div class="phase" data-p="4"><span>4</span>Se elige un token</div>
+      <div class="phase" data-p="5"><span>5</span>El token vuelve al contexto</div>
+    </div>
+    <div class="stage" id="stage">
+      <svg id="overlay" aria-hidden="true"></svg>
+
+      <div class="ctx" id="ctxbox">
+        <div class="ctx-head"><span><b>Contexto</b>: lo que el modelo ve (tokens con su número en el vocabulario)</span><span><span id="attlbl" style="color:#b86b00;margin-right:12px"></span><span id="ctxcount"></span></span></div>
+        <div class="chips" id="chips"></div>
+      </div>
+
+      <div class="boxwrap">
+        <div class="gpt isclosed" id="gpt">
+          <div class="scan" id="scan"></div>
+          <div class="gpt-title"><b>GPT</b><button id="open">Mirar dentro</button></div>
+          <div class="closed">
+            <div><div class="q">?</div>
+            <p>Una caja que convierte una secuencia de tokens en una probabilidad para cada token del vocabulario.</p></div>
+          </div>
+          <div class="inside" id="layers">
+            <div class="vecs" id="vecs" title="Cada token se convierte en un vector de números (embedding)"></div>
+            <div class="layer" data-l="0">Embeddings de token + posición<small>token → vector</small></div>
+            <div class="layer block" data-l="1">Bloque transformer 1<small>atención + MLP</small></div>
+            <div class="layer block" data-l="2">Bloque transformer 2<small>atención + MLP</small></div>
+            <div class="layer block" data-l="3">⋮ &nbsp;(en un GPT real, de 12 a más de 100 bloques)<small></small></div>
+            <div class="layer block" data-l="4">Bloque transformer N<small>atención + MLP</small></div>
+            <div class="layer" data-l="5">Capa de salida<small>vector → 1 logit por token</small></div>
+            <div class="layer" data-l="6">Softmax<small>logits → probabilidades</small></div>
+          </div>
+        </div>
+        <div class="boxcap">Solo el vector de la <b style="color:#b86b00">última posición</b> se usa para predecir el siguiente token.</div>
+      </div>
+
+      <div class="out" id="outpanel">
+        <div>
+          <h3>Los 10 tokens más probables <small id="vstat"></small></h3>
+          <div class="bars" id="bars"></div>
+        </div>
+        <div>
+          <h3>Todo el vocabulario, ordenado por probabilidad <small id="vocabn"></small></h3>
+          <svg id="vocab" viewBox="0 0 600 54" preserveAspectRatio="none" aria-label="Probabilidad de cada token del vocabulario"></svg>
+        </div>
+        <div>
+          <h3>Muestreo: un número al azar entre 0 y 1 elige el token <small>cada tramo mide su probabilidad</small></h3>
+          <div class="needle-wrap"><div id="needle"></div></div>
+          <div class="roulette" id="roulette"></div>
+          <div class="rinfo" id="rinfo"></div>
+        </div>
+        <div class="picked"><span class="lbl">Token elegido:</span><div class="slot" id="slot">—</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= TEXTO GENERADO ================= -->
+  <section class="card">
+    <h2>Texto generado</h2>
+    <div class="gentext" id="gentext"></div>
+    <p class="note">En <span style="color:#b86b00;background:#fff3e0;padding:0 3px;border-radius:3px">naranja</span>, lo que ha escrito el modelo.
+      Las palabras atenuadas ya han salido de la ventana de contexto: el modelo ya no las ve.</p>
+  </section>
+
+  <section class="card">
+    <h2>Historial de decisiones</h2>
+    <div class="stats">
+      <div class="stat"><span>Tokens generados</span><b id="ngen">0</b></div>
+      <div class="stat"><span>No era el más probable</span><b id="nnot">0</b></div>
+      <div class="stat"><span>Prob. de toda la frase</span><b id="pseq">–</b></div>
+    </div>
+    <div class="histwrap"><table class="hist"><thead><tr><th>Paso</th><th>Token elegido</th><th>Probabilidad</th><th>Puesto</th></tr></thead><tbody id="hist"></tbody></table></div>
+    <p class="note">La probabilidad de la frase completa es el producto de las probabilidades de cada paso.</p>
+  </section>
+
+  <section class="card wide">
+    <h2>¿Qué está pasando?</h2>
+    <div class="explain">
+      <div><h3>Tokens</h3><p>El texto se trocea en <b>tokens</b> y cada uno se identifica por su número en el vocabulario.
+        Aquí cada token es una palabra o un signo; un GPT real usa trozos de palabra y tiene un vocabulario de unos 50 000 a
+        200 000 tokens, así que puede escribir cualquier palabra.</p></div>
+      <div><h3>Una distribución, no una respuesta</h3><p>La caja no devuelve «la» siguiente palabra: devuelve una
+        probabilidad para <b>cada</b> token del vocabulario. Internamente calcula una puntuación (<b>logit</b>) por token y la
+        función <b>softmax</b> la convierte en probabilidades que suman 1.</p></div>
+      <div><h3>Generación autorregresiva</h3><p>El token elegido se añade al contexto y la caja se vuelve a ejecutar con el
+        contexto ampliado. El modelo no planifica la frase entera: decide un token cada vez, condicionado por todo lo anterior.</p></div>
+      <div><h3>Temperatura</h3><p>Divide los logits antes del softmax. Con temperatura baja la distribución se concentra en
+        los tokens más probables (texto predecible y repetitivo); con temperatura alta se aplana (texto más variado, pero con
+        más errores). Con temperatura 0 siempre se elige el más probable.</p></div>
+      <div><h3>Top-k</h3><p>Antes de sortear, se descartan todos los tokens salvo los <i>k</i> más probables y se reparten
+        de nuevo las probabilidades. Evita que salga alguno de los miles de tokens con probabilidad diminuta.</p></div>
+      <div><h3>Ventana de contexto y atención</h3><p>El modelo solo ve los últimos tokens que caben en su <b>ventana</b>.
+        Dentro de ella, el mecanismo de <b>atención</b> decide cuánto mira cada token a los anteriores; los arcos de arriba lo
+        ilustran para el último token.</p></div>
+    </div>
+    <div class="honest"><b>Qué hay realmente dentro de esta caja.</b> Un GPT de verdad no cabe en una página web. Esta caja
+      contiene un modelo de lenguaje pequeño (de n-gramas, que mira los 3 tokens anteriores) entrenado con unas 50 frases
+      de ejemplo, y los arcos de atención son ilustrativos. Pero lo que se ve fuera de la caja, entrada de contexto, distribución
+      sobre el vocabulario, temperatura, top-k, muestreo y reentrada, funciona exactamente igual que en un GPT.</div>
+  </section>
+</main>
+
+<script>
+// =====================================================================
+//  Texto de entrenamiento del modelo de la caja
+// =====================================================================
+const CORPUS = `había una vez un gato que vivía en una casa junto al mar .
+el gato dormía al sol todas las tardes .
+el gato miraba el mar desde la ventana .
+un día , el gato decidió salir a explorar la playa .
+en la playa , el gato encontró un pez de colores .
+el pez de colores vivía en el mar con su familia .
+el gato y el pez se hicieron amigos .
+todas las tardes , el gato visitaba al pez en la playa .
+había una vez una niña que vivía en una isla .
+la niña miraba el mar todas las mañanas .
+un día , la niña encontró un barco en la playa .
+la niña subió al barco y navegó por el mar .
+el barco llegó a una isla llena de árboles .
+en la isla vivía un perro muy simpático .
+el perro y la niña se hicieron amigos .
+en canarias hace sol todo el año .
+en canarias hay playas de arena negra .
+en canarias hay volcanes y montañas .
+la isla tiene playas de arena blanca y de arena negra .
+el teide es el volcán más alto de canarias .
+el mar de canarias es azul y tranquilo .
+hoy hace sol y el mar está tranquilo .
+hoy hace frío y el cielo está gris .
+mañana hará sol en la playa .
+el modelo lee el texto y predice la siguiente palabra .
+el modelo elige una palabra y la añade al texto .
+el modelo no piensa , solo calcula probabilidades .
+el modelo calcula la probabilidad de cada palabra del vocabulario .
+la red neuronal aprende de los datos .
+la red neuronal aprende a predecir la siguiente palabra .
+una red neuronal tiene muchas capas .
+cada capa transforma los números que recibe .
+el texto se divide en tokens .
+cada token se convierte en un vector de números .
+la inteligencia artificial aprende de los datos .
+la inteligencia artificial predice la siguiente palabra .
+el estudiante lee el libro en la biblioteca .
+el estudiante aprende física y matemáticas .
+la profesora explica la lección en clase .
+la profesora explica cómo aprende una red neuronal .
+los estudiantes escuchan a la profesora con atención .
+la atención permite al modelo mirar las palabras anteriores .
+el perro come carne y el gato come pescado .
+el perro juega en el parque todas las tardes .
+el perro duerme en la casa .
+el sol sale por la mañana y se esconde por la tarde .
+por la noche , el cielo se llena de estrellas .
+desde el teide se ven muchas estrellas .`;
+const BOS = '<inicio>', EOS = '<fin>';
+const SENTS = CORPUS.trim().split('\n').map(s => [BOS, ...s.trim().split(/\s+/), EOS]);
+const VOCAB = [...new Set(SENTS.flat())];
+const V = VOCAB.length;
+const ID = Object.fromEntries(VOCAB.map((w, i) => [w, i]));
+const NG = 4;   // mira hasta 3 tokens anteriores
+const COUNTS = Array.from({ length: NG }, () => new Map());
+for (const s of SENTS) for (let i = 1; i < s.length; i++) for (let n = 0; n < NG && i - n >= 0; n++) {
+  const key = s.slice(i - n, i).join(' ');
+  let m = COUNTS[n].get(key); if (!m) COUNTS[n].set(key, m = new Map());
+  m.set(s[i], (m.get(s[i]) || 0) + 1);
+}
+// Probabilidad del siguiente token: interpolación de n-gramas (de 0 a 3 tokens de contexto)
+function modelProbs(ctx) {
+  let p = new Float64Array(V).fill(1 / V), used = 0;
+  for (let n = 0; n < NG && n <= ctx.length; n++) {
+    const m = COUNTS[n].get(ctx.slice(ctx.length - n).join(' '));
+    if (!m) break;
+    let tot = 0; for (const c of m.values()) tot += c;
+    const lam = tot / (tot + 0.3), q = new Float64Array(V);
+    for (const [w, c] of m) q[ID[w]] = c / tot;
+    for (let k = 0; k < V; k++) p[k] = lam * q[k] + (1 - lam) * p[k];
+    used = n;
+  }
+  return { logits: Array.from(p, v => Math.log(v)), used };
+}
+
+// =====================================================================
+//  Estado
+// =====================================================================
+const $ = id => document.getElementById(id);
+const fmt = (v, d = 2) => (Object.is(v, -0) ? 0 : v).toLocaleString('es-ES', { minimumFractionDigits: d, maximumFractionDigits: d });
+const pct = v => v >= 0.995 ? '100 %' : v < 0.001 ? (v > 0 ? '<0,1 %' : '0 %') : fmt(v * 100, 1) + ' %';
+const show = w => w === BOS ? '⟨inicio⟩' : w === EOS ? '⟨fin⟩' : w;
+const PRESETS = ['había una vez', 'en canarias', 'el modelo', 'la red neuronal', 'hoy hace', 'el gato', 'la profesora'];
+
+let tokens = [];         // todos los tokens (incluye ⟨inicio⟩)
+let nPrompt = 0;         // cuántos son del texto inicial
+let history = [];        // {tok, p, rank}
+let cur = null;          // distribución actual {logits, probs, order, used}
+let picked = null;       // índice del token elegido en este paso
+let busy = false, auto = false, finished = false;
+
+const win = () => +$('win').value;
+const visible = () => tokens.slice(Math.max(0, tokens.length - win()));
+
+function computeDist() {
+  const { logits, used } = modelProbs(visible());
+  const T = +$('temp').value, K = +$('topk').value;
+  const order = logits.map((_, i) => i).sort((a, b) => logits[b] - logits[a]);
+  let probs = new Float64Array(V);
+  if (T < 0.02) probs[order[0]] = 1;                         // temperatura 0: voraz
+  else {
+    const m = logits[order[0]] / T; let Z = 0;
+    for (let k = 0; k < V; k++) { probs[k] = Math.exp(logits[k] / T - m); Z += probs[k]; }
+    for (let k = 0; k < V; k++) probs[k] /= Z;
+  }
+  const raw = Float64Array.from(probs);
+  if (K > 0) {
+    const keep = new Set(order.slice(0, K)); let Z = 0;
+    for (let k = 0; k < V; k++) { if (!keep.has(k)) probs[k] = 0; Z += probs[k]; }
+    for (let k = 0; k < V; k++) probs[k] /= Z;
+  }
+  cur = { logits, probs, raw, order, used, K };
+}
+
+// =====================================================================
+//  Dibujo: contexto, vectores, arcos de atención
+// =====================================================================
+function embColor(tok, j) {          // colores deterministas para el "embedding" de cada token
+  let h = (ID[tok] + 1) * 2654435761 ^ (j + 1) * 40503; h = (h ^ (h >>> 13)) * 1274126177; h ^= h >>> 16;
+  const t = ((h >>> 0) % 1000) / 500 - 1;
+  const c = t >= 0 ? [255, 150, 0] : [2, 102, 162], a = Math.abs(t);
+  return `rgb(${c.map(v => Math.round(255 + (v - 255) * a)).join(',')})`;
+}
+function drawContext(opts = {}) {
+  const vis = visible(), hidden = tokens.length - vis.length;
+  const chips = $('chips');
+  let html = hidden > 0 ? `<span class="outside">+${hidden} token${hidden > 1 ? 's' : ''} fuera de la ventana</span>` : '';
+  vis.forEach((t, i) => {
+    const gi = tokens.length - vis.length + i;
+    const cls = ['chip', gi >= nPrompt ? 'gen' : '', t === BOS || t === EOS ? 'special' : '', i === vis.length - 1 ? 'last' : ''].join(' ');
+    html += `<span class="${cls}" data-i="${i}" ${opts.hideLast && i === vis.length - 1 ? 'style="visibility:hidden"' : ''}>${show(t)}<small>#${ID[t]}</small></span>`;
+  });
+  chips.innerHTML = html;
+  $('ctxcount').textContent = `${vis.length} de ${win()} tokens`;
+  // vectores de embedding en la caja
+  $('vecs').innerHTML = vis.map((t, i) => `<div class="vec ${opts.vecsIn ? 'in' : ''} ${i === vis.length - 1 ? 'lastv' : ''}">${Array.from({ length: 8 }, (_, j) => `<i style="background:${embColor(t, j)}"></i>`).join('')}</div>`).join('');
+}
+
+function attentionWeights() {
+  const vis = visible(), L = vis.length, used = cur ? cur.used : 1;
+  const w = vis.map((t, i) => {
+    const d = L - 1 - i;
+    let s = Math.exp(-d / 2.5) * 0.6;
+    if (d < used) s += 1.2 - d * 0.25;          // los tokens que el modelo ha usado de verdad
+    if (t === BOS) s += 0.25;                    // muchos modelos miran mucho al primer token
+    return s;
+  });
+  const Z = w.reduce((a, b) => a + b, 0);
+  return w.map(v => v / Z);
+}
+
+// =====================================================================
+//  Capa superpuesta (flechas y arcos)
+// =====================================================================
+const stage = $('stage'), ov = $('overlay');
+function rel(el) {
+  const s = stage.getBoundingClientRect(), r = el.getBoundingClientRect();
+  return { x: r.left - s.left, y: r.top - s.top, w: r.width, h: r.height, cx: r.left - s.left + r.width / 2, cy: r.top - s.top + r.height / 2 };
+}
+let arcsOn = false;
+function drawOverlay() {
+  const S = stage.getBoundingClientRect();
+  ov.setAttribute('viewBox', `0 0 ${S.width} ${S.height}`);
+  const ctx = rel($('ctxbox')), gpt = rel($('gpt')), out = rel($('outpanel')), slot = rel($('slot'));
+  let s = `<defs><marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#9aa5b1"/></marker>
+           <marker id="aho" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#ff9600"/></marker></defs>`;
+  // contexto → caja
+  s += `<path d="M${gpt.cx} ${ctx.y + ctx.h + 2} L${gpt.cx} ${gpt.y - 4}" stroke="#9aa5b1" stroke-width="2" marker-end="url(#ah)" fill="none"/>`;
+  // caja → salida
+  if (out.x > gpt.x + gpt.w) s += `<path d="M${gpt.x + gpt.w + 4} ${gpt.y + 70} L${out.x - 8} ${gpt.y + 70}" stroke="#9aa5b1" stroke-width="2" marker-end="url(#ah)" fill="none"/>`;
+  // bucle de reentrada: token elegido → contexto
+  const rx = S.width - 18;
+  s += `<path class="loop" d="M${slot.x + slot.w + 6} ${slot.cy} H${rx - 12} Q${rx} ${slot.cy} ${rx} ${slot.cy - 12} V${ctx.cy + 12} Q${rx} ${ctx.cy} ${rx - 12} ${ctx.cy} H${ctx.x + ctx.w + 6}"
+         stroke="#ff9600" stroke-width="2" stroke-dasharray="6 5" fill="none" marker-end="url(#aho)" opacity=".75"/>
+        <text class="loop" x="${rx - 6}" y="${(slot.cy + ctx.cy) / 2}" font-size="12" fill="#b86b00" font-family="system-ui" font-weight="600" text-anchor="middle" transform="rotate(-90 ${rx - 6} ${(slot.cy + ctx.cy) / 2})">se añade al contexto</text>`;
+  $('attlbl').textContent = arcsOn && cur ? '⌒ atención del último token (ilustrativa)' : '';
+  // arcos de atención del último token
+  if (arcsOn && cur) {
+    const chips = [...$('chips').querySelectorAll('.chip')];
+    const w = attentionWeights(), last = chips[chips.length - 1];
+    if (last) {
+      const L = rel(last);
+      chips.forEach((c, i) => {
+        if (i === chips.length - 1) return;
+        const R = rel(c), h = Math.min(40, 12 + Math.abs(L.cx - R.cx) * 0.12);
+        if (Math.abs(R.cy - L.cy) > 10) return;      // solo en la misma línea
+        const y = L.y - 2;
+        s += `<path d="M${L.cx} ${y} C${L.cx} ${y - h}, ${R.cx} ${y - h}, ${R.cx} ${R.y - 2}" fill="none" stroke="#ff9600" stroke-linecap="round"
+               stroke-width="${(1 + w[i] * 12).toFixed(1)}" stroke-opacity="${(0.15 + w[i] * 1.6).toFixed(2)}"/>`;
+      });
+    }
+  }
+  ov.innerHTML = s;
+}
+
+// =====================================================================
+//  Dibujo: distribución de salida
+// =====================================================================
+const barsEl = $('bars');
+for (let i = 0; i < 10; i++) {
+  const r = document.createElement('div'); r.className = 'bar';
+  r.innerHTML = `<span class="w"></span><div class="track"><div class="fill"></div></div><span class="pc"></span><span class="lg"></span>`;
+  barsEl.appendChild(r);
+}
+function drawBars(empty) {
+  const rows = [...barsEl.children];
+  rows.forEach((r, i) => {
+    const k = cur ? cur.order[i] : null;
+    r.className = 'bar';
+    if (!cur || empty) { r.querySelector('.w').textContent = cur ? show(VOCAB[k]) : '–'; r.querySelector('.fill').style.width = '0'; r.querySelector('.pc').textContent = ''; r.querySelector('.lg').textContent = ''; return; }
+    const p = cur.probs[k];
+    if (p === 0) r.classList.add('cut');
+    if (picked === k) r.classList.add('pick');
+    r.querySelector('.w').textContent = show(VOCAB[k]);
+    r.querySelector('.fill').style.width = (p * 100).toFixed(1) + '%';
+    r.querySelector('.pc').textContent = p === 0 ? 'fuera' : pct(p);
+    r.querySelector('.lg').textContent = 'logit ' + fmt(cur.logits[k], 1);
+    r.title = `token #${k} · logit ${fmt(cur.logits[k], 2)} · probabilidad ${pct(p)}`;
+  });
+  // vocabulario completo
+  const W = 600, H = 54, bw = W / V;
+  let s = '';
+  if (cur && !empty) {
+    const mx = cur.probs[cur.order[0]];
+    cur.order.forEach((k, i) => {
+      const p = cur.probs[k], h = p > 0 ? Math.max(1.5, (p / mx) * (H - 4)) : 1;
+      const c = picked === k ? '#ff9600' : p === 0 ? '#d5dbe1' : '#0266a2';
+      s += `<rect x="${(i * bw).toFixed(2)}" y="${(H - h).toFixed(1)}" width="${Math.max(1, bw - 0.6).toFixed(2)}" height="${h.toFixed(1)}" fill="${c}"/>`;
+    });
+  }
+  $('vocab').innerHTML = s + `<line x1="0" x2="${W}" y1="${H - 0.5}" y2="${H - 0.5}" stroke="#c4ccd4"/>`;
+  $('vocabn').textContent = `${V} tokens`;
+  if (cur && !empty) {
+    const n = cur.probs.filter(p => p > 0.01).length;
+    $('vstat').textContent = `${n} de ${V} superan el 1 %`;
+  } else $('vstat').textContent = '';
+}
+
+const SEGC = ['#0266a2', '#ff9600', '#3f86b8', '#ffb347', '#6aa3c9', '#ffc978'];
+let segs = [];
+function drawRoulette(empty) {
+  const R = $('roulette');
+  segs = [];
+  if (!cur || empty) { R.innerHTML = ''; $('needle').style.left = '0'; return; }
+  let acc = 0, html = '', rest = 0;
+  cur.order.forEach((k, i) => {
+    const p = cur.probs[k];
+    if (p <= 0) return;
+    if (p < 0.012) { rest += p; segs.push({ k, a: acc, b: acc + p }); acc += p; return; }
+    segs.push({ k, a: acc, b: acc + p }); acc += p;
+    html += `<div style="width:${(p * 100).toFixed(3)}%;background:${picked === k ? '#b86b00' : SEGC[i % SEGC.length]}" title="${show(VOCAB[k])}: ${pct(p)}">${p > 0.06 ? show(VOCAB[k]) : ''}</div>`;
+  });
+  if (rest > 0) html += `<div style="width:${(rest * 100).toFixed(3)}%;background:#c4ccd4" title="resto de tokens: ${pct(rest)}">${rest > 0.08 ? 'resto' : ''}</div>`;
+  R.innerHTML = html;
+}
+
+// =====================================================================
+//  Texto generado e historial
+// =====================================================================
+function joinTokens(list, cls) {
+  let out = '', capital = true;
+  list.forEach((t, i) => {
+    if (t === BOS) return;
+    if (t === EOS) { out += ` <span class="${cls(i)}" style="color:#9aa5b1">⟨fin⟩</span>`; return; }
+    let w = capital ? t.charAt(0).toUpperCase() + t.slice(1) : t;
+    capital = t === '.';
+    const sp = (t === '.' || t === ',' || out === '') ? '' : ' ';
+    out += `${sp}<span class="${cls(i)}">${w}</span>`;
+  });
+  return out;
+}
+function drawText() {
+  const start = tokens.length - win();
+  $('gentext').innerHTML = joinTokens(tokens, i => [i >= nPrompt ? 'g' : '', i < start ? 'old' : ''].join(' ')) + (finished ? '' : '<span class="cursor"></span>');
+  const tb = $('hist');
+  tb.innerHTML = history.map((h, i) => `<tr><td>${i + 1}</td><td class="tok">${show(h.tok)}</td><td>${pct(h.p)}</td><td class="${h.rank === 1 ? 'rk1' : 'rkn'}">${h.rank}º</td></tr>`).reverse().join('');
+  $('ngen').textContent = history.length;
+  $('nnot').textContent = history.filter(h => h.rank > 1).length;
+  if (history.length) {
+    const lp = history.reduce((a, h) => a + Math.log10(h.p), 0);
+    $('pseq').textContent = lp > -3 ? pct(Math.pow(10, lp)) : `10^${fmt(lp, 1)}`;
+  } else $('pseq').textContent = '–';
+}
+
+// =====================================================================
+//  Animación de un paso
+// =====================================================================
+const speed = () => +$('speed').value;
+const sleep = ms => new Promise(r => setTimeout(r, ms * speed()));
+function setPhase(n) { document.querySelectorAll('.phase').forEach(p => p.classList.toggle('on', +p.dataset.p === n)); }
+function hot(l) { document.querySelectorAll('.layer').forEach(e => e.classList.toggle('hot', +e.dataset.l === l)); }
+
+async function step() {
+  if (busy || finished) return;
+  busy = true; updateButtons();
+  picked = null;
+  $('slot').textContent = '—'; $('slot').style.borderStyle = 'dashed';
+  $('rinfo').innerHTML = '';
+  // 1 · el contexto entra en la caja
+  setPhase(1);
+  drawContext();
+  computeDist();
+  drawBars(true); drawRoulette(true);
+  arcsOn = false; drawOverlay();
+  const chips = [...$('chips').querySelectorAll('.chip')];
+  chips.forEach((c, i) => setTimeout(() => c.classList.add('pulse'), i * 35 * speed()));
+  const vecs = [...$('vecs').children];
+  vecs.forEach((v, i) => setTimeout(() => v.classList.add('in'), (150 + i * 35) * speed()));
+  $('gpt').classList.add('busy');
+  await sleep(450 + chips.length * 35);
+  // 2 · la red procesa
+  setPhase(2);
+  arcsOn = true; drawOverlay();
+  const scan = $('scan'), g = $('gpt');
+  scan.animate([{ top: g.clientHeight + 'px', opacity: 0.9 }, { top: '-60px', opacity: 0.9 }], { duration: 900 * speed(), easing: 'ease-in-out' });
+  for (let l = 0; l <= 6; l++) { hot(l); await sleep(130); }
+  hot(-1);
+  $('gpt').classList.remove('busy');
+  // 3 · probabilidades
+  setPhase(3);
+  drawBars(false); drawRoulette(false);
+  await sleep(650);
+  // 4 · muestreo
+  setPhase(4);
+  const r = Math.random();
+  const seg = segs.find(s => r >= s.a && r < s.b) || segs[segs.length - 1];
+  picked = seg.k;
+  const T = +$('temp').value;
+  const needle = $('needle'), Rw = $('roulette').clientWidth;
+  if (T < 0.02 || cur.K === 1) {
+    needle.style.left = (seg.b / 2 * Rw) + 'px';
+    $('rinfo').innerHTML = `Temperatura 0 o top-k = 1: no hay sorteo, se elige siempre el más probable → <b>«${show(VOCAB[picked])}»</b>`;
+    await sleep(500);
+  } else {
+    const swings = [0.1, 0.9, 0.3, 0.75, 0.5, r];
+    const kf = swings.map(v => ({ left: (v * Rw) + 'px' }));
+    await needle.animate([{ left: needle.style.left || '0px' }, ...kf], { duration: 1100 * speed(), easing: 'cubic-bezier(.2,.7,.2,1)', fill: 'forwards' }).finished;
+    needle.style.left = (r * Rw) + 'px';
+    $('rinfo').innerHTML = `Número aleatorio r = ${fmt(r, 3)} → cae en el tramo de <b>«${show(VOCAB[picked])}»</b> (${pct(cur.probs[picked])})`;
+  }
+  drawBars(false); drawRoulette(false);
+  const rank = cur.order.indexOf(picked) + 1;
+  $('slot').innerHTML = `<span class="chip gen" style="border-style:solid">${show(VOCAB[picked])}<small>#${picked}</small></span>`;
+  $('slot').style.borderStyle = 'solid';
+  await sleep(450);
+  // 5 · reentrada en el contexto
+  setPhase(5);
+  arcsOn = false;
+  const tok = VOCAB[picked];
+  history.push({ tok, p: cur.probs[picked], rank });
+  const from = rel($('slot'));
+  tokens.push(tok);
+  drawContext({ hideLast: true, vecsIn: true });
+  drawOverlay();
+  const allChips = $('chips').querySelectorAll('.chip');
+  const target = allChips[allChips.length - 1];
+  const to = rel(target);
+  const fly = document.createElement('span');
+  fly.className = 'chip fly'; fly.innerHTML = `${show(tok)}<small>#${picked}</small>`;
+  fly.style.left = from.x + 'px'; fly.style.top = from.y + 'px';
+  stage.appendChild(fly);
+  const rx = stage.clientWidth - 18 - fly.offsetWidth / 2;
+  const path = window.innerWidth > 980
+    ? [{ left: from.x + 'px', top: from.y + 'px' }, { left: rx + 'px', top: from.y + 'px', offset: .3 }, { left: rx + 'px', top: to.y + 'px', offset: .7 }, { left: to.x + 'px', top: to.y + 'px' }]
+    : [{ left: from.x + 'px', top: from.y + 'px' }, { left: to.x + 'px', top: to.y + 'px' }];
+  await fly.animate(path, { duration: 1100 * speed(), easing: 'ease-in-out', fill: 'forwards' }).finished;
+  fly.remove();
+  target.style.visibility = ''; target.classList.add('pulse');
+  $('slot').textContent = '—'; $('slot').style.borderStyle = 'dashed';
+  drawText();
+  if (tok === EOS) finished = true;
+  await sleep(300);
+  setPhase(0);
+  // muestra ya la distribución del siguiente paso (sin animación) para poder jugar con la temperatura
+  picked = null;
+  if (!finished) { computeDist(); drawBars(false); drawRoulette(false); }
+  drawOverlay();
+  busy = false; updateButtons();
+}
+
+async function runAuto() {
+  while (auto && !finished) { await step(); await sleep(200); }
+  auto = false; updateButtons();
+}
+function updateButtons() {
+  $('step').disabled = busy || finished;
+  $('auto').disabled = finished && !auto;
+  $('auto').textContent = auto ? '❚❚ Pausa' : '▶ Generar';
+  $('auto').classList.toggle('primary', auto); $('auto').classList.toggle('running', auto);
+  $('use').disabled = busy; $('restart').disabled = busy;
+  document.querySelectorAll('#presets button').forEach(b => b.disabled = busy);
+}
+
+// =====================================================================
+//  Texto inicial
+// =====================================================================
+function tokenize(text) {
+  const words = text.toLowerCase().replace(/([.,])/g, ' $1 ').split(/\s+/).filter(Boolean);
+  const known = [], unknown = [];
+  for (const w of words) (ID[w] !== undefined && w !== BOS && w !== EOS ? known : unknown).push(w);
+  return { known, unknown };
+}
+let promptText = PRESETS[0];
+function start(text) {
+  const { known, unknown } = tokenize(text);
+  $('warn').textContent = unknown.length
+    ? `El vocabulario de esta caja no contiene: ${[...new Set(unknown)].join(', ')}. Se ignoran (un GPT real no tiene este problema porque trocea las palabras en partes).`
+    : '';
+  promptText = text;
+  tokens = [BOS, ...known]; nPrompt = tokens.length;
+  history = []; finished = false; picked = null;
+  computeDist();
+  drawContext({ vecsIn: true }); drawBars(false); drawRoulette(false); drawText();
+  $('needle').style.left = '0px'; $('rinfo').innerHTML = '';
+  $('slot').textContent = '—';
+  setPhase(0); arcsOn = false;
+  requestAnimationFrame(drawOverlay);
+  updateButtons();
+}
+PRESETS.forEach(p => {
+  const b = document.createElement('button'); b.textContent = p + '…';
+  b.addEventListener('click', () => { auto = false; $('prompt').value = ''; start(p); });
+  $('presets').appendChild(b);
+});
+$('use').addEventListener('click', () => { auto = false; if ($('prompt').value.trim()) start($('prompt').value); });
+$('prompt').addEventListener('keydown', e => { if (e.key === 'Enter') $('use').click(); });
+$('restart').addEventListener('click', () => { auto = false; start(promptText); });
+$('step').addEventListener('click', () => step());
+$('auto').addEventListener('click', () => { auto = !auto; updateButtons(); if (auto) runAuto(); });
+$('open').addEventListener('click', () => {
+  const g = $('gpt'); g.classList.toggle('isclosed');
+  $('open').textContent = g.classList.contains('isclosed') ? 'Mirar dentro' : 'Cerrar la caja';
+});
+function refreshDist() {
+  $('vtemp').textContent = +$('temp').value < 0.02 ? '0 (voraz)' : fmt(+$('temp').value, 2);
+  if (!busy && !finished) { picked = null; computeDist(); drawBars(false); drawRoulette(false); }
+}
+$('temp').addEventListener('input', refreshDist);
+$('topk').addEventListener('change', refreshDist);
+$('win').addEventListener('change', () => { if (!busy) { drawContext({ vecsIn: true }); refreshDist(); drawText(); requestAnimationFrame(drawOverlay); } });
+window.addEventListener('resize', () => drawOverlay());
+
+refreshDist();
+start(PRESETS[0]);
+</script>
+</body>
+</html>
