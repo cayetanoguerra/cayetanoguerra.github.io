@@ -1,0 +1,493 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Atención de Bahdanau</title>
+<style>
+  /* Layout: barra superior ULPGC · figura animada con controles · [explicación del paso | matriz de alineamiento] */
+  :root {
+    color-scheme: light;
+    /* Colores institucionales ULPGC */
+    --blue: #0266a2; --blue-dark: #014d7a; --blue-soft: #e8f1f8;
+    --orange: #ff9600; --orange-dark: #b86b00; --orange-soft: #fff3e0;
+    --bg: #f4f6f8; --panel: #ffffff; --ink: #1b2430; --muted: #5d6875;
+    --line: #e1e6eb;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .gut { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  .topbar { background: var(--panel); border-top: 4px solid var(--blue); border-bottom: 1px solid var(--line); }
+  header { max-width: 1280px; margin: 0 auto; padding-block: 18px 20px;
+           display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; }
+  .logo { height: 30px; width: auto; opacity: .9; flex-shrink: 0; margin-top: 4px; }
+  h1 { font-size: 26px; margin: 0 0 6px; letter-spacing: -.01em; color: var(--blue); text-wrap: balance; }
+  h1::after { content: ""; display: block; width: 48px; height: 3px; background: var(--orange); border-radius: 2px; margin-top: 6px; }
+  header p { margin: 0; color: var(--muted); max-width: 88ch; }
+
+  main { max-width: 1280px; margin: 0 auto; padding-block: 16px 28px; display: grid; gap: 16px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px;
+          box-shadow: 0 1px 2px rgba(16, 40, 64, .04); min-width: 0; }
+  .card h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: var(--blue);
+             margin: 0 0 12px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  .card h2::before { content: ""; width: 4px; height: 14px; background: var(--orange); border-radius: 2px; }
+  .note { color: var(--muted); font-size: 13px; margin: 8px 0 0; }
+  .note b { color: var(--ink); }
+
+  button { font: inherit; padding: 7px 14px; border-radius: 8px; border: 1px solid var(--line);
+           background: var(--bg); color: var(--ink); cursor: pointer; transition: background .15s, border-color .15s; }
+  button:hover { border-color: #c4ccd4; }
+  button:disabled { opacity: .45; cursor: default; }
+  button.primary { background: var(--blue); color: #fff; border-color: var(--blue); font-weight: 600; min-width: 130px; }
+  button.primary:hover { background: var(--blue-dark); border-color: var(--blue-dark); }
+  button.primary.running { background: var(--orange-dark); border-color: var(--orange-dark); }
+  button:focus-visible, input:focus-visible { outline: 3px solid var(--orange); outline-offset: 2px; }
+  input[type=range] { accent-color: var(--orange); }
+
+  /* ---------- Figura ---------- */
+  .fhead { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
+  .fhead h2 { margin: 0; }
+  .ctrls { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .ctrls .speed { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); margin-left: 8px; }
+  .ctrls .speed input { width: 110px; }
+  .figwrap { overflow-x: auto; }
+  #fig { display: block; width: 100%; min-width: 900px; height: auto; }
+  #fig text { font-family: system-ui, -apple-system, sans-serif; }
+  .tl { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; align-items: flex-end; }
+  .tl .grp { display: flex; flex-direction: column; gap: 4px; }
+  .tl .grp span { font-size: 11.5px; color: var(--muted); font-weight: 600; }
+  .tl .grp.cur span { color: var(--orange-dark); }
+  .tl .bl { display: flex; gap: 2px; }
+  .tl .bl i { width: 14px; height: 12px; border-radius: 3px; background: var(--line); cursor: pointer; }
+  .tl .bl i.d { background: #9cc3dd; }
+  .tl .bl i.c { background: var(--orange); }
+  .tl .bl i:hover { outline: 2px solid var(--blue); outline-offset: 1px; }
+
+  /* ---------- Explicación ---------- */
+  .lower { display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 16px; align-items: start; }
+  .ph { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+  .ph h3 { margin: 0 0 6px; font-size: 18px; color: var(--ink); }
+  .ph .tag { font-size: 12px; font-weight: 700; padding: 2px 10px; border-radius: 999px; background: var(--orange-soft); color: var(--orange-dark); }
+  #ex-text p { margin: 0 0 8px; max-width: 80ch; }
+  .formula { background: var(--blue-soft); border-radius: 10px; padding: 12px 14px; font-family: var(--mono);
+             font-size: 13.5px; line-height: 1.8; color: var(--blue-dark); overflow-x: auto; margin-top: 10px; }
+  .formula b { color: var(--ink); }
+  .formula .c { font-family: system-ui, sans-serif; color: var(--muted); font-size: 12.5px; display: block; line-height: 1.45; margin-top: 4px; }
+  .calc { margin-top: 10px; padding: 10px 12px; background: var(--orange-soft); border-radius: 8px;
+          font-family: var(--mono); font-size: 13px; line-height: 1.75; color: #6b3f00; overflow-x: auto; }
+  .calc .h { font-family: system-ui, sans-serif; font-weight: 700; color: var(--orange-dark); font-size: 12px;
+             text-transform: uppercase; letter-spacing: .06em; display: block; }
+  .calc b { color: #3d2400; }
+
+  .amat { display: grid; gap: 2px; width: max-content; }
+  .amat .cl { font-size: 12px; font-weight: 600; color: var(--blue-dark); text-align: center; padding-bottom: 4px; align-self: end; }
+  .amat .rl { font-size: 12.5px; font-weight: 600; color: var(--orange-dark); text-align: right; padding-right: 8px; align-self: center; }
+  .amat .cell { width: 46px; height: 30px; border-radius: 3px; display: grid; place-items: center; font: 10.5px var(--mono);
+                box-shadow: inset 0 0 0 1px rgba(27, 36, 48, .06); background: #fafbfc; color: #fff; transition: background .3s; }
+  .legend { display: grid; gap: 6px; font-size: 12.5px; color: var(--muted); margin-top: 14px; }
+  .legend > span { display: flex; align-items: center; gap: 8px; }
+  .legend em { font-style: normal; }
+  .legend i { width: 16px; height: 16px; border-radius: 50%; display: inline-block; flex-shrink: 0; border: 1.5px solid; }
+
+  @media (max-width: 1000px) { .lower { grid-template-columns: minmax(0, 1fr); } }
+  @media (max-width: 560px) { header { flex-direction: column-reverse; gap: 10px; } .logo { height: 24px; } }
+  @media (prefers-reduced-motion: reduce) { .amat .cell { transition: none; } }
+</style>
+</head>
+<body>
+<div class="topbar gut">
+<header>
+  <div>
+    <h1>Atención de Bahdanau, paso a paso</h1>
+    <p>Un traductor seq2seq con LSTM lee «el gato negro duerme» y escribe «the black cat sleeps». En cada paso, el decodificador
+       <b>puntúa</b> cada palabra de la entrada, convierte las puntuaciones en <b>pesos</b> con una softmax, mezcla los estados del
+       codificador según esos pesos y usa el resultado, el <b>vector de contexto</b>, para generar la siguiente palabra. Reproduce la
+       animación o avanza parte a parte. Los vectores tienen sólo 4 componentes y sus valores son simulados, pero todos los cálculos
+       que se muestran son reales.</p>
+  </div>
+  <img class="logo" src="logo-ulpgc.jpg" alt="ULPGC · Universidad de Las Palmas de Gran Canaria">
+</header>
+</div>
+
+<main class="gut">
+  <section class="card">
+    <div class="fhead">
+      <h2>Codificador, decodificador y atención</h2>
+      <div class="ctrls">
+        <button id="bFirst" title="Volver al principio" aria-label="Volver al principio">⏮</button>
+        <button id="bPrev" title="Parte anterior (←)" aria-label="Parte anterior">◀</button>
+        <button id="bPlay" class="primary">▶ Reproducir</button>
+        <button id="bNext" title="Parte siguiente (→)" aria-label="Parte siguiente">▶</button>
+        <label class="speed">Velocidad <input id="speed" type="range" min="0.4" max="2.5" step="0.1" value="1"></label>
+      </div>
+    </div>
+    <div class="figwrap"><svg id="fig" viewBox="0 0 1200 700" role="img" aria-label="Esquema animado de un modelo seq2seq con atención"></svg></div>
+    <div class="tl" id="tl"></div>
+  </section>
+
+  <div class="lower">
+    <section class="card" aria-live="polite">
+      <div class="ph"><h3 id="ex-title"></h3><span class="tag" id="ex-tag"></span></div>
+      <div id="ex-text"></div>
+      <div class="formula" id="ex-formula"></div>
+      <div class="calc" id="ex-calc"></div>
+    </section>
+    <section class="card">
+      <h2>Matriz de alineamiento</h2>
+      <div id="mat"></div>
+      <p class="note">Cada fila son los pesos α de un paso del decodificador. Se rellena a medida que avanza la animación.</p>
+      <div class="legend">
+        <span><i style="background:rgba(2,102,162,.8);border-color:#0266a2"></i><em>componente positiva de un vector</em></span>
+        <span><i style="background:rgba(255,150,0,.8);border-color:#b86b00"></i><em>componente negativa</em></span>
+        <span><i style="background:#e8f1f8;border-color:#0266a2;border-radius:4px"></i><em>LSTM del codificador (estado h<sub>k</sub>)</em></span>
+        <span><i style="background:#fff3e0;border-color:#b86b00;border-radius:4px"></i><em>LSTM del decodificador (estado s<sub>t</sub>)</em></span>
+      </div>
+    </section>
+  </div>
+</main>
+
+<script>
+/* ======================= Datos simulados ======================= */
+// Vectores de 4 componentes. W, U y v se han elegido para que la función de atención produzca
+// alineamientos realistas; todo lo demás se calcula aquí con las fórmulas de Bahdanau.
+const SRC = ["el", "gato", "negro", "duerme", "<eos>"];
+const TGT = ["the", "black", "cat", "sleeps", "<eos>"];
+const XIN = [[.4, -.7, .2, .9], [-.5, .3, .8, -.2], [.9, .1, -.6, .3], [-.2, -.8, .5, .6], [.1, .5, .4, -.9]];          // embeddings de entrada
+const YIN = [[.3, .3, -.3, -.3], [.7, -.4, .1, .6], [-.6, .2, .9, -.1], [.2, .8, -.5, .4], [-.3, -.6, .7, .2]];         // <bos>, the, black, cat, sleeps
+const H = [[.55, .55, .03, -.39], [-.80, -.21, -.16, -.82], [-.81, .90, .27, -.48], [-.12, .85, .72, .62], [-.19, -.01, .32, -.79]];
+const S = [[.02, -.62, -.78, .33], [-.84, .36, -.99, .01], [-.20, .99, -.11, .99], [-.99, -.92, .99, .99], [-.96, .99, -.99, -.99], [.31, -.45, .12, .58]]; // s0…s5
+const W = [[-.02, .54, -.83, -.71], [.46, -.72, .47, .57], [-.55, -.39, .31, .48]];
+const U = [[1.03, .95, .68, 1.41], [-.62, .34, -.56, -.85], [.23, 1.23, -.23, -.37]];
+const V = [6.68, 9.04, -6.57];
+const PRED = [[["the", .91], ["a", .06], ["black", .01]], [["black", .88], ["cat", .05], ["white", .03]], [["cat", .93], ["dog", .03], ["black", .02]],
+              [["sleeps", .90], ["runs", .04], ["jumps", .03]], [["<eos>", .95], ["on", .02], ["sleeps", .01]]];
+const N = SRC.length, M = TGT.length;
+
+const mv = (A, x) => A.map(r => r.reduce((s, a, i) => s + a * x[i], 0));
+const UH = H.map(h => mv(U, h));
+const STEP = TGT.map((_, i) => {             // paso t = i + 1 usa s_{t-1} = S[i]
+  const Ws = mv(W, S[i]);
+  const sum = UH.map(u => u.map((x, a) => x + Ws[a])), th = sum.map(r => r.map(Math.tanh));
+  const e = th.map(r => r.reduce((s, x, a) => s + V[a] * x, 0));
+  const mx = Math.max(...e), ex = e.map(x => Math.exp(x - mx)), se = ex.reduce((a, b) => a + b), al = ex.map(x => x / se);
+  const c = [0, 1, 2, 3].map(d => H.reduce((s, h, k) => s + al[k] * h[d], 0));
+  return { Ws, sum, th, e, al, c };
+});
+
+/* ======================= Línea de tiempo ======================= */
+const FR = [{ type: "enc" }];
+for (let t = 1; t <= M; t++) {
+  FR.push({ type: "state", t });
+  for (let k = 0; k < N; k++) FR.push({ type: "score", t, k });
+  FR.push({ type: "soft", t }, { type: "ctx", t }, { type: "dec", t }, { type: "pred", t });
+}
+let F = 0, P = 1, playing = false, timer = null, raf = null;
+
+/* ======================= Utilidades ======================= */
+const $ = s => document.querySelector(s);
+const fmt = (v, d = 2) => (Math.abs(v) < 5 * 10 ** -(d + 1) ? 0 : v).toFixed(d).replace(".", ",").replace("-", "−");
+const vf = v => "[" + v.map(x => fmt(x)).join("; ") + "]";
+const esc = w => w.replace("<", "&lt;").replace(">", "&gt;");
+const sub = n => String(n).split("").map(c => "₀₁₂₃₄₅₆₇₈₉"[c]).join("");
+const ease = p => 1 - Math.pow(1 - p, 3);
+const fill = (x, a = 1) => { const m = Math.min(1, Math.abs(x)), c = x >= 0 ? "2,102,162" : "255,150,0"; return `rgba(${c},${((.08 + .85 * m) * a).toFixed(3)})`; };
+const C = { blue: "#0266a2", bd: "#014d7a", bs: "#e8f1f8", or: "#ff9600", od: "#b86b00", os: "#fff3e0", ink: "#1b2430", mu: "#5d6875", li: "#e1e6eb", gr: "#9aa6b2" };
+
+/* ======================= Geometría de la figura ======================= */
+const ex = k => 470 + k * 70, sx = 815, dx = i => 880 + i * 70;
+const CELL_Y = 420, CELL_H = 100, IN_Y = 572, SCORE_Y = 360, SOFT_Y = 300, BAR_BASE = 270, BAR_MAX = 96, CTX_X = 610, CTX_Y = 34;
+
+// Celda vertical con 4 círculos (estado de una LSTM o un vector)
+function vbox(x, y, vals, { stroke, bg, a = 1, r = 8, gap = 23, w = 32, h = CELL_H, glow = false, dash = false, label = "" } = {}) {
+  let s = `<g opacity="${a.toFixed(3)}">`;
+  if (glow) s += `<rect x="${x - w / 2 - 6}" y="${y - 6}" width="${w + 12}" height="${h + 12}" rx="12" fill="none" stroke="${C.or}" stroke-width="3" opacity=".85"/>`;
+  s += `<rect x="${x - w / 2}" y="${y}" width="${w}" height="${h}" rx="9" fill="${bg}" stroke="${stroke}" stroke-width="2"${dash ? ' stroke-dasharray="5 3"' : ""}/>`;
+  vals.forEach((v, i) => s += `<circle cx="${x}" cy="${y + 16 + i * gap}" r="${r}" fill="${vals === null ? "#fff" : fill(v)}" stroke="${stroke}" stroke-width="1.3"><title>${fmt(v)}</title></circle>`);
+  if (label) s += `<text x="${x + w / 2 + 3}" y="${y + h + 13}" font-size="12.5" font-style="italic" fill="${stroke}">${label}</text>`;
+  return s + "</g>";
+}
+function emptyBox(x, y, n, { stroke, bg, r = 8, gap = 23, w = 32, h = CELL_H } = {}) {
+  let s = `<rect x="${x - w / 2}" y="${y}" width="${w}" height="${h}" rx="9" fill="#fff" stroke="${C.li}" stroke-width="2"/>`;
+  for (let i = 0; i < n; i++) s += `<circle cx="${x}" cy="${y + 16 + i * gap}" r="${r}" fill="#fff" stroke="${C.li}" stroke-width="1.3"/>`;
+  return s;
+}
+const arrow = (x1, y1, x2, y2, col, w = 1.6, op = 1, extra = "") =>
+  `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${col}" stroke-width="${w}" opacity="${op}" marker-end="url(#m-${col.slice(1)})" ${extra}/>`;
+function markers() {
+  return `<defs>${[C.blue, C.od, C.or, C.gr, C.ink, C.bd].map(c => `<marker id="m-${c.slice(1)}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="${c}"/></marker>`).join("")}</defs>`;
+}
+function hrow(cx, y, vals, { stroke, r = 11, gap = 30, label, a = 1, values = true, vlabel } = {}) {
+  const x0 = cx - (vals.length - 1) * gap / 2;
+  let s = `<g opacity="${a.toFixed(3)}">`;
+  if (label) s += `<text x="${x0 - r - 10}" y="${y + 4}" font-size="12.5" text-anchor="end" fill="${C.ink}" font-weight="600">${label}</text>`;
+  vals.forEach((v, i) => { s += `<circle cx="${x0 + i * gap}" cy="${y}" r="${r}" fill="${fill(v)}" stroke="${stroke}" stroke-width="1.4"/>`;
+    if (values) s += `<text x="${x0 + i * gap}" y="${y + r + 12}" font-size="9.5" text-anchor="middle" fill="${C.mu}" font-family="ui-monospace,monospace">${fmt(v, Math.abs(v) >= 10 ? 1 : 2)}</text>`; });
+  return s + "</g>";
+}
+
+/* ======================= Dibujo de un fotograma ======================= */
+function draw() {
+  const fr = FR[F], p = ease(P), t = fr.t || 0, i = t - 1, st = t ? STEP[i] : null;
+  const order = ["state", "score", "soft", "ctx", "dec", "pred"], ph = order.indexOf(fr.type);   // fase dentro del paso t
+  let s = markers();
+
+  /* --- títulos --- */
+  s += `<text x="${(ex(0) + ex(N - 1)) / 2}" y="692" font-size="21" font-weight="700" text-anchor="middle" fill="${C.blue}">Codificador</text>
+        <text x="${(dx(0) + dx(M - 1)) / 2}" y="692" font-size="21" font-weight="700" text-anchor="middle" fill="${C.od}">Decodificador</text>`;
+
+  /* --- codificador --- */
+  const encLit = fr.type === "enc" ? p * (N + 1) : N + 1;
+  for (let k = 0; k < N; k++) {
+    const on = Math.max(0, Math.min(1, encLit - k));
+    s += vbox(ex(k), IN_Y, XIN[k], { stroke: C.blue, bg: "#fff", r: 6.5, gap: 17, w: 28, h: 78, a: .55 + .45 * Math.min(1, encLit - k + 1) });
+    s += arrow(ex(k), IN_Y - 2, ex(k), CELL_Y + CELL_H + 4, C.gr);
+    s += `<text x="${ex(k)}" y="${IN_Y + 98}" font-size="15" font-weight="700" text-anchor="middle" fill="${C.ink}">${esc(SRC[k])}</text>`;
+    if (k) s += arrow(ex(k - 1) + 17, CELL_Y + 50, ex(k) - 18, CELL_Y + 50, C.blue, 2, Math.min(1, on * 2));
+    s += on > 0 ? vbox(ex(k), CELL_Y, H[k], { stroke: C.blue, bg: C.bs, a: on, glow: fr.type === "score" && fr.k === k, label: `h${sub(k + 1)}` })
+                : emptyBox(ex(k), CELL_Y, 4);
+  }
+  /* --- s0 --- */
+  const s0on = Math.max(0, Math.min(1, encLit - N));
+  s += arrow(ex(N - 1) + 17, CELL_Y + 50, sx - 18, CELL_Y + 50, C.gr, 2, s0on);
+  s += s0on > 0 ? vbox(sx, CELL_Y, S[0], { stroke: C.od, bg: "#fff", a: s0on, dash: true, label: "s₀", glow: t === 1 && ph >= 0 && ph <= 1 }) : emptyBox(sx, CELL_Y, 4);
+  if (s0on > 0) s += `<text x="${sx}" y="${CELL_Y - 10}" font-size="10.5" text-anchor="middle" fill="${C.mu}">estado inicial</text>`;
+
+  /* --- decodificador --- */
+  for (let d = 0; d < M; d++) {
+    const step = d + 1, done = step < t || (step === t && ph >= 4), cur = step === t && ph === 4;
+    const a = cur ? p : done ? 1 : 0;
+    const inW = d === 0 ? "<bos>" : TGT[d - 1];
+    s += vbox(dx(d), IN_Y, YIN[d], { stroke: C.od, bg: "#fff", r: 6.5, gap: 17, w: 28, h: 78, a: step <= t ? 1 : .35 });
+    s += `<text x="${dx(d)}" y="${IN_Y + 98}" font-size="15" font-weight="700" text-anchor="middle" fill="${step <= t ? C.ink : C.gr}">${esc(inW)}</text>`;
+    s += arrow(dx(d), IN_Y - 2, dx(d), CELL_Y + CELL_H + 4, C.gr, 1.6, step <= t ? 1 : .35);
+    s += arrow((d ? dx(d - 1) : sx) + 17, CELL_Y + 50, dx(d) - 18, CELL_Y + 50, C.gr, 2, done ? 1 : .35);
+    s += a > 0 ? vbox(dx(d), CELL_Y, S[d + 1], { stroke: C.od, bg: C.os, a, label: `s${sub(step)}`, glow: step === t - 1 && ph <= 1 && ph >= 0 }) : emptyBox(dx(d), CELL_Y, 4);
+    // salida
+    const shown = step < t || (step === t && ph === 5), pa = step === t && ph === 5 ? p : 1;
+    if (shown) {
+      s += `<g opacity="${pa}">${arrow(dx(d), CELL_Y - 4, dx(d), SCORE_Y + 14, C.od)}
+            <circle cx="${dx(d)}" cy="${SCORE_Y}" r="11" fill="${C.os}" stroke="${C.od}" stroke-width="1.5"/>
+            <text x="${dx(d) + 14}" y="${SCORE_Y - 12}" font-size="12" font-style="italic" fill="${C.od}">p${sub(step)}</text>
+            ${arrow(dx(d), SCORE_Y - 13, dx(d), SCORE_Y - 40, C.od)}
+            <text x="${dx(d)}" y="${SCORE_Y - 50}" font-size="17" font-weight="700" text-anchor="middle" fill="${C.ink}">${esc(TGT[d])}</text></g>`;
+    }
+  }
+
+  /* --- atención del paso t --- */
+  // caja softmax
+  s += `<rect x="${ex(0) - 26}" y="${SOFT_Y}" width="${ex(N - 1) - ex(0) + 52}" height="28" rx="6" fill="${fr.type === "soft" ? C.os : "#fafbfc"}" stroke="${fr.type === "soft" ? C.or : C.gr}" stroke-dasharray="5 3"/>
+        <text x="${(ex(0) + ex(N - 1)) / 2}" y="${SOFT_Y + 19}" font-size="15" text-anchor="middle" fill="${C.ink}">softmax</text>
+        <line x1="${ex(0) - 26}" y1="${BAR_BASE}" x2="${ex(N - 1) + 26}" y2="${BAR_BASE}" stroke="${C.gr}"/>`;
+  if (!st || ph < 3) s += emptyBox(CTX_X, CTX_Y, 4) + `<text x="${CTX_X + 26}" y="${CTX_Y + 22}" font-size="16" font-style="italic" font-weight="700" fill="#c4ccd4">c${t ? sub(t) : "ₜ"}</text>
+      <text x="${CTX_X - 26}" y="${CTX_Y + 22}" font-size="12.5" text-anchor="end" fill="#c4ccd4">vector de contexto</text>`;
+  if (st && ph >= 1) {
+    const sxp = t === 1 ? sx : dx(t - 2);          // de dónde sale s_{t-1}
+    for (let k = 0; k < N; k++) {
+      const visible = ph > 1 || (fr.type === "score" && k <= fr.k), now = fr.type === "score" && fr.k === k, a = now ? p : 1;
+      if (!visible) { s += `<circle cx="${ex(k)}" cy="${SCORE_Y}" r="10" fill="#fff" stroke="${C.li}" stroke-width="1.5"/>`; continue; }
+      // flechas de entrada a la función de atención: h_k (azul) y s_{t-1} (naranja)
+      if (ph === 1) {
+        s += arrow(ex(k), CELL_Y - 4, ex(k), SCORE_Y + 14, C.blue, now ? 2.4 : 1.4, now ? a : .5);
+        s += `<line x1="${sxp}" y1="${CELL_Y - 2}" x2="${ex(k) + 9}" y2="${SCORE_Y + 6}" stroke="${C.or}" stroke-width="${now ? 2.4 : 1.2}" opacity="${now ? a : .45}" marker-end="url(#m-ff9600)"/>`;
+      } else s += arrow(ex(k), CELL_Y - 4, ex(k), SCORE_Y + 14, C.blue, 1.2, .35);
+      const e = st.e[k];
+      s += `<g opacity="${a}"><circle cx="${ex(k)}" cy="${SCORE_Y}" r="11" fill="${fill(e / 6)}" stroke="${C.ink}" stroke-width="1.4"/>
+            <text x="${ex(k) + 14}" y="${SCORE_Y + 4}" font-size="10.5" fill="${C.ink}" font-family="ui-monospace,monospace">${fmt(e, 1)}</text></g>`;
+      if (ph >= 2) s += arrow(ex(k), SCORE_Y - 12, ex(k), SOFT_Y + 30, C.gr, 1.2, .8);
+      if (now) s += `<circle cx="${ex(k)}" cy="${SCORE_Y}" r="22" fill="none" stroke="${C.ink}" stroke-width="4"/><line x1="${ex(k) - 16}" y1="${SCORE_Y + 16}" x2="${ex(k) - 30}" y2="${SCORE_Y + 32}" stroke="${C.ink}" stroke-width="6" stroke-linecap="round"/>
+            <line x1="${ex(k) - 22}" y1="${SCORE_Y - 4}" x2="408" y2="160" stroke="${C.gr}" stroke-width="1.2"/><line x1="${ex(k) - 22}" y1="${SCORE_Y + 8}" x2="408" y2="652" stroke="${C.gr}" stroke-width="1.2"/>`;
+    }
+    // barras de pesos
+    if (ph >= 2) {
+      const g = fr.type === "soft" ? p : 1;
+      for (let k = 0; k < N; k++) {
+        const h = st.al[k] * BAR_MAX * g;
+        s += arrow(ex(k), SOFT_Y - 2, ex(k), BAR_BASE + 4, C.gr, 1.1, .7);
+        s += `<rect x="${ex(k) - 13}" y="${BAR_BASE - h}" width="26" height="${h}" rx="2" fill="rgba(2,102,162,.25)" stroke="${C.blue}" stroke-width="1.4"/>
+              <text x="${ex(k)}" y="${BAR_BASE - h - 6}" font-size="11.5" font-weight="700" text-anchor="middle" fill="${C.bd}" opacity="${g}">${fmt(st.al[k])}</text>`;
+      }
+      s += `<text x="${ex(0) - 13}" y="${BAR_BASE - BAR_MAX - 22}" font-size="13" fill="${C.ink}" font-weight="600">pesos de atención α</text>`;
+    }
+    // vector de contexto
+    if (ph >= 3) {
+      const g = fr.type === "ctx" ? p : 1;
+      for (let k = 0; k < N; k++) s += `<line x1="${ex(k)}" y1="${BAR_BASE - st.al[k] * BAR_MAX - 18}" x2="${CTX_X}" y2="${CTX_Y + CELL_H + 4}" stroke="${C.bd}" stroke-width="${1 + 3 * st.al[k]}" stroke-dasharray="3 3" opacity="${(.25 + .75 * st.al[k]) * g}"/>`;
+      s += vbox(CTX_X, CTX_Y, st.c, { stroke: C.bd, bg: "#fff", a: Math.max(.15, g) });
+      s += `<text x="${CTX_X + 26}" y="${CTX_Y + 22}" font-size="16" font-style="italic" font-weight="700" fill="${C.bd}" opacity="${g}">c${sub(t)}</text>
+            <text x="${CTX_X - 26}" y="${CTX_Y + 22}" font-size="12.5" text-anchor="end" fill="${C.ink}" opacity="${g}">contexto = Σ α·h</text>`;
+    }
+    // el contexto entra en la LSTM del decodificador
+    if (ph >= 4) {
+      const g = fr.type === "dec" ? p : 1, tx = dx(t - 1) - 22, ty = CELL_Y + 86;
+      const path = `M${CTX_X + 18} ${CTX_Y + 60} C ${CTX_X + 260} ${CTX_Y + 60}, ${tx - 140} ${ty - 40}, ${tx} ${ty}`;
+      s += `<path d="${path}" fill="none" stroke="${C.or}" stroke-width="3" pathLength="1" stroke-dasharray="${g} 1" marker-end="${g > .98 ? "url(#m-ff9600)" : ""}"/>`;
+      if (g > .5) s += `<text x="${(CTX_X + tx) / 2 + 60}" y="${CTX_Y + 120}" font-size="14" font-weight="700" fill="${C.od}" opacity="${(g - .5) * 2}" transform="rotate(32 ${(CTX_X + tx) / 2 + 60} ${CTX_Y + 120})">al decodificador</text>`;
+    }
+  }
+
+  /* --- panel de la función de atención (lupa) --- */
+  s += insetPanel(fr, p);
+  $("#fig").innerHTML = s;
+}
+
+function insetPanel(fr, p) {
+  const X = 16, Y = 160, Wd = 392, Hd = 492, cx = X + Wd / 2;
+  let s = `<rect x="${X}" y="${Y}" width="${Wd}" height="${Hd}" rx="10" fill="#fafbfc" stroke="${C.gr}" stroke-width="1.5"/>
+           <text x="${X + 16}" y="${Y + 28}" font-size="17" font-weight="700" fill="${C.ink}">Función de atención</text>
+           <text x="${X + 16}" y="${Y + 48}" font-size="12.5" fill="${C.mu}">MLP de Bahdanau: e = vᵀ · tanh(W·s<tspan baseline-shift="sub" font-size="9">t−1</tspan> + U·h<tspan baseline-shift="sub" font-size="9">k</tspan>)</text>`;
+  const t = fr.t, k = fr.type === "score" ? fr.k : (t ? STEP[t - 1].al.indexOf(Math.max(...STEP[t - 1].al)) : -1);
+  if (!t || fr.type === "state") {
+    s += `<text x="${cx}" y="${Y + 240}" font-size="13.5" text-anchor="middle" fill="${C.mu}">Se aplicará a cada pareja</text>
+          <text x="${cx}" y="${Y + 262}" font-size="13.5" text-anchor="middle" fill="${C.mu}">(estado del decodificador s<tspan baseline-shift="sub" font-size="10">t−1</tspan>, estado del codificador h<tspan baseline-shift="sub" font-size="10">k</tspan>)</text>
+          <text x="${cx}" y="${Y + 284}" font-size="13.5" text-anchor="middle" fill="${C.mu}">para responder: ¿cuánto importa la palabra k</text>
+          <text x="${cx}" y="${Y + 306}" font-size="13.5" text-anchor="middle" fill="${C.mu}">para generar la palabra t?</text>`;
+    return s;
+  }
+  const st = STEP[t - 1], a = fr.type === "score" ? 1 : .55, pp = fr.type === "score" ? p : 1;
+  // fila de entradas
+  const yIn = Y + 436, yProj = Y + 352, ySum = Y + 272, yTh = Y + 196, yE = Y + 112, lx = X + 104, rx = X + 290;
+  const stage = v => Math.max(0, Math.min(1, pp * 5 - v));     // aparición escalonada
+  s += `<g opacity="${a}">`;
+  s += hrow(lx, yIn, H[k], { stroke: C.blue, r: 10, gap: 33 }) + `<text x="${lx}" y="${yIn + 36}" font-size="12.5" text-anchor="middle" fill="${C.blue}" font-weight="700">h${sub(k + 1)} · «${esc(SRC[k])}»</text>`;
+  s += hrow(rx, yIn, S[t - 1], { stroke: C.od, r: 10, gap: 33 }) + `<text x="${rx}" y="${yIn + 36}" font-size="12.5" text-anchor="middle" fill="${C.od}" font-weight="700">s${sub(t - 1)} (decodificador)</text>`;
+  s += `<g opacity="${stage(0)}">${arrow(lx, yIn - 14, lx, yProj + 26, C.gr)}${arrow(rx, yIn - 14, rx, yProj + 26, C.gr)}
+        <text x="${lx + 8}" y="${(yIn + yProj) / 2 + 8}" font-size="12" fill="${C.ink}" font-weight="700">U·</text><text x="${rx + 8}" y="${(yIn + yProj) / 2 + 8}" font-size="12" fill="${C.ink}" font-weight="700">W·</text>
+        ${hrow(lx, yProj, UH[k], { stroke: C.blue, r: 10, gap: 30 })}${hrow(rx, yProj, st.Ws, { stroke: C.od, r: 10, gap: 30 })}</g>`;
+  s += `<g opacity="${stage(1)}">${arrow(lx + 30, yProj - 14, cx - 30, ySum + 22, C.gr)}${arrow(rx - 30, yProj - 14, cx + 30, ySum + 22, C.gr)}
+        <text x="${cx}" y="${(yProj + ySum) / 2 + 12}" font-size="18" text-anchor="middle" fill="${C.ink}">+</text>
+        ${hrow(cx, ySum, st.sum[k], { stroke: C.ink, r: 10, gap: 30 })}<text x="${cx + 62}" y="${ySum + 4}" font-size="12" fill="${C.mu}">suma</text></g>`;
+  s += `<g opacity="${stage(2)}">${arrow(cx, ySum - 14, cx, yTh + 26, C.gr)}<text x="${cx + 8}" y="${(ySum + yTh) / 2 + 6}" font-size="12" font-weight="700" fill="${C.ink}">tanh</text>
+        ${hrow(cx, yTh, st.th[k], { stroke: C.ink, r: 10, gap: 30 })}</g>`;
+  s += `<g opacity="${stage(3)}">${arrow(cx, yTh - 14, cx, yE + 18, C.gr)}<text x="${cx + 8}" y="${(yTh + yE) / 2 + 6}" font-size="12" font-weight="700" fill="${C.ink}">vᵀ ·</text>
+        <text x="${cx - 70}" y="${(yTh + yE) / 2 + 6}" font-size="10.5" text-anchor="end" fill="${C.mu}" font-family="ui-monospace,monospace">v = ${vf(V).replace(/;/g, "")}</text></g>`;
+  s += `<g opacity="${stage(4)}"><circle cx="${cx}" cy="${yE}" r="15" fill="${fill(st.e[k] / 6)}" stroke="${C.ink}" stroke-width="1.8"/>
+        <text x="${cx + 24}" y="${yE + 6}" font-size="17" font-weight="700" fill="${C.ink}">e${sub(t)}${sub(k + 1)} = ${fmt(st.e[k])}</text>
+        <text x="${cx - 24}" y="${yE + 6}" font-size="12" text-anchor="end" fill="${C.mu}">puntuación</text></g>`;
+  if (fr.type !== "score") s += `<text x="${X + 16}" y="${Y + 68}" font-size="11.5" fill="${C.od}">Se muestra la pareja con más peso: «${esc(SRC[k])}»</text>`;
+  return s + "</g>";
+}
+
+/* ======================= Explicación de cada parte ======================= */
+function explain() {
+  const fr = FR[F], t = fr.t, st = t ? STEP[t - 1] : null, prev = !t ? "" : t === 1 ? "&lt;bos&gt;" : esc(TGT[t - 2]);
+  let title = "", tag = "", text = "", formula = "", calc = "";
+  if (fr.type === "enc") {
+    title = "1 · El codificador lee la frase"; tag = "Codificador";
+    text = `<p>Cada palabra de entrada se convierte en un vector (su <i>embedding</i>, abajo) y entra en una <b>LSTM</b> que la recorre de izquierda a derecha.
+      En cada posición k la LSTM actualiza dos vectores: su <b>memoria</b> m<sub>k</sub> y su <b>estado oculto</b> h<sub>k</sub>. Los h<sub>k</sub> (cajas azules)
+      resumen la palabra k y lo leído antes de ella: son lo que después podrá «consultar» la atención.</p>
+      <p>Sin atención, el decodificador sólo recibiría el último estado. Con atención, <b>guardamos todos</b>. El estado final sirve para iniciar el decodificador (s₀).</p>`;
+    formula = `f<sub>k</sub>, i<sub>k</sub>, o<sub>k</sub> = σ( W·[x<sub>k</sub>; h<sub>k−1</sub>] + b ) &nbsp; (puertas de olvido, entrada y salida)<br>
+      g<sub>k</sub> = tanh( W<sub>g</sub>·[x<sub>k</sub>; h<sub>k−1</sub>] + b<sub>g</sub> )<br>
+      m<sub>k</sub> = f<sub>k</sub> ⊙ m<sub>k−1</sub> + i<sub>k</sub> ⊙ g<sub>k</sub> &nbsp;&nbsp; h<sub>k</sub> = o<sub>k</sub> ⊙ tanh(m<sub>k</sub>)
+      <span class="c">La memoria de la LSTM suele llamarse c; aquí la llamamos m para no confundirla con el vector de contexto c<sub>t</sub>. La atención sólo usa los estados ocultos h.
+      En el artículo original el codificador es bidireccional (otra LSTM lee de derecha a izquierda y se concatenan ambos estados); aquí usamos una sola dirección para simplificar el dibujo.</span>`;
+    calc = `<span class="h">Estados del codificador</span>${SRC.map((w, k) => `h${sub(k + 1)} («${esc(w)}») = ${vf(H[k])}`).join("<br>")}`;
+  } else if (fr.type === "state") {
+    title = `Paso t = ${t} · ¿Qué sabe ya el decodificador?`; tag = `generando la palabra ${t}`;
+    text = `<p>Para generar la palabra número ${t}, el modelo de Bahdanau parte del <b>estado anterior del decodificador</b>, s<sub>${t - 1}</sub> (marcado en naranja),
+      que resume lo que lleva traducido hasta ahora${t > 1 ? ` («${TGT.slice(0, t - 1).map(esc).join(" ")}»)` : " (todavía nada: sólo la frase leída)"}.</p>
+      <p>Con ese estado preguntará a cada palabra de la entrada: <b>¿cuánto me sirves ahora?</b> Esa es la clave: la pregunta cambia en cada paso porque s<sub>t−1</sub> cambia.</p>`;
+    formula = `consulta: s<sub>${t - 1}</sub> = ${vf(S[t - 1])}
+      <span class="c">Bahdanau usa s<sub>t−1</sub>, el estado <b>antes</b> de dar el paso t. En el modelo posterior de Luong la atención se calcula después, con s<sub>t</sub>.</span>`;
+    calc = `<span class="h">Siguiente</span>Calcular una puntuación e<sub>${t}k</sub> para cada una de las ${N} palabras de entrada.`;
+  } else if (fr.type === "score") {
+    const k = fr.k;
+    title = `Paso t = ${t} · Puntuación de «${esc(SRC[k])}»`; tag = `puntuación ${k + 1} de ${N}`;
+    text = `<p>La <b>función de atención</b> (panel de la izquierda, «bajo la lupa») recibe el estado del decodificador s<sub>${t - 1}</sub> y el estado del codificador h<sub>${k + 1}</sub>
+      de la palabra «${esc(SRC[k])}», y devuelve <b>un solo número</b>: la puntuación e<sub>${t}${k + 1}</sub>, que mide lo relevante que es esa palabra para el paso ${t}.</p>
+      <p>Bahdanau usa una pequeña red de una capa oculta: proyecta los dos vectores con W y U a un espacio común (aquí de 3 dimensiones), los suma, aplica tanh y los reduce
+      a un número con el vector v. W, U y v se aprenden durante el entrenamiento, igual que el resto de la red.</p>`;
+    formula = `e<sub>${t}${k + 1}</sub> = vᵀ · tanh( W·s<sub>${t - 1}</sub> + U·h<sub>${k + 1}</sub> )
+      <span class="c">Otras funciones de puntuación habituales: producto escalar sᵀh y forma bilineal sᵀ·W·h (Luong). La de Bahdanau se llama aditiva o MLP.</span>`;
+    calc = `<span class="h">Cálculo con los números de la figura</span>W·s<sub>${t - 1}</sub> = ${vf(st.Ws)} &nbsp; U·h<sub>${k + 1}</sub> = ${vf(UH[k])}<br>
+      suma = ${vf(st.sum[k])} &nbsp;→ tanh = ${vf(st.th[k])}<br>
+      e<sub>${t}${k + 1}</sub> = ${V.map((v, a) => `${fmt(v)}·${fmt(st.th[k][a])}`).join(" + ")} = <b>${fmt(st.e[k])}</b>`;
+  } else if (fr.type === "soft") {
+    title = `Paso t = ${t} · De puntuaciones a pesos`; tag = "softmax";
+    text = `<p>Las ${N} puntuaciones pasan por una <b>softmax</b>, que las convierte en <b>pesos de atención</b> α<sub>${t}k</sub>: todos positivos y que suman 1.
+      Forman una distribución de probabilidad sobre las palabras de entrada: cómo reparte el decodificador su atención en este paso.</p>
+      <p>La exponencial exagera las diferencias: aquí la palabra «${esc(SRC[st.al.indexOf(Math.max(...st.al))])}» se queda con el ${fmt(Math.max(...st.al) * 100, 0)} % de la atención.</p>`;
+    formula = `α<sub>${t}k</sub> = exp(e<sub>${t}k</sub>) / Σ<sub>j</sub> exp(e<sub>${t}j</sub>) &nbsp;&nbsp; Σ<sub>k</sub> α<sub>${t}k</sub> = 1`;
+    const se = st.e.reduce((a, e) => a + Math.exp(e), 0);
+    calc = `<span class="h">Cálculo</span>Σ exp(e) = ${st.e.map(e => fmt(Math.exp(e), 2)).join(" + ")} = ${fmt(se, 2)}<br>
+      ${SRC.map((w, k) => `α<sub>${t}${k + 1}</sub> («${esc(w)}») = ${fmt(Math.exp(st.e[k]), 2)} / ${fmt(se, 2)} = <b>${fmt(st.al[k])}</b>`).join("<br>")}`;
+  } else if (fr.type === "ctx") {
+    title = `Paso t = ${t} · El vector de contexto`; tag = "suma ponderada";
+    text = `<p>El <b>vector de contexto</b> c<sub>${t}</sub> es la <b>media ponderada</b> de los estados del codificador, usando los pesos de atención.
+      Como casi todo el peso está en «${esc(SRC[st.al.indexOf(Math.max(...st.al))])}», c<sub>${t}</sub> se parece mucho a su estado h, pero lleva también un poco de las demás palabras.</p>
+      <p>Es un resumen de la frase de entrada <b>hecho a medida para este paso</b>: en lugar de un único vector fijo para toda la traducción, cada palabra de salida tiene el suyo.</p>`;
+    formula = `c<sub>${t}</sub> = Σ<sub>k</sub> α<sub>${t}k</sub> · h<sub>k</sub>`;
+    calc = `<span class="h">Cálculo, componente a componente</span>${[0, 1, 2, 3].map(d => `c<sub>${t}</sub>[${d + 1}] = ${SRC.map((_, k) => `${fmt(st.al[k])}·${fmt(H[k][d])}`).join(" + ")} = <b>${fmt(st.c[d])}</b>`).join("<br>")}`;
+  } else if (fr.type === "dec") {
+    title = `Paso t = ${t} · El decodificador da un paso`; tag = "LSTM del decodificador";
+    text = `<p>En el modelo de Bahdanau, el contexto c<sub>${t}</sub> entra en la <b>LSTM del decodificador</b> como parte de su entrada, junto con el embedding de la
+      palabra generada en el paso anterior («${prev}»). Con ellos y su estado anterior s<sub>${t - 1}</sub> (y su memoria m<sub>${t - 1}</sub>), la LSTM calcula el nuevo estado s<sub>${t}</sub>.</p>
+      <p>Este nuevo estado servirá para dos cosas: predecir la palabra ${t} y, en el paso siguiente, hacer la nueva consulta de atención.</p>`;
+    formula = `x<sub>${t}</sub> = [ emb(y<sub>${t - 1}</sub>) ; c<sub>${t}</sub> ] &nbsp; (4 + 4 = 8 valores)<br>
+      (s<sub>${t}</sub>, m<sub>${t}</sub>) = LSTM( x<sub>${t}</sub>, s<sub>${t - 1}</sub>, m<sub>${t - 1}</sub> )
+      <span class="c">Las ecuaciones de la LSTM son las mismas que en el codificador, con otros pesos.</span>`;
+    calc = `<span class="h">Entrada de la LSTM</span>emb(«${prev}») = ${vf(YIN[t - 1])}<br>c<sub>${t}</sub> = ${vf(st.c)}<br>→ s<sub>${t}</sub> = <b>${vf(S[t])}</b>`;
+  } else {
+    title = `Paso t = ${t} · Predicción de la palabra`; tag = "salida";
+    text = `<p>Una capa de salida con <b>softmax</b> sobre todo el vocabulario inglés convierte el estado s<sub>${t}</sub>, el contexto c<sub>${t}</sub> y la palabra anterior
+      en una distribución de probabilidad p<sub>${t}</sub>. Se elige la palabra más probable: <b>«${esc(TGT[t - 1])}»</b>.</p>
+      <p>${t < M ? `Esa palabra será la entrada del paso ${t + 1}, que vuelve a empezar: nueva consulta con s<sub>${t}</sub>, nuevas puntuaciones, nuevos pesos y nuevo contexto.`
+        : `Al generar &lt;eos&gt; (fin de frase) la traducción termina. Mira la matriz de alineamiento: cada fila muestra en qué palabra se fijó el modelo para cada palabra de salida.`}</p>`;
+    formula = `p<sub>${t}</sub> = softmax( W<sub>o</sub> · [ s<sub>${t}</sub> ; c<sub>${t}</sub> ; emb(y<sub>${t - 1}</sub>) ] + b<sub>o</sub> )`;
+    calc = `<span class="h">Las palabras más probables</span>${PRED[t - 1].map(([w, q], j) => `${j ? "" : "<b>"}${esc(w)}: ${fmt(q * 100, 0)} %${j ? "" : "</b>"}`).join(" &nbsp;·&nbsp; ")}`;
+  }
+  $("#ex-title").textContent = ""; $("#ex-title").innerHTML = title; $("#ex-tag").textContent = tag;
+  $("#ex-text").innerHTML = text; $("#ex-formula").innerHTML = formula; $("#ex-calc").innerHTML = calc;
+}
+
+/* ======================= Matriz de alineamiento y línea de tiempo ======================= */
+function drawMatrix() {
+  const fr = FR[F], t = fr.t || 0, ph = ["state", "score", "soft", "ctx", "dec", "pred"].indexOf(fr.type);
+  let g = `<div class="amat" style="grid-template-columns:auto repeat(${N}, 46px)"><div></div>${SRC.map(w => `<div class="cl">${esc(w)}</div>`).join("")}`;
+  for (let i = 0; i < M; i++) {
+    const shown = i + 1 < t || (i + 1 === t && ph >= 2);
+    g += `<div class="rl" style="opacity:${i + 1 <= t ? 1 : .35}">${esc(TGT[i])}</div>`;
+    for (let k = 0; k < N; k++) { const a = STEP[i].al[k];
+      g += `<div class="cell" style="${shown ? `background:rgba(2,102,162,${(.05 + .95 * a).toFixed(3)});color:${a > .45 ? "#fff" : C.mu}` : ""}">${shown && a >= .05 ? fmt(a).replace("0,", ",") : ""}</div>`; }
+  }
+  $("#mat").innerHTML = g + "</div>";
+}
+function drawTimeline() {
+  const groups = [{ name: "codificación", idx: [0] }];
+  for (let t = 1; t <= M; t++) groups.push({ name: `t = ${t} · ${TGT[t - 1] === "<eos>" ? "<eos>" : "«" + TGT[t - 1] + "»"}`, idx: FR.map((f, i) => f.t === t ? i : -1).filter(i => i >= 0) });
+  $("#tl").innerHTML = groups.map(g => `<div class="grp${g.idx.includes(F) ? " cur" : ""}"><span>${esc(g.name)}</span><div class="bl">${g.idx.map(i =>
+    `<i class="${i < F ? "d" : i === F ? "c" : ""}" data-f="${i}" title="${frameName(FR[i])}"></i>`).join("")}</div></div>`).join("");
+}
+const frameName = f => ({ enc: "codificador", state: "estado anterior", soft: "softmax", ctx: "contexto", dec: "paso del decodificador", pred: "predicción" }[f.type] || `puntuación de «${SRC[f.k]}»`);
+$("#tl").onclick = e => { const b = e.target.closest("[data-f]"); if (b) { stop(); goto(+b.dataset.f, false); } };
+
+/* ======================= Reproducción ======================= */
+const dur = () => (FR[F].type === "enc" ? 2600 : FR[F].type === "score" ? 1500 : 1200) / +$("#speed").value;
+function goto(i, animate = true) {
+  F = Math.max(0, Math.min(FR.length - 1, i)); explain(); drawMatrix(); drawTimeline();
+  cancelAnimationFrame(raf);
+  if (!animate || matchMedia("(prefers-reduced-motion: reduce)").matches) { P = 1; draw(); return; }
+  const t0 = performance.now(), d = Math.min(900, dur() * .6);
+  const tick = now => { P = Math.min(1, (now - t0) / (FR[F].type === "enc" ? dur() * .8 : d)); draw(); if (P < 1) raf = requestAnimationFrame(tick); };
+  P = 0; raf = requestAnimationFrame(tick);
+}
+function schedule() { clearTimeout(timer); if (!playing) return;
+  timer = setTimeout(() => { if (F >= FR.length - 1) return stop(); goto(F + 1); schedule(); }, dur()); }
+function play() { if (F >= FR.length - 1) goto(0); playing = true; $("#bPlay").textContent = "⏸ Pausa"; $("#bPlay").classList.add("running"); schedule(); }
+function stop() { playing = false; clearTimeout(timer); $("#bPlay").textContent = "▶ Reproducir"; $("#bPlay").classList.remove("running"); }
+$("#bPlay").onclick = () => playing ? stop() : play();
+$("#bNext").onclick = () => { stop(); goto(F + 1); };
+$("#bPrev").onclick = () => { stop(); goto(F - 1, false); };
+$("#bFirst").onclick = () => { stop(); goto(0); };
+document.addEventListener("keydown", e => {
+  if (e.target.tagName === "INPUT") return;
+  if (e.key === "ArrowRight") { stop(); goto(F + 1); } else if (e.key === "ArrowLeft") { stop(); goto(F - 1, false); }
+  else if (e.key === " ") { e.preventDefault(); playing ? stop() : play(); }
+});
+goto(0);
+</script>
+</body>
+</html>

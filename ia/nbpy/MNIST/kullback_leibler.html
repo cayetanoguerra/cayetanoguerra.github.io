@@ -1,0 +1,610 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Divergencia de Kullback-Leibler</title>
+<style>
+  /* Layout: barra superior ULPGC · tira de pasos · [distribuciones P y Q | escenario del paso] */
+  :root {
+    color-scheme: light;
+    /* Colores institucionales ULPGC */
+    --blue: #0266a2; --blue-dark: #014d7a; --blue-soft: #e8f1f8;
+    --orange: #ff9600; --orange-dark: #b86b00; --orange-soft: #fff3e0;
+    --bg: #f4f6f8; --panel: #ffffff; --ink: #1b2430; --muted: #5d6875;
+    --line: #e1e6eb; --hatch-a: #eef1f4; --hatch-b: #d3dae1;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .gut { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  .topbar { background: var(--panel); border-top: 4px solid var(--blue); border-bottom: 1px solid var(--line); }
+  header { max-width: 1280px; margin: 0 auto; padding-block: 18px 20px;
+           display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; }
+  .logo { height: 30px; width: auto; opacity: .9; flex-shrink: 0; margin-top: 4px; }
+  h1 { font-size: 26px; margin: 0 0 6px; letter-spacing: -.01em; color: var(--blue); text-wrap: balance; }
+  h1::after { content: ""; display: block; width: 48px; height: 3px; background: var(--orange); border-radius: 2px; margin-top: 6px; }
+  header p { margin: 0; color: var(--muted); max-width: 84ch; }
+
+  .steps-wrap { max-width: 1280px; margin: 0 auto; padding-block: 16px 0; }
+  .steps { display: flex; flex-wrap: wrap; gap: 6px; }
+  .steps button { display: flex; align-items: center; gap: 7px; padding: 5px 11px 5px 6px; font-size: 13px;
+                  background: var(--panel); border: 1px solid var(--line); border-radius: 999px; }
+  .steps button .n { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center;
+                     background: var(--blue-soft); color: var(--blue); font-weight: 700; font-size: 11px; font-variant-numeric: tabular-nums; }
+  .steps button.done .n { background: var(--blue); color: #fff; }
+  .steps button.cur { border-color: var(--blue); background: var(--blue-soft); font-weight: 600; color: var(--blue-dark); }
+  .steps button.cur .n { background: var(--orange); color: #fff; }
+
+  main { max-width: 1280px; margin: 0 auto; padding-block: 16px 28px; display: grid; gap: 16px;
+         grid-template-columns: 320px minmax(0, 1fr); align-items: start; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px;
+          box-shadow: 0 1px 2px rgba(16, 40, 64, .04); min-width: 0; }
+  .card h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: var(--blue);
+             margin: 0 0 12px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  .card h2::before { content: ""; width: 4px; height: 14px; background: var(--orange); border-radius: 2px; }
+  .note { color: var(--muted); font-size: 13px; margin: 8px 0 0; }
+  .note b { color: var(--ink); }
+
+  button { font: inherit; padding: 7px 14px; border-radius: 8px; border: 1px solid var(--line);
+           background: var(--bg); color: var(--ink); cursor: pointer; transition: background .15s, border-color .15s; }
+  button:hover { border-color: #c4ccd4; }
+  button:disabled { opacity: .45; cursor: default; }
+  button.primary { background: var(--blue); color: #fff; border-color: var(--blue); font-weight: 600; }
+  button.primary:hover { background: var(--blue-dark); border-color: var(--blue-dark); }
+  button.alt { background: var(--orange-dark); color: #fff; border-color: var(--orange-dark); font-weight: 600; }
+  button.alt:hover { background: #9a5900; }
+  button:focus-visible, input:focus-visible { outline: 3px solid var(--orange); outline-offset: 2px; }
+  .sm { padding: 4px 10px; font-size: 13px; }
+  input[type=range] { accent-color: var(--orange); width: 100%; margin: 4px 0 0; }
+
+  /* ---------- Panel de distribuciones ---------- */
+  .dist + .dist { margin-top: 14px; }
+  .dist-h { display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; margin-bottom: 4px; }
+  .dist-h b { font-family: var(--mono); font-size: 14px; }
+  .dist-h span { color: var(--muted); }
+  .dist canvas { display: block; width: 100%; height: 150px; border-radius: 8px; border: 1px solid var(--line);
+                 cursor: ns-resize; touch-action: none; }
+  .seg { display: flex; border: 1px solid var(--line); border-radius: 9px; overflow: hidden; }
+  .seg button { flex: 1; border: 0; border-radius: 0; background: var(--panel); font-size: 13px; padding: 6px 8px; }
+  .seg button + button { border-left: 1px solid var(--line); }
+  .seg button[aria-pressed="true"] { background: var(--blue-soft); font-weight: 600; color: var(--blue-dark); }
+  .row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; align-items: center; }
+  .stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 14px; }
+  .stat { background: var(--bg); border-radius: 8px; padding: 6px 10px; }
+  .stat span { display: block; font-size: 11px; letter-spacing: .03em; color: var(--muted); font-family: var(--mono); }
+  .stat b { font-size: 18px; font-variant-numeric: tabular-nums; }
+  .stat.hi { background: var(--orange-soft); }
+  .stat.hi b { color: var(--orange-dark); }
+
+  /* ---------- Escenario ---------- */
+  .stage-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  .stage-head h2 { margin-bottom: 4px; }
+  .stepno { color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+  .explain { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 16px 24px; margin-bottom: 14px; }
+  .explain .txt p { margin: 0 0 8px; max-width: 68ch; }
+  .explain .txt p:last-child { margin-bottom: 0; }
+  .formula { background: var(--blue-soft); border-radius: 10px; padding: 12px 14px; font-family: var(--mono);
+             font-size: 13.5px; line-height: 1.75; color: var(--blue-dark); align-self: start; overflow-x: auto; }
+  .formula .c { font-family: system-ui, sans-serif; color: var(--muted); font-size: 12.5px; display: block; line-height: 1.45; margin-top: 4px; }
+  .formula b { color: var(--ink); }
+  .viz { overflow-x: auto; padding: 14px 4px 8px; border-top: 1px solid var(--line); min-height: 260px; }
+  .calc { margin-top: 12px; padding: 10px 12px; background: var(--orange-soft); border-radius: 8px;
+          font-family: var(--mono); font-size: 13px; line-height: 1.7; color: #6b3f00; overflow-x: auto; }
+  .calc .h { font-family: system-ui, sans-serif; font-weight: 700; color: var(--orange-dark); font-size: 12px;
+             text-transform: uppercase; letter-spacing: .06em; display: block; }
+  .nav { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+  .hint { color: var(--muted); font-size: 12.5px; }
+  kbd { font: 12px var(--mono); background: var(--blue-soft); color: var(--blue); border-radius: 4px; padding: 1px 5px; }
+  .panel-t { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 700; margin: 18px 0 8px; }
+  .panel-t:first-child { margin-top: 0; }
+  .flex { display: flex; gap: 20px 28px; align-items: flex-start; flex-wrap: wrap; }
+  .flex > * { min-width: 0; }
+
+  table.t { border-collapse: collapse; font-size: 13.5px; min-width: 520px; }
+  table.t th { text-align: right; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted);
+               font-weight: 700; padding: 4px 0 6px 14px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  table.t th:first-child, table.t td:first-child { text-align: left; padding-left: 0; }
+  table.t td { padding: 5px 0 5px 14px; border-bottom: 1px solid #f0f2f4; text-align: right; font-family: var(--mono);
+               font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  table.t td.bar { text-align: left; width: 220px; }
+  table.t tfoot td { border-bottom: 0; border-top: 2px solid var(--line); font-weight: 700; color: var(--ink); }
+  .b { display: inline-block; height: 12px; border-radius: 3px; vertical-align: middle; }
+  .b.p { background: var(--blue); } .b.q { background: var(--orange); } .b.k { background: var(--orange-dark); } .b.n { background: #6fa8d0; }
+  .ctr { position: relative; display: inline-block; width: 200px; height: 14px; vertical-align: middle; }
+  .ctr::before { content: ""; position: absolute; left: 50%; top: -3px; bottom: -3px; width: 1px; background: #c4ccd4; }
+  .ctr .b { position: absolute; top: 1px; }
+
+  .gap { display: grid; grid-template-columns: 140px minmax(200px, 1fr); gap: 8px 12px; align-items: center; font-size: 13px; max-width: 760px; }
+  .gap .l { color: var(--muted); text-align: right; font-family: var(--mono); }
+  .gap .tr { position: relative; height: 26px; background: var(--bg); border-radius: 5px; }
+  .gap .seg1, .gap .seg2 { position: absolute; top: 0; bottom: 0; border-radius: 5px; display: flex; align-items: center;
+                           padding: 0 8px; font: 12px var(--mono); color: #fff; white-space: nowrap; overflow: hidden; }
+  .gap .seg1 { background: var(--blue); left: 0; }
+  .gap .seg2 { background: repeating-linear-gradient(45deg, var(--orange) 0 6px, var(--orange-dark) 6px 8px); }
+  .gap .seg2.inf { background: repeating-linear-gradient(45deg, #d9480f 0 6px, #a8380b 6px 8px); }
+
+  .props { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .prop { background: var(--bg); border-radius: 10px; padding: 12px 14px; }
+  .prop h3 { margin: 0 0 6px; font-size: 14px; display: flex; align-items: center; gap: 8px; }
+  .prop .v { font-family: var(--mono); font-size: 13px; color: var(--blue-dark); }
+  .tag { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; text-transform: uppercase; letter-spacing: .05em; }
+  .tag.y { background: var(--blue); color: #fff; } .tag.n { background: #d9480f; color: #fff; }
+  .ok { margin-top: 12px; padding: 10px 12px; border-left: 4px solid var(--blue); background: var(--blue-soft); border-radius: 6px; font-size: 13.5px; max-width: 80ch; }
+  .warn { margin-top: 12px; padding: 10px 12px; border-left: 4px solid #d9480f; background: #fdeee7; border-radius: 6px; font-size: 13.5px; max-width: 80ch; }
+  .ok ul { margin: 6px 0 0; padding-left: 20px; } .ok li { margin: 2px 0; }
+
+  .knobs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 22px; max-width: 640px; }
+  .knob label { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); }
+  .knob label b { color: var(--ink); font-family: var(--mono); font-size: 13px; }
+  .knob.q label b { color: var(--orange-dark); }
+  .facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-top: 14px; }
+  .fact { background: var(--bg); border-radius: 8px; padding: 10px 12px; }
+  .fact b { display: block; font-size: 20px; color: var(--blue); font-variant-numeric: tabular-nums; }
+  .fact.o b { color: var(--orange-dark); }
+  .fact span { font-size: 12px; color: var(--muted); }
+  .stat span.par, .fact span.par { display: inline; font-size: inherit; color: inherit; }
+  .par { font-family: system-ui, -apple-system, sans-serif; font-weight: 700; padding: 0 1px; }
+  svg text { font-family: system-ui, sans-serif; }
+  svg.plot { display: block; width: 100%; max-width: 760px; height: auto; }
+
+  @media (max-width: 900px) {
+    main { grid-template-columns: minmax(0, 1fr); }
+    .explain { grid-template-columns: minmax(0, 1fr); }
+    .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .props, .knobs { grid-template-columns: minmax(0, 1fr); }
+    .logo { height: 24px; }
+  }
+  @media (min-width: 901px) and (min-height: 820px) { aside.card { position: sticky; top: 12px; } }
+  @media (max-width: 560px) {
+    .steps button .lbl { display: none; }
+    .steps button { padding: 5px; }
+    header { flex-direction: column-reverse; gap: 10px; }
+  }
+</style>
+</head>
+<body>
+<div class="topbar gut">
+<header>
+  <div>
+    <h1>Divergencia de Kullback-Leibler</h1>
+    <p>¿Cuánto se equivoca un modelo Q cuando la realidad sigue la distribución P? La divergencia de Kullback-Leibler
+       lo mide en <b>bits de sorpresa extra</b>. Construye la idea paso a paso, desde la sorpresa de un suceso hasta la
+       función de pérdida con la que se entrenan las redes neuronales, y <b>arrastra las barras</b> de P y Q para ver cómo cambia cada número.</p>
+  </div>
+  <img class="logo" src="logo-ulpgc.jpg" alt="ULPGC · Universidad de Las Palmas de Gran Canaria">
+</header>
+</div>
+
+<div class="steps-wrap gut"><nav class="steps" id="steps" aria-label="Pasos"></nav></div>
+
+<main class="gut">
+  <aside class="card">
+    <h2>Un dado: realidad y modelo</h2>
+    <div class="dist">
+      <div class="dist-h"><b style="color:var(--blue)">P</b><span>cómo cae el dado de verdad</span></div>
+      <canvas id="cP" aria-label="Distribución P; arrastra las barras"></canvas>
+    </div>
+    <div class="dist">
+      <div class="dist-h"><b style="color:var(--orange-dark)">Q</b><span>lo que cree nuestro modelo</span></div>
+      <canvas id="cQ" aria-label="Distribución Q; arrastra las barras"></canvas>
+    </div>
+    <div class="row">
+      <button class="sm" data-pre="loaded">Dado trucado</button>
+      <button class="sm" data-pre="same">Q = P</button>
+      <button class="sm" data-pre="zero">Q con un cero</button>
+      <button class="sm" data-pre="rand">Al azar</button>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <span class="note" style="margin:0">Unidades</span>
+      <div class="seg" id="units" style="flex:1">
+        <button data-u="2" aria-pressed="true">bits (log₂)</button>
+        <button data-u="e" aria-pressed="false">nats (ln)</button>
+      </div>
+    </div>
+    <div class="stats">
+      <div class="stat"><span>H(P)</span><b id="sHP"></b></div>
+      <div class="stat"><span>H(P, Q)</span><b id="sCE"></b></div>
+      <div class="stat hi"><span>D(P <span class='par'>‖</span> Q)</span><b id="sKL"></b></div>
+      <div class="stat"><span>D(Q <span class='par'>‖</span> P)</span><b id="sKR"></b></div>
+    </div>
+    <p class="note">Al subir una barra, las demás se reescalan para que la suma siga siendo 1.</p>
+  </aside>
+
+  <section class="card" aria-live="polite">
+    <div class="stage-head">
+      <h2 id="st-title">—</h2>
+      <span class="stepno" id="st-no"></span>
+    </div>
+    <div class="explain">
+      <div class="txt" id="st-text"></div>
+      <div class="formula" id="st-formula"></div>
+    </div>
+    <div class="viz" id="viz"></div>
+    <div class="nav">
+      <button id="prev">← Anterior</button>
+      <span class="hint">También con <kbd>←</kbd> <kbd>→</kbd></span>
+      <button id="next" class="primary">Siguiente →</button>
+    </div>
+  </section>
+</main>
+
+<script>
+/* ======================= Estado ======================= */
+const K = 6, FACES = ["1", "2", "3", "4", "5", "6"];
+let P = [.1, .1, .1, .1, .1, .5], Q = Array(K).fill(1 / K);
+let BASE = 2, STEP = 0;
+const $ = s => document.querySelector(s);
+
+/* ======================= Teoría de la información ======================= */
+const lg = x => BASE === 2 ? Math.log2(x) : Math.log(x);
+const U = () => BASE === 2 ? "bits" : "nats", LOGN = () => BASE === 2 ? "log₂" : "ln";
+const surprise = p => p > 0 ? -lg(p) : Infinity;
+const H = A => A.reduce((s, p) => p > 0 ? s - p * lg(p) : s, 0);
+const CE = (A, B) => A.reduce((s, p, i) => p > 0 ? (B[i] > 0 ? s - p * lg(B[i]) : Infinity) : s, 0);
+const KL = (A, B) => A.reduce((s, p, i) => p > 0 ? (B[i] > 0 ? s + p * lg(p / B[i]) : Infinity) : s, 0);
+const JS = (A, B) => { const M = A.map((p, i) => (p + B[i]) / 2); return KL(A, M) / 2 + KL(B, M) / 2; };
+const f = (v, d = 3) => !isFinite(v) ? "∞" : (Math.abs(v) < 5 * 10 ** -(d + 1) ? 0 : v).toFixed(d).replace(".", ",").replace("-", "−");
+const pc = v => f(v, 3);
+
+/* ======================= Editores P y Q ======================= */
+const CSS = getComputedStyle(document.documentElement), C = n => CSS.getPropertyValue(n).trim();
+const BLUE = C("--blue"), ORANGE = C("--orange"), MUTED = C("--muted"), LINE = C("--line");
+const EP = { l: 30, r: 8, t: 18, b: 20 }, YMAX = 1;
+function fit(cv) {
+  const r = cv.getBoundingClientRect(), d = window.devicePixelRatio || 1;
+  if (cv.width !== Math.round(r.width * d)) { cv.width = Math.round(r.width * d); cv.height = Math.round(r.height * d); }
+  const g = cv.getContext("2d"); g.setTransform(d, 0, 0, d, 0, 0); return { g, W: r.width, H: r.height };
+}
+function drawEditor(cv, A, color) {
+  const { g, W, H: Hh } = fit(cv), pw = W - EP.l - EP.r, ph = Hh - EP.t - EP.b, slot = pw / K;
+  g.clearRect(0, 0, W, Hh); g.fillStyle = "#fff"; g.fillRect(0, 0, W, Hh);
+  g.font = "10.5px system-ui, sans-serif"; g.textAlign = "right"; g.textBaseline = "middle";
+  for (const y of [0, .25, .5, .75, 1]) {
+    const yy = EP.t + ph * (1 - y / YMAX);
+    g.strokeStyle = y ? LINE : "#c4ccd4"; g.lineWidth = 1; g.beginPath(); g.moveTo(EP.l, yy); g.lineTo(W - EP.r, yy); g.stroke();
+    g.fillStyle = MUTED; if (y % .5 === 0) g.fillText(f(y, 1).replace(",0", ""), EP.l - 6, yy);
+  }
+  // referencia uniforme
+  const yu = EP.t + ph * (1 - 1 / K / YMAX);
+  g.setLineDash([3, 3]); g.strokeStyle = "#9aa6b2"; g.beginPath(); g.moveTo(EP.l, yu); g.lineTo(W - EP.r, yu); g.stroke(); g.setLineDash([]);
+  A.forEach((v, i) => {
+    const x = EP.l + slot * i + slot * .18, w = slot * .64, y = EP.t + ph * (1 - v / YMAX);
+    g.fillStyle = color; g.fillRect(x, y, w, EP.t + ph - y);
+    if (v === 0) { g.fillStyle = "#d9480f"; g.fillRect(x, EP.t + ph - 2, w, 2); }
+    g.fillStyle = "#1b2430"; g.textAlign = "center"; g.textBaseline = "bottom"; g.font = "600 11px system-ui, sans-serif";
+    g.fillText(f(v, 2), x + w / 2, Math.max(EP.t, y - 2) );
+    g.fillStyle = MUTED; g.textBaseline = "top"; g.font = "11px system-ui, sans-serif"; g.fillText(FACES[i], x + w / 2, EP.t + ph + 5);
+  });
+}
+function setVal(A, i, v) {
+  v = Math.max(0, Math.min(1, v)); if (v < .006) v = 0; if (v > .994) v = 1;
+  const rest = 1 - v, s = A.reduce((a, b, j) => j === i ? a : a + b, 0);
+  return A.map((x, j) => j === i ? v : s < 1e-9 ? rest / (K - 1) : x * rest / s);
+}
+function attachEditor(cv, which) {
+  // Se reescala siempre a partir de la distribución del inicio del arrastre y sobre la barra agarrada,
+  // para que las demás conserven sus proporciones aunque lleguen a valer 0 por el camino.
+  let drag = false, base = null, idx = 0;
+  const apply = e => {
+    const r = cv.getBoundingClientRect(), ph = r.height - EP.t - EP.b;
+    const v = (1 - (e.clientY - r.top - EP.t) / ph) * YMAX;
+    if (which === "P") P = setVal(base, idx, v); else Q = setVal(base, idx, v);
+    update();
+  };
+  cv.addEventListener("pointerdown", e => {
+    const r = cv.getBoundingClientRect(), pw = r.width - EP.l - EP.r;
+    idx = Math.max(0, Math.min(K - 1, Math.floor((e.clientX - r.left - EP.l) / (pw / K))));
+    base = (which === "P" ? P : Q).slice();
+    drag = true; cv.setPointerCapture(e.pointerId); apply(e); });
+  cv.addEventListener("pointermove", e => drag && apply(e));
+  cv.addEventListener("pointerup", () => drag = false); cv.addEventListener("pointercancel", () => drag = false);
+}
+attachEditor($("#cP"), "P"); attachEditor($("#cQ"), "Q");
+document.querySelectorAll("[data-pre]").forEach(b => b.onclick = () => {
+  const k = b.dataset.pre;
+  if (k === "loaded") { P = [.1, .1, .1, .1, .1, .5]; Q = Array(K).fill(1 / K); }
+  if (k === "same") Q = P.slice();
+  if (k === "zero") { P = [.1, .1, .1, .1, .1, .5]; Q = [.2, .2, .2, .2, .2, 0]; }
+  if (k === "rand") { const r = () => { const a = Array.from({ length: K }, () => Math.random() ** 2 + .02), s = a.reduce((x, y) => x + y); return a.map(x => x / s); }; P = r(); Q = r(); }
+  update();
+});
+$("#units").addEventListener("click", e => { const t = e.target.closest("button"); if (!t) return;
+  BASE = t.dataset.u === "2" ? 2 : Math.E; [...$("#units").children].forEach(x => x.setAttribute("aria-pressed", x === t)); update(true); });
+
+function drawAside() {
+  drawEditor($("#cP"), P, BLUE); drawEditor($("#cQ"), Q, ORANGE);
+  $("#sHP").textContent = f(H(P)); $("#sCE").textContent = f(CE(P, Q));
+  $("#sKL").textContent = f(KL(P, Q)); $("#sKR").textContent = f(KL(Q, P));
+}
+function update(force) { drawAside(); if (force || STEPS[STEP].usesPQ) renderStep(); }
+new ResizeObserver(drawAside).observe($("#cP"));
+
+/* ======================= Utilidades de las vistas ======================= */
+const bar = (v, max, cls, w = 200) => `<span class="b ${cls}" style="width:${isFinite(v) ? Math.max(v > 0 ? 2 : 0, v / max * w) : w}px"></span>`;
+const ctr = (v, max, w = 200) => { const half = w / 2, len = isFinite(v) ? Math.min(half, Math.abs(v) / max * half) : half;
+  return `<span class="ctr" style="width:${w}px"><span class="b ${v >= 0 ? "k" : "n"}" style="${v >= 0 ? `left:${half}px` : `left:${half - len}px`};width:${Math.max(1, len)}px"></span></span>`; };
+function gapBars(rows) {          // rows: [label, base, extra, color?]
+  const mx = Math.max(...rows.map(r => r[1] + (isFinite(r[2]) ? r[2] : 0)), 1e-9) * 1.08 || 1;
+  return `<div class="gap">${rows.map(([l, a, b]) => {
+    const wa = a / mx * 100, wb = isFinite(b) ? b / mx * 100 : 100 - wa;
+    return `<div class="l">${l}</div><div class="tr"><div class="seg1" style="width:${wa}%">${f(a)}</div>${b !== null ? `<div class="seg2${isFinite(b) ? "" : " inf"}" style="left:${wa}%;width:${Math.max(0, wb)}%">${b > 0 || !isFinite(b) ? "+ " + f(b) : ""}</div>` : ""}</div>`;
+  }).join("")}</div>`;
+}
+// Gráfica SVG genérica
+function plot({ w = 720, h = 260, x0, x1, y0, y1, series = [], points = [], xticks = [], yticks = [], xl = "", yl = "", extra = "" }) {
+  const L = 48, R = 14, T = 12, B = 34, pw = w - L - R, ph = h - T - B;
+  const X = x => L + (x - x0) / (x1 - x0) * pw, Y = y => T + (1 - (y - y0) / (y1 - y0)) * ph;
+  let s = `<svg class="plot" viewBox="0 0 ${w} ${h}" role="img">`;
+  yticks.forEach(t => s += `<line x1="${L}" x2="${L + pw}" y1="${Y(t)}" y2="${Y(t)}" stroke="${t === 0 ? "#c4ccd4" : LINE}"/><text x="${L - 6}" y="${Y(t) + 4}" font-size="11" fill="${MUTED}" text-anchor="end">${f(t, t % 1 ? 1 : 0)}</text>`);
+  xticks.forEach(t => s += `<line x1="${X(t)}" x2="${X(t)}" y1="${T}" y2="${T + ph}" stroke="${LINE}"/><text x="${X(t)}" y="${T + ph + 16}" font-size="11" fill="${MUTED}" text-anchor="middle">${f(t, t % 1 ? 1 : 0)}</text>`);
+  s += `<text x="${L + pw}" y="${h - 3}" font-size="11.5" fill="${MUTED}" text-anchor="end">${xl}</text><text x="${L + pw - 4}" y="${T + 14}" text-anchor="end" font-size="11.5" fill="${MUTED}">${yl}</text>`;
+  series.forEach(({ pts, color, width = 2.2, fill, dash }) => {
+    const d = pts.map(([x, y], i) => `${i ? "L" : "M"}${X(x).toFixed(1)},${Y(Math.min(y1, Math.max(y0, y))).toFixed(1)}`).join("");
+    if (fill) s += `<path d="${d}L${X(pts[pts.length - 1][0])},${Y(y0)}L${X(pts[0][0])},${Y(y0)}Z" fill="${fill}"/>`;
+    s += `<path d="${d}" fill="none" stroke="${color}" stroke-width="${width}" ${dash ? `stroke-dasharray="${dash}"` : ""} stroke-linejoin="round"/>`;
+  });
+  points.forEach(({ x, y, label, color }) => s += `<circle cx="${X(x)}" cy="${Y(Math.min(y, y1))}" r="5" fill="${color}" stroke="#fff" stroke-width="1.5"/>
+    <text x="${X(x) + 8}" y="${Y(Math.min(y, y1)) - 7}" font-size="11.5" font-weight="600" fill="#1b2430">${label}</text>`);
+  return s + extra.replace(/X\((.*?)\)/g, (_, v) => X(+v)).replace(/Y\((.*?)\)/g, (_, v) => Y(+v)) + "</svg>";
+}
+
+/* ======================= Pasos ======================= */
+const STEPS = [
+  { t: "Sorpresa", f: stepSurprise, usesPQ: true },
+  { t: "Entropía", f: stepEntropy, usesPQ: true },
+  { t: "Entropía cruzada", f: stepCross, usesPQ: true },
+  { t: "Divergencia KL", f: stepKL, usesPQ: true },
+  { t: "Asimetría", f: stepAsym },
+  { t: "¿Es una distancia?", f: stepMetric, usesPQ: true },
+  { t: "En aprendizaje automático", f: stepML },
+];
+
+function stepSurprise() {
+  const pts = []; for (let i = 1; i <= 200; i++) { const p = i / 200; pts.push([p, -lg(p)]); }
+  const ymax = BASE === 2 ? 7 : 5;
+  return {
+    text: `<p>Empecemos por un solo suceso. Si algo tiene probabilidad <b>p</b>, ¿cuánto nos <b>sorprende</b> que ocurra? Un suceso seguro (p = 1)
+      no sorprende nada; uno muy raro sorprende mucho. La medida que usa la teoría de la información es <b>−log p</b>.</p>
+      <p>El logaritmo hace que las sorpresas de sucesos independientes se <b>sumen</b>: sacar dos seises seguidos con un dado justo
+      sorprende el doble que uno solo. Con logaritmo en base 2 la sorpresa se mide en <b>bits</b>: una moneda al aire aporta exactamente 1 bit.</p>`,
+    formula: `sorpresa(x) = −${LOGN()} p(x)<br>p = 1 → 0 ${U()} &nbsp; p = ½ → ${f(-lg(.5), 2)} ${U()}<br>p → 0 → ∞
+      <span class="c">Los puntos azules son las caras del dado con las probabilidades de P (panel izquierdo).</span>`,
+    viz: plot({ x0: 0, x1: 1, y0: 0, y1: ymax, xticks: [0, .2, .4, .6, .8, 1], yticks: BASE === 2 ? [0, 1, 2, 3, 4, 5, 6, 7] : [0, 1, 2, 3, 4, 5],
+        xl: "probabilidad p", yl: `sorpresa −${LOGN()} p (${U()})`, series: [{ pts, color: "#9aa6b2", width: 2 }],
+        points: P.map((p, i) => { const g = FACES.filter((_, j) => Math.abs(P[j] - p) < 1e-9); return { x: Math.max(p, .002), y: surprise(p), label: (g.length > 1 ? "caras " : "cara ") + g.join(", "), color: BLUE }; }).filter((_, i) => P.findIndex(q => Math.abs(q - P[i]) < 1e-9) === i) }) +
+      `<table class="t" style="margin-top:10px"><thead><tr><th>Cara</th><th>p</th><th>sorpresa (${U()})</th><th></th></tr></thead><tbody>
+       ${P.map((p, i) => `<tr><td>${FACES[i]}</td><td>${pc(p)}</td><td>${f(surprise(p))}</td><td class="bar">${bar(surprise(p), ymax, "p")}</td></tr>`).join("")}</tbody></table>`,
+  };
+}
+
+function stepEntropy() {
+  const h = H(P), hmax = lg(K), mx = lg(Math.E) / Math.E;   // escala fija: máximo de −p·log p (en p = 1/e)
+  return {
+    text: `<p>La <b>entropía</b> de una distribución es su <b>sorpresa media</b>: cada sorpresa ponderada por lo a menudo que ocurre.
+      Mide la incertidumbre que tiene P. Un dado justo tiene la máxima posible, ${LOGN()} 6 = ${f(hmax)} ${U()}; un dado que siempre saca
+      lo mismo tiene entropía 0.</p>
+      <p>Tiene una lectura muy práctica (Shannon, 1948): es el <b>número medio mínimo de bits</b> necesarios para codificar los resultados
+      si diseñamos el código pensando en P, dando códigos cortos a lo frecuente, como hace Huffman en JPEG.</p>`,
+    formula: `H(P) = Σ<sub>x</sub> p(x) · (−${LOGN()} p(x))<br>H(P) = <b>${f(h)} ${U()}</b> &nbsp; (máx. ${f(hmax)})
+      <span class="c">Prueba a dejar P uniforme o a concentrarla en una sola cara.</span>`,
+    viz: `<table class="t"><thead><tr><th>Cara</th><th>p</th><th>sorpresa</th><th>p · sorpresa</th><th></th></tr></thead><tbody>
+       ${P.map((p, i) => { const c = p > 0 ? -p * lg(p) : 0; return `<tr><td>${FACES[i]}</td><td>${pc(p)}</td><td>${f(surprise(p))}</td><td>${f(c)}</td><td class="bar">${bar(c, mx, "p")}</td></tr>`; }).join("")}</tbody>
+       <tfoot><tr><td colspan="3">H(P) = suma</td><td>${f(h)}</td><td></td></tr></tfoot></table>
+       <p class="panel-t">Incertidumbre de P frente al máximo</p>
+       ${gapBars([["H(P)", h, null], ["uniforme", hmax, null]])}
+       <div class="calc"><span class="h">Cálculo</span>H(P) = ${P.filter(p => p > 0).map(p => `${f(p, 2)}·${f(-lg(p), 2)}`).join(" + ")} = ${f(h)} ${U()}</div>`,
+  };
+}
+
+function stepCross() {
+  const h = H(P), ce = CE(P, Q), mx = Math.max(...P.map((p, i) => p > 0 && Q[i] > 0 ? -p * lg(Q[i]) : 0), .01);
+  return {
+    text: `<p>Ahora supón que la realidad sigue P, pero nosotros <b>creemos que sigue Q</b>. Cada vez que sale una cara nos sorprendemos
+      según lo que esperábamos, −log q(x), pero las caras aparecen con las frecuencias reales p(x).</p>
+      <p>Esa sorpresa media es la <b>entropía cruzada</b> H(P, Q). En términos de códigos: son los bits medios que gastaríamos usando
+      un código diseñado para Q cuando los datos vienen de P. Nunca puede ser menor que H(P): <b>equivocarse siempre sale caro</b>.</p>`,
+    formula: `H(P, Q) = Σ<sub>x</sub> p(x) · (−${LOGN()} q(x))<br>H(P, Q) = <b>${f(ce)}</b> ≥ H(P) = ${f(h)} ${U()}
+      <span class="c">La frecuencia la pone la realidad (p); la sorpresa, el modelo (q).</span>`,
+    viz: `<table class="t"><thead><tr><th>Cara</th><th>p</th><th>q</th><th>−${LOGN()} q</th><th>p · (−${LOGN()} q)</th><th></th></tr></thead><tbody>
+       ${P.map((p, i) => { const c = p > 0 ? (Q[i] > 0 ? -p * lg(Q[i]) : Infinity) : 0;
+         return `<tr><td>${FACES[i]}</td><td>${pc(p)}</td><td>${pc(Q[i])}</td><td>${f(surprise(Q[i]))}</td><td>${f(c)}</td><td class="bar">${bar(c, mx, "q")}</td></tr>`; }).join("")}</tbody>
+       <tfoot><tr><td colspan="4">H(P, Q) = suma</td><td>${f(ce)}</td><td></td></tr></tfoot></table>
+       <p class="panel-t">Bits medios por tirada</p>
+       ${gapBars([["código para P", h, null], ["código para Q", h, ce - h]])}
+       <p class="note">La parte rayada es el <b>coste extra</b> por usar el modelo equivocado. Ese exceso tiene nombre propio: es el siguiente paso.</p>`,
+  };
+}
+
+function stepKL() {
+  const h = H(P), ce = CE(P, Q), d = KL(P, Q);
+  const terms = P.map((p, i) => p > 0 ? (Q[i] > 0 ? p * lg(p / Q[i]) : Infinity) : 0);
+  const mx = Math.max(...terms.filter(isFinite).map(Math.abs), .01);
+  return {
+    text: `<p>La <b>divergencia de Kullback-Leibler</b> es exactamente ese exceso: cuántos ${U()} de sorpresa extra, en media, nos cuesta
+      creer Q cuando la verdad es P.</p>
+      <p>Se puede escribir como una única suma. Fíjate en que algunos términos pueden salir <b>negativos</b> (caras donde Q da más
+      probabilidad de la real), pero el total <b>nunca</b> es negativo, y sólo vale 0 cuando Q = P. Y si Q asigna probabilidad <b>0</b> a algo
+      que sí ocurre, la divergencia es <b>infinita</b>: prueba el botón «Q con un cero».</p>`,
+    formula: `D<sub>KL</sub>(P <span class='par'>‖</span> Q) = H(P, Q) − H(P)<br>&nbsp;&nbsp;&nbsp;= Σ<sub>x</sub> p(x) · ${LOGN()} [ p(x) / q(x) ]<br>
+      &nbsp;&nbsp;&nbsp;= ${f(ce)} − ${f(h)} = <b>${f(d)} ${U()}</b>
+      <span class="c">Se lee «divergencia de P respecto de Q». El orden importa.</span>`,
+    viz: `<table class="t"><thead><tr><th>Cara</th><th>p</th><th>q</th><th>p / q</th><th>p · ${LOGN()}(p/q)</th><th style="text-align:center">contribución</th></tr></thead><tbody>
+       ${P.map((p, i) => `<tr><td>${FACES[i]}</td><td>${pc(p)}</td><td>${pc(Q[i])}</td><td>${p > 0 ? (Q[i] > 0 ? f(p / Q[i], 2) : "∞") : "—"}</td>
+         <td>${f(terms[i])}</td><td class="bar">${ctr(terms[i], mx)}</td></tr>`).join("")}</tbody>
+       <tfoot><tr><td colspan="4">D(P <span class='par'>‖</span> Q) = suma</td><td>${f(d)}</td><td></td></tr></tfoot></table>
+       <p class="note"><span class="b k" style="width:14px"></span> la cara pesa más en P que en Q (penaliza) &nbsp;
+         <span class="b n" style="width:14px"></span> pesa menos (resta), pero no lo bastante para hacer negativo el total.</p>
+       <p class="panel-t">La divergencia es la distancia entre las dos barras</p>
+       ${gapBars([["H(P)", h, null], ["H(P, Q)", h, ce - h]])}
+       ${!isFinite(d) ? `<div class="warn"><b>D = ∞.</b> Q da probabilidad 0 a una cara que sí sale. Para Q ese resultado es «imposible», así que su sorpresa es infinita.
+         En la práctica los modelos nunca asignan exactamente 0 (por eso se suaviza con un pequeño ε).</div>` : ""}`,
+  };
+}
+
+/* --------- Paso 5: asimetría con distribuciones continuas --------- */
+const AS = { sep: 5.5, w: .5, mu: 0, sig: 1, anim: null };
+const XS = Array.from({ length: 641 }, (_, i) => -8 + 16 * i / 640), DX = 16 / 640, S0 = .7;
+const lnN = (x, m, s) => -((x - m) ** 2) / (2 * s * s) - Math.log(s * Math.sqrt(2 * Math.PI));
+const lnP = x => { const a = Math.log(AS.w) + lnN(x, -AS.sep / 2, S0), b = Math.log(1 - AS.w) + lnN(x, AS.sep / 2, S0), m = Math.max(a, b);
+  return m + Math.log(Math.exp(a - m) + Math.exp(b - m)); };
+function contKL(mu, sig, lp) {
+  let fw = 0, rv = 0;
+  for (let i = 0; i < XS.length; i++) { const lq = lnN(XS[i], mu, sig), p = Math.exp(lp[i]), q = Math.exp(lq);
+    fw += p * (lp[i] - lq); rv += q * (lq - lp[i]); }
+  const k = DX / (BASE === 2 ? Math.LN2 : 1); return [fw * k, rv * k];
+}
+function optimize(which) {
+  const lp = XS.map(lnP); let best = [Infinity, 0, 1];
+  for (let mu = -5; mu <= 5.001; mu += .1) for (let sig = .3; sig <= 4.001; sig += .05) {
+    const v = contKL(mu, sig, lp)[which]; if (v < best[0] - 1e-9) best = [v, mu, sig]; }
+  // segunda pasada fina
+  const [, m0, s0] = best;
+  for (let mu = m0 - .1; mu <= m0 + .1; mu += .01) for (let sig = Math.max(.3, s0 - .05); sig <= s0 + .05; sig += .005) {
+    const v = contKL(mu, sig, lp)[which]; if (v < best[0]) best = [v, mu, sig]; }
+  return best;
+}
+function stepAsym() {
+  return {
+    text: `<p>La divergencia <b>no es simétrica</b>: en general D(P <span class='par'>‖</span> Q) ≠ D(Q <span class='par'>‖</span> P). Puedes comprobarlo en el panel izquierdo, pero se entiende
+      mucho mejor con distribuciones continuas. Aquí P (azul) tiene <b>dos jorobas</b> y queremos aproximarla con una sola campana de Gauss Q (naranja).</p>
+      <p>Minimizar <b>D(P <span class='par'>‖</span> Q)</b> castiga que Q sea pequeña donde P es grande: Q se estira para <b>cubrir los dos modos</b>, aunque ponga masa
+      en medio, donde P casi no tiene. Minimizar <b>D(Q <span class='par'>‖</span> P)</b> castiga lo contrario: Q se <b>queda con un solo modo</b> y lo ajusta bien. Pulsa los botones; después acerca los modos de P y vuelve a probar: cuando se solapan, las dos soluciones acaban coincidiendo.</p>`,
+    formula: `D(P <span class='par'>‖</span> Q) = ∫ p(x) ${LOGN()} [p(x)/q(x)] dx &nbsp;<span style="color:var(--blue)">«cubre la masa»</span><br>
+      D(Q <span class='par'>‖</span> P) = ∫ q(x) ${LOGN()} [q(x)/p(x)] dx &nbsp;<span style="color:var(--orange-dark)">«busca un modo»</span>
+      <span class="c">La primera aparece al entrenar por máxima verosimilitud; la segunda, en inferencia variacional (VAE).</span>`,
+    viz: `<div id="asplot"></div>
+      <div class="facts"><div class="fact"><b id="aF"></b><span>D(P <span class='par'>‖</span> Q) en ${U()}</span></div><div class="fact o"><b id="aR"></b><span>D(Q <span class='par'>‖</span> P) en ${U()}</span></div>
+        <div class="fact" style="grid-column: span 2"><span style="display:block;margin-bottom:6px">Ajustar Q automáticamente minimizando…</span>
+          <div class="row" style="margin:0"><button class="primary sm" id="optF">D(P <span class='par'>‖</span> Q)</button><button class="alt sm" id="optR">D(Q <span class='par'>‖</span> P)</button></div></div></div>
+      <div class="knobs" style="margin-top:14px">
+        <div class="knob"><label for="kSep">P · separación de los modos <b id="vSep"></b></label><input id="kSep" type="range" min="0" max="7" step=".1" value="${AS.sep}"></div>
+        <div class="knob"><label for="kW">P · peso del modo izquierdo <b id="vW"></b></label><input id="kW" type="range" min=".2" max=".8" step=".01" value="${AS.w}"></div>
+        <div class="knob q"><label for="kMu">Q · media μ <b id="vMu"></b></label><input id="kMu" type="range" min="-5" max="5" step=".01" value="${AS.mu}"></div>
+        <div class="knob q"><label for="kSig">Q · desviación σ <b id="vSig"></b></label><input id="kSig" type="range" min=".3" max="4" step=".01" value="${AS.sig}"></div>
+      </div>`,
+    after() {
+      const draw = () => {
+        const lp = XS.map(lnP), [fw, rv] = contKL(AS.mu, AS.sig, lp);
+        const pP = XS.map((x, i) => [x, Math.exp(lp[i])]), pQ = XS.map(x => [x, Math.exp(lnN(x, AS.mu, AS.sig))]);
+        const ym = Math.max(.55, ...pP.map(p => p[1]), ...pQ.map(p => p[1])) * 1.05;
+        $("#asplot").innerHTML = plot({ x0: -8, x1: 8, y0: 0, y1: ym, h: 250, xticks: [-8, -6, -4, -2, 0, 2, 4, 6, 8], yticks: [0, .2, .4].filter(t => t < ym),
+          xl: "x", yl: "densidad", series: [{ pts: pP, color: BLUE, fill: "rgba(2,102,162,.16)" }, { pts: pQ, color: ORANGE, width: 2.6 }] });
+        $("#aF").textContent = f(fw); $("#aR").textContent = f(rv);
+        $("#vSep").textContent = f(AS.sep, 1); $("#vW").textContent = f(AS.w, 2); $("#vMu").textContent = f(AS.mu, 2); $("#vSig").textContent = f(AS.sig, 2);
+        $("#kMu").value = AS.mu; $("#kSig").value = AS.sig;
+      };
+      const bind = (id, key) => $(id).oninput = e => { cancelAnimationFrame(AS.anim); AS[key] = +e.target.value; draw(); };
+      bind("#kSep", "sep"); bind("#kW", "w"); bind("#kMu", "mu"); bind("#kSig", "sig");
+      const go = which => { cancelAnimationFrame(AS.anim);
+        const [, m1, s1] = optimize(which), m0 = AS.mu, s0 = AS.sig, t0 = performance.now();
+        const tick = t => { const k = Math.min(1, (t - t0) / 800), e = 1 - (1 - k) ** 3;
+          AS.mu = m0 + (m1 - m0) * e; AS.sig = s0 + (s1 - s0) * e; draw(); if (k < 1) AS.anim = requestAnimationFrame(tick); };
+        AS.anim = requestAnimationFrame(tick); };
+      $("#optF").onclick = () => go(0); $("#optR").onclick = () => go(1);
+      draw();
+    },
+  };
+}
+
+/* --------- Paso 6: propiedades --------- */
+function stepMetric() {
+  const d = KL(P, Q), r = KL(Q, P), js = JS(P, Q), lmax = lg(2);
+  const A = [.9, .1], Bm = [.5, .5], Cq = [.1, .9], ac = KL(A, Cq), ab = KL(A, Bm), bc = KL(Bm, Cq);
+  const same = P.every((p, i) => Math.abs(p - Q[i]) < 1e-9);
+  return {
+    text: `<p>A menudo se habla de la KL como si fuera una «distancia» entre distribuciones, pero en sentido matemático <b>no es una métrica</b>,
+      y por eso se llama <b>divergencia</b>. Una métrica debe cumplir cuatro propiedades; la KL sólo cumple dos.</p>
+      <p>Cuando se necesita algo simétrico se usa la <b>divergencia de Jensen-Shannon</b>, que compara cada distribución con la media
+      de las dos. Está acotada (como mucho 1 bit) y su raíz cuadrada <b>sí</b> es una métrica.</p>`,
+    formula: `M = ½ (P + Q)<br>JS(P, Q) = ½ D(P <span class='par'>‖</span> M) + ½ D(Q <span class='par'>‖</span> M)<br>JS = <b>${f(js)}</b> &nbsp; √JS = <b>${f(Math.sqrt(js))}</b>
+      <span class="c">0 ≤ JS ≤ ${LOGN()} 2 = ${f(lmax)} ${U()}. Siempre finita, aunque Q tenga ceros.</span>`,
+    viz: `<div class="props">
+      <div class="prop"><h3><span class="tag y">Sí</span> No negativa</h3><div class="v">D(P <span class='par'>‖</span> Q) = ${f(d)} ≥ 0</div>
+        <p class="note">Desigualdad de Gibbs: el mejor código para P es el diseñado para P.</p></div>
+      <div class="prop"><h3><span class="tag y">Sí</span> Cero sólo si P = Q</h3><div class="v">${same ? "P = Q → D = 0" : `P ≠ Q → D = ${f(d)} &gt; 0`}</div>
+        <div class="row"><button class="sm" id="mkSame">Hacer Q = P</button></div></div>
+      <div class="prop"><h3><span class="tag n">No</span> Simétrica</h3><div class="v">D(P <span class='par'>‖</span> Q) = ${f(d)}<br>D(Q <span class='par'>‖</span> P) = ${f(r)}</div>
+        <p class="note">${Math.abs(d - r) < 1e-3 ? "Ahora casi coinciden: mueve alguna barra para separarlas." : "Dos valores distintos con las mismas distribuciones."}</p></div>
+      <div class="prop"><h3><span class="tag n">No</span> Desigualdad triangular</h3>
+        <div class="v">A = (0,9; 0,1) &nbsp; B = (0,5; 0,5) &nbsp; C = (0,1; 0,9)<br>D(A<span class='par'>‖</span>B) + D(B<span class='par'>‖</span>C) = ${f(ab)} + ${f(bc)} = ${f(ab + bc)}<br>D(A<span class='par'>‖</span>C) = <b>${f(ac)}</b> &nbsp;¡mayor!</div>
+        <p class="note">Ir «directamente» de A a C cuesta más que pasar por B.</p></div>
+      </div>
+      <p class="panel-t">Las tres medidas para tus P y Q</p>
+      ${gapBars([["D(P <span class='par'>‖</span> Q)", 0, d], ["D(Q <span class='par'>‖</span> P)", 0, r], ["JS(P, Q)", 0, js]]).replace(/<div class="seg1" style="width:0%">0,000<\/div>/g, "")}`,
+    after() { const b = $("#mkSame"); if (b) b.onclick = () => { Q = P.slice(); update(); }; },
+  };
+}
+
+/* --------- Paso 7: pérdida en clasificación --------- */
+const ML = { cls: ["gato", "perro", "pájaro", "pez"], y: 0, z: [0.5, 1.2, -0.3, 0], smooth: false };
+const softmax = z => { const m = Math.max(...z), e = z.map(v => Math.exp(v - m)), s = e.reduce((a, b) => a + b); return e.map(v => v / s); };
+const mlP = () => ML.cls.map((_, i) => ML.smooth ? (i === ML.y ? .9 + .1 / 4 : .1 / 4) : (i === ML.y ? 1 : 0));
+function mlParts() {
+  const p = mlP(), q = softmax(ML.z), ce = CE(p, q), h = H(p), d = KL(p, q);
+  const rows = ML.cls.map((c, i) => `<tr><td>${c}</td><td>${f(ML.z[i], 2)}</td><td>${pc(p[i])}</td><td class="bar">${bar(p[i], 1, "p", 150)}</td><td>${pc(q[i])}</td><td class="bar">${bar(q[i], 1, "q", 150)}</td></tr>`).join("");
+  return {
+    formula: `pérdida = H(P, Q) = H(P) + D(P <span class='par'>‖</span> Q)<br>= ${f(h)} + ${f(d)} = <b>${f(ce)} ${U()}</b><br>∂pérdida/∂z<sub>i</sub> = q<sub>i</sub> − p<sub>i</sub>
+      <span class="c">z son los «logits», las salidas de la red antes de la softmax: q<sub>i</sub> = e<sup>z<sub>i</sub></sup> / Σ e<sup>z<sub>j</sub></sup>.</span>`,
+    dyn: `<table class="t" style="margin-top:12px"><thead><tr><th>Clase</th><th>logit z</th><th>P (etiqueta)</th><th></th><th>Q (red)</th><th></th></tr></thead><tbody>${rows}</tbody></table>
+      <div class="facts"><div class="fact o"><b>${f(ce)}</b><span>pérdida H(P, Q)</span></div><div class="fact"><b>${f(d)}</b><span>D(P <span class='par'>‖</span> Q)</span></div>
+        <div class="fact"><b>${f(h)}</b><span>H(P) (constante)</span></div><div class="fact"><b>${pc(q[ML.y])}</b><span>q de la clase correcta</span></div></div>`,
+  };
+}
+function stepML() {
+  const m = mlParts();
+  return {
+    text: `<p>Al entrenar un clasificador, cada ejemplo trae su etiqueta: es una distribución P concentrada en la clase correcta (codificación
+      <i>one-hot</i>). La red produce una distribución Q con una capa <b>softmax</b>. La pérdida habitual, la <b>entropía cruzada</b> H(P, Q), es
+      la KL más una constante, porque H(P) no depende de la red. <b>Minimizar la entropía cruzada es minimizar la KL.</b></p>
+      <p>Con etiquetas one-hot, H(P) = 0 y la pérdida se reduce a −log q(clase correcta). Su gradiente respecto a las salidas de la red,
+      antes de la softmax, es simplemente <b>q − p</b>. Pulsa «Paso de entrenamiento» y mira cómo Q se acerca a P.</p>`,
+    formula: m.formula,
+    viz: `<div class="row" style="margin-top:0"><span class="note" style="margin:0">Clase correcta:</span>
+        <div class="seg" id="mlY" style="min-width:300px">${ML.cls.map((c, i) => `<button data-i="${i}" aria-pressed="${i === ML.y}">${c}</button>`).join("")}</div>
+        <label class="note" style="margin:0;display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="mlS" ${ML.smooth ? "checked" : ""} style="accent-color:var(--orange)"> suavizado de etiquetas (ε = 0,1)</label></div>
+      <div id="mlDyn">${m.dyn}</div>
+      <div class="knobs" style="margin-top:14px">${ML.cls.map((c, i) => `<div class="knob q"><label for="z${i}">z · ${c} <b id="vz${i}">${f(ML.z[i], 2)}</b></label><input id="z${i}" type="range" min="-4" max="6" step=".05" value="${ML.z[i]}"></div>`).join("")}</div>
+      <div class="row"><button class="primary" id="mlStep">Paso de entrenamiento (z ← z − 1·(q − p))</button><button id="mlReset">Reiniciar</button></div>
+      <div class="ok"><b>Otros lugares donde aparece la KL</b><ul>
+        <li><b>Autoencoders variacionales (VAE):</b> un término D(Q <span class='par'>‖</span> N(0, 1)) mantiene ordenado el espacio latente.</li>
+        <li><b>Destilación de conocimiento:</b> una red pequeña imita las probabilidades de otra grande minimizando la KL entre ambas.</li>
+        <li><b>Ajuste fino de modelos de lenguaje (RLHF):</b> una penalización KL evita que el modelo se aleje demasiado del original.</li>
+        <li><b>t-SNE:</b> coloca los puntos en 2D minimizando la KL entre vecindades del espacio original y del mapa.</li></ul></div>`,
+    after() {
+      const refresh = sync => { const m2 = mlParts(); $("#mlDyn").innerHTML = m2.dyn; $("#st-formula").innerHTML = m2.formula;
+        ML.cls.forEach((_, i) => { $("#vz" + i).textContent = f(ML.z[i], 2); if (sync) $("#z" + i).value = ML.z[i]; }); };
+      ML.cls.forEach((_, i) => $("#z" + i).oninput = e => { ML.z[i] = +e.target.value; refresh(false); });
+      $("#mlY").onclick = e => { const b = e.target.closest("button"); if (!b) return; ML.y = +b.dataset.i;
+        [...$("#mlY").children].forEach(x => x.setAttribute("aria-pressed", x === b)); refresh(false); };
+      $("#mlS").onchange = e => { ML.smooth = e.target.checked; refresh(false); };
+      $("#mlStep").onclick = () => { const p = mlP(), q = softmax(ML.z); ML.z = ML.z.map((v, i) => Math.max(-4, Math.min(6, v - (q[i] - p[i])))); refresh(true); };
+      $("#mlReset").onclick = () => { ML.z = [0.5, 1.2, -0.3, 0]; refresh(true); };
+    },
+  };
+}
+
+/* ======================= Navegación ======================= */
+function renderSteps() {
+  $("#steps").innerHTML = STEPS.map((s, i) => `<button data-s="${i}" class="${i < STEP ? "done" : i === STEP ? "cur" : ""}"${i === STEP ? ' aria-current="step"' : ""}>
+    <span class="n">${i + 1}</span><span class="lbl">${s.t}</span></button>`).join("");
+}
+function renderStep() {
+  const s = STEPS[STEP], r = s.f();
+  $("#st-title").textContent = s.t; $("#st-no").textContent = `Paso ${STEP + 1} de ${STEPS.length}`;
+  $("#st-text").innerHTML = r.text; $("#st-formula").innerHTML = r.formula; $("#viz").innerHTML = r.viz;
+  r.after && r.after();
+  $("#prev").disabled = STEP === 0; $("#next").disabled = STEP === STEPS.length - 1;
+  renderSteps();
+}
+const go = i => { STEP = Math.max(0, Math.min(STEPS.length - 1, i)); renderStep(); };
+$("#steps").addEventListener("click", e => { const b = e.target.closest("button"); if (b) go(+b.dataset.s); });
+$("#prev").onclick = () => go(STEP - 1); $("#next").onclick = () => go(STEP + 1);
+document.addEventListener("keydown", e => { if (e.target.tagName === "INPUT") return;
+  if (e.key === "ArrowRight") go(STEP + 1); if (e.key === "ArrowLeft") go(STEP - 1); });
+
+drawAside(); renderStep();
+</script>
+</body>
+</html>

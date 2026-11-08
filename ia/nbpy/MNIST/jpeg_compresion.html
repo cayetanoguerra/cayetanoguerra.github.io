@@ -1,0 +1,776 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Compresión JPEG paso a paso</title>
+<style>
+  /* Layout: barra superior ULPGC · tira de pasos · [imagen y controles | escenario del paso] */
+  :root {
+    color-scheme: light;
+    /* Colores institucionales ULPGC */
+    --blue: #0266a2; --blue-dark: #014d7a; --blue-soft: #e8f1f8;
+    --orange: #ff9600; --orange-dark: #b86b00; --orange-soft: #fff3e0;
+    --bg: #f4f6f8; --panel: #ffffff; --ink: #1b2430; --muted: #5d6875;
+    --line: #e1e6eb; --hatch-a: #eef1f4; --hatch-b: #d3dae1;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    --cw: 36px; --ch: 26px;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .gut { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  .topbar { background: var(--panel); border-top: 4px solid var(--blue); border-bottom: 1px solid var(--line); }
+  header { max-width: 1280px; margin: 0 auto; padding-block: 18px 20px;
+           display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; }
+  .logo { height: 30px; width: auto; opacity: .9; flex-shrink: 0; margin-top: 4px; }
+  h1 { font-size: 26px; margin: 0 0 6px; letter-spacing: -.01em; color: var(--blue); text-wrap: balance; }
+  h1::after { content: ""; display: block; width: 48px; height: 3px; background: var(--orange); border-radius: 2px; margin-top: 6px; }
+  header p { margin: 0; color: var(--muted); max-width: 84ch; }
+
+  .steps-wrap { max-width: 1280px; margin: 0 auto; padding-block: 16px 0; }
+  .steps { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .steps .grp { font-size: 11px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); font-weight: 700; margin: 0 2px 0 6px; }
+  .steps .grp:first-child { margin-left: 0; }
+  .steps button { display: flex; align-items: center; gap: 7px; padding: 5px 11px 5px 6px; font-size: 13px;
+                  background: var(--panel); border: 1px solid var(--line); border-radius: 999px; }
+  .steps button .n { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center;
+                     background: var(--blue-soft); color: var(--blue); font-weight: 700; font-size: 11px; font-variant-numeric: tabular-nums; }
+  .steps button.done .n { background: var(--blue); color: #fff; }
+  .steps button.cur { border-color: var(--blue); background: var(--blue-soft); font-weight: 600; color: var(--blue-dark); }
+  .steps button.cur .n { background: var(--orange); color: #fff; }
+
+  main { max-width: 1280px; margin: 0 auto; padding-block: 16px 28px; display: grid; gap: 16px;
+         grid-template-columns: 300px minmax(0, 1fr); align-items: start; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px;
+          box-shadow: 0 1px 2px rgba(16, 40, 64, .04); min-width: 0; }
+  .card h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: var(--blue);
+             margin: 0 0 12px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  .card h2::before { content: ""; width: 4px; height: 14px; background: var(--orange); border-radius: 2px; }
+  .note { color: var(--muted); font-size: 13px; margin: 8px 0 0; }
+  .note b { color: var(--ink); }
+
+  button { font: inherit; padding: 7px 14px; border-radius: 8px; border: 1px solid var(--line);
+           background: var(--bg); color: var(--ink); cursor: pointer; transition: background .15s, border-color .15s; }
+  button:hover { border-color: #c4ccd4; }
+  button:disabled { opacity: .45; cursor: default; }
+  button.primary { background: var(--blue); color: #fff; border-color: var(--blue); font-weight: 600; }
+  button.primary:hover { background: var(--blue-dark); border-color: var(--blue-dark); }
+  button:focus-visible, input:focus-visible { outline: 3px solid var(--orange); outline-offset: 2px; }
+  .sm { padding: 4px 10px; font-size: 13px; }
+  input[type=range] { accent-color: var(--orange); width: 100%; margin: 4px 0 0; }
+
+  /* ---------- Panel de imagen ---------- */
+  #img { display: block; width: 100%; aspect-ratio: 1; border-radius: 8px; border: 1px solid var(--line); cursor: crosshair;
+         image-rendering: pixelated; touch-action: manipulation; }
+  .seg { display: flex; border: 1px solid var(--line); border-radius: 9px; overflow: hidden; }
+  .seg button { flex: 1; border: 0; border-radius: 0; background: var(--panel); font-size: 13px; padding: 6px 8px; }
+  .seg button + button { border-left: 1px solid var(--line); }
+  .seg button[aria-pressed="true"] { background: var(--blue-soft); font-weight: 600; color: var(--blue-dark); }
+  .ctl { margin-top: 14px; }
+  .ctl > label, .ctl > .lab { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); margin-bottom: 4px; }
+  .ctl > label b { color: var(--orange-dark); font-family: var(--mono); font-size: 13px; }
+  .row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 14px; }
+  .stat { background: var(--bg); border-radius: 8px; padding: 6px 10px; }
+  .stat span { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+  .stat b { font-size: 18px; font-variant-numeric: tabular-nums; }
+  .stat.hi { background: var(--orange-soft); }
+  .stat.hi b { color: var(--orange-dark); }
+
+  /* ---------- Escenario ---------- */
+  .stage-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  .stage-head h2 { margin-bottom: 4px; }
+  .stepno { color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+  .explain { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 16px 24px; margin-bottom: 14px; }
+  .explain .txt p { margin: 0 0 8px; max-width: 68ch; }
+  .explain .txt p:last-child { margin-bottom: 0; }
+  .formula { background: var(--blue-soft); border-radius: 10px; padding: 12px 14px; font-family: var(--mono);
+             font-size: 13px; line-height: 1.7; color: var(--blue-dark); align-self: start; overflow-x: auto; }
+  .formula .c { font-family: system-ui, sans-serif; color: var(--muted); font-size: 12.5px; display: block; line-height: 1.45; margin-top: 4px; }
+  .formula b { color: var(--ink); }
+  .viz { overflow-x: auto; padding: 14px 4px 8px; border-top: 1px solid var(--line); min-height: 280px; }
+  .calc { margin-top: 12px; padding: 10px 12px; background: var(--orange-soft); border-radius: 8px;
+          font-family: var(--mono); font-size: 13px; line-height: 1.6; color: #6b3f00; min-height: 44px; overflow-x: auto; }
+  .calc .h { font-family: system-ui, sans-serif; font-weight: 700; color: var(--orange-dark); font-size: 12px;
+             text-transform: uppercase; letter-spacing: .06em; display: block; }
+  .calc .dim { font-family: system-ui, sans-serif; color: var(--muted); }
+  .nav { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+  .hint { color: var(--muted); font-size: 12.5px; }
+  kbd { font: 12px var(--mono); background: var(--blue-soft); color: var(--blue); border-radius: 4px; padding: 1px 5px; }
+
+  .flex { display: flex; gap: 20px 22px; align-items: flex-start; flex-wrap: wrap; }
+  .eq { display: flex; align-items: center; gap: 12px; flex-wrap: nowrap; width: max-content; }
+  .op { font-size: 22px; color: var(--muted); font-weight: 300; padding-top: 18px; }
+  .fig { display: flex; flex-direction: column; gap: 5px; }
+  .fig > span, .mx-title { font-size: 12.5px; color: var(--blue-dark); font-weight: 700; }
+  .fig small, .mx-title small { font-weight: 400; color: var(--muted); }
+  .fig canvas { display: block; border-radius: 6px; border: 1px solid var(--line); image-rendering: pixelated; background: #fff; }
+  .mx { display: flex; flex-direction: column; gap: 4px; position: relative; }
+  .mx-grid { display: grid; gap: 2px; position: relative; }
+  .cell { width: var(--cw); height: var(--ch); display: grid; place-items: center; border-radius: 3px;
+          font: 10.5px/1 var(--mono); font-variant-numeric: tabular-nums; position: relative;
+          box-shadow: inset 0 0 0 1px rgba(27, 36, 48, .06); }
+  .cell.hl { box-shadow: inset 0 0 0 2px var(--orange-dark), 0 0 0 1px var(--orange); z-index: 1; }
+  .hov .cell { cursor: pointer; }
+  .zz { position: absolute; left: 0; top: 0; pointer-events: none; }
+
+  .facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-top: 14px; }
+  .fact { background: var(--bg); border-radius: 8px; padding: 10px 12px; }
+  .fact b { display: block; font-size: 20px; color: var(--blue); font-variant-numeric: tabular-nums; }
+  .fact span { font-size: 12px; color: var(--muted); }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 3px; max-width: 760px; }
+  .chip { font: 11.5px/1 var(--mono); padding: 5px 0; width: 34px; text-align: center; border-radius: 5px;
+          background: var(--blue-soft); color: var(--blue-dark); border: 1px solid #c9dbea; }
+  .chip.z { background: var(--panel); color: #9aa6b2; border-color: var(--line); }
+  .chip.tail { background: repeating-linear-gradient(45deg, var(--hatch-a) 0 5px, var(--hatch-b) 5px 6px); color: transparent; border-color: var(--line); }
+  .chip.dc { background: var(--orange-soft); color: #7a4700; border-color: #ffd699; }
+  .tok { display: inline-flex; align-items: center; padding: 5px 10px; border-radius: 8px; font: 12.5px var(--mono);
+         background: var(--blue-soft); color: var(--blue-dark); border: 1px solid #c9dbea; }
+  .tok.dc { background: var(--orange-soft); color: #7a4700; border-color: #ffd699; }
+  .tok.eob { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .tok.zrl { background: var(--bg); color: var(--muted); border-color: var(--line); }
+  .panel-t { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 700; margin: 16px 0 8px; }
+  .panel-t:first-child { margin-top: 0; }
+
+  table.h { border-collapse: collapse; font-size: 13px; min-width: 560px; }
+  table.h th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted);
+               font-weight: 700; padding: 4px 12px 6px 0; border-bottom: 1px solid var(--line); }
+  table.h td { padding: 4px 12px 4px 0; border-bottom: 1px solid #f0f2f4; font-variant-numeric: tabular-nums; }
+  table.h td.m { font-family: var(--mono); font-size: 12.5px; }
+  table.h .bar { display: inline-block; height: 10px; background: var(--blue); border-radius: 3px; vertical-align: middle; margin-right: 6px; }
+  .code { color: var(--orange-dark); font-weight: 700; letter-spacing: .04em; }
+
+  .ok { margin-top: 12px; padding: 10px 12px; border-left: 4px solid var(--blue); background: var(--blue-soft); border-radius: 6px;
+        font-size: 13.5px; max-width: 76ch; }
+  .warn { margin-top: 12px; padding: 10px 12px; border-left: 4px solid var(--orange); background: var(--orange-soft); border-radius: 6px;
+          font-size: 13.5px; max-width: 76ch; }
+  .slider-in { max-width: 380px; }
+  .slider-in label { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); }
+  .slider-in label b { color: var(--orange-dark); font-family: var(--mono); }
+
+  @media (max-width: 900px) {
+    main { grid-template-columns: minmax(0, 1fr); }
+    .explain { grid-template-columns: minmax(0, 1fr); }
+    .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .logo { height: 24px; }
+    #img { max-width: 360px; margin: 0 auto; }
+  }
+  @media (min-width: 901px) and (min-height: 860px) { aside.card { position: sticky; top: 12px; } }
+  @media (max-width: 560px) {
+    .steps button .lbl { display: none; }
+    .steps button { padding: 5px; }
+    .steps .grp { display: none; }
+    header { flex-direction: column-reverse; gap: 10px; }
+  }
+</style>
+</head>
+<body>
+<div class="topbar gut">
+<header>
+  <div>
+    <h1>Compresión JPEG paso a paso</h1>
+    <p>Sigue el viaje de un bloque de 8×8 píxeles a través del codificador JPEG: cambio de espacio de color,
+       submuestreo, <b>transformada discreta del coseno</b>, <b>cuantización</b>, recorrido en zigzag y códigos de Huffman.
+       Todo se calcula en tu navegador sobre la imagen de la izquierda: haz clic en ella para elegir otro bloque
+       y mueve la <b>calidad</b> para ver qué se pierde y cuánto se gana.</p>
+  </div>
+  <img class="logo" src="logo-ulpgc.jpg" alt="ULPGC · Universidad de Las Palmas de Gran Canaria">
+</header>
+</div>
+
+<div class="steps-wrap gut"><nav class="steps" id="steps" aria-label="Pasos"></nav></div>
+
+<main class="gut">
+  <aside class="card">
+    <h2>Imagen · 256 × 256</h2>
+    <canvas id="img" width="512" height="512" aria-label="Imagen; haz clic para elegir un bloque de 8×8"></canvas>
+    <div class="seg" id="view" style="margin-top:10px">
+      <button data-v="orig" aria-pressed="true">Original</button>
+      <button data-v="dec" aria-pressed="false">Comprimida</button>
+    </div>
+    <div class="ctl">
+      <label for="q">Calidad JPEG <b id="vq"></b></label>
+      <input id="q" type="range" min="1" max="100" step="1" value="50">
+    </div>
+    <div class="ctl">
+      <div class="lab">Submuestreo de color</div>
+      <div class="seg" id="sub">
+        <button data-s="444" aria-pressed="false">4:4:4</button>
+        <button data-s="422" aria-pressed="false">4:2:2</button>
+        <button data-s="420" aria-pressed="true">4:2:0</button>
+      </div>
+    </div>
+    <div class="row">
+      <button class="sm" id="load">Cargar una imagen…</button>
+      <button class="sm" id="reset">Imagen de ejemplo</button>
+      <input type="file" id="file" accept="image/*" hidden>
+    </div>
+    <div class="stats">
+      <div class="stat"><span>Sin comprimir</span><b id="sRaw">192 KB</b></div>
+      <div class="stat hi"><span>JPEG (estimado)</span><b id="sJpg">—</b></div>
+      <div class="stat"><span>Compresión</span><b id="sRat">—</b></div>
+      <div class="stat"><span>PSNR</span><b id="sPsnr">—</b></div>
+    </div>
+    <p class="note">Bloque seleccionado: <b id="sBlk"></b></p>
+  </aside>
+
+  <section class="card" aria-live="polite">
+    <div class="stage-head">
+      <h2 id="st-title">—</h2>
+      <span class="stepno" id="st-no"></span>
+    </div>
+    <div class="explain">
+      <div class="txt" id="st-text"></div>
+      <div class="formula" id="st-formula"></div>
+    </div>
+    <div class="viz" id="viz"></div>
+    <div class="nav">
+      <button id="prev">← Anterior</button>
+      <span class="hint">También con <kbd>←</kbd> <kbd>→</kbd></span>
+      <button id="next" class="primary">Siguiente →</button>
+    </div>
+  </section>
+</main>
+
+<script>
+/* ======================= Constantes JPEG ======================= */
+const W = 256, H = 256, PI = Math.PI;
+const QL = [16,11,10,16,24,40,51,61, 12,12,14,19,26,58,60,55, 14,13,16,24,40,57,69,56, 14,17,22,29,51,87,80,62,
+            18,22,37,56,68,109,103,77, 24,35,55,64,81,104,113,92, 49,64,78,87,103,121,120,101, 72,92,95,98,112,100,103,99];
+const QC = [17,18,24,47,99,99,99,99, 18,21,26,66,99,99,99,99, 24,26,56,99,99,99,99,99, 47,66,99,99,99,99,99,99,
+            ...Array(32).fill(99)];
+// Orden zigzag (índice = fila·8 + columna)
+const ZZ = (() => { const o = []; for (let s = 0; s < 15; s++) { const c = [];
+  for (let i = 0; i <= s; i++) { const j = s - i; if (i < 8 && j < 8) c.push(i * 8 + j); }
+  if (s % 2 === 0) c.reverse(); o.push(...c); } return o; })();
+const ZPOS = new Array(64); ZZ.forEach((p, k) => ZPOS[p] = k);
+// Matriz de la DCT ortonormal: CM[u·8+x]
+const CM = new Float64Array(64);
+for (let u = 0; u < 8; u++) for (let x = 0; x < 8; x++) CM[u * 8 + x] = (u ? Math.sqrt(2 / 8) : Math.sqrt(1 / 8)) * Math.cos((2 * x + 1) * u * PI / 16);
+
+function dct(b) {            // b[y·8+x] → F[v·8+u]
+  const t = new Float64Array(64), F = new Float64Array(64);
+  for (let v = 0; v < 8; v++) for (let x = 0; x < 8; x++) { let s = 0; for (let y = 0; y < 8; y++) s += CM[v * 8 + y] * b[y * 8 + x]; t[v * 8 + x] = s; }
+  for (let v = 0; v < 8; v++) for (let u = 0; u < 8; u++) { let s = 0; for (let x = 0; x < 8; x++) s += t[v * 8 + x] * CM[u * 8 + x]; F[v * 8 + u] = s; }
+  return F;
+}
+function idct(F) {
+  const t = new Float64Array(64), b = new Float64Array(64);
+  for (let y = 0; y < 8; y++) for (let u = 0; u < 8; u++) { let s = 0; for (let v = 0; v < 8; v++) s += CM[v * 8 + y] * F[v * 8 + u]; t[y * 8 + u] = s; }
+  for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) { let s = 0; for (let u = 0; u < 8; u++) s += t[y * 8 + u] * CM[u * 8 + x]; b[y * 8 + x] = s; }
+  return b;
+}
+const qtable = (base, q) => { const S = q < 50 ? 5000 / q : 200 - 2 * q;
+  return base.map(v => Math.min(255, Math.max(1, Math.floor((v * S + 50) / 100)))); };
+const cat = v => v === 0 ? 0 : Math.floor(Math.log2(Math.abs(v))) + 1;
+const clamp = v => v < 0 ? 0 : v > 255 ? 255 : v;
+
+/* ======================= Estado ======================= */
+let IMG = null, E = null;
+let QUAL = 50, SUB = "420", SEL = { bx: 7, by: 21 }, STEP = 0, VIEW = "orig", NCO = 6;
+
+/* ======================= Imagen de ejemplo ======================= */
+function sampleCanvas() {
+  const c = document.createElement("canvas"); c.width = W; c.height = H; const g = c.getContext("2d");
+  let gr = g.createLinearGradient(0, 0, 0, 160); gr.addColorStop(0, "#1f5fa8"); gr.addColorStop(1, "#f6b26b");
+  g.fillStyle = gr; g.fillRect(0, 0, W, 165);
+  g.fillStyle = "#fff4c9"; g.beginPath(); g.arc(196, 62, 22, 0, 7); g.fill();
+  // tablero de ajedrez (detalle fino)
+  for (let i = 0; i < 6; i++) for (let j = 0; j < 6; j++) { g.fillStyle = (i + j) % 2 ? "#111" : "#fff"; g.fillRect(14 + 4 * i, 14 + 4 * j, 4, 4); }
+  g.fillStyle = "#35553a"; g.beginPath(); g.moveTo(0, 150); g.lineTo(46, 96); g.lineTo(92, 138); g.lineTo(140, 82);
+  g.lineTo(198, 148); g.lineTo(256, 112); g.lineTo(256, 172); g.lineTo(0, 172); g.fill();
+  g.fillStyle = "#284330"; g.beginPath(); g.moveTo(110, 172); g.lineTo(150, 120); g.lineTo(175, 150); g.lineTo(256, 172); g.fill();
+  gr = g.createLinearGradient(0, 160, 0, 256); gr.addColorStop(0, "#0a78b8"); gr.addColorStop(1, "#01263f");
+  g.fillStyle = gr; g.fillRect(0, 165, W, 91);
+  g.strokeStyle = "rgba(255,255,255,.33)"; g.lineWidth = 1;
+  for (let y = 172; y < 256; y += 7) { g.beginPath(); for (let x = 0; x <= W; x += 3) g.lineTo(x, y + 1.6 * Math.sin(x / 7 + y)); g.stroke(); }
+  g.fillStyle = "#e02b2b"; g.beginPath(); g.moveTo(62, 204); g.lineTo(62, 166); g.lineTo(90, 204); g.fill();
+  g.fillStyle = "#ffb000"; g.beginPath(); g.moveTo(58, 204); g.lineTo(58, 178); g.lineTo(40, 204); g.fill();
+  g.fillStyle = "#f4f4f4"; g.fillRect(44, 205, 52, 7);
+  g.font = "bold 40px system-ui, -apple-system, sans-serif"; g.fillStyle = "#fff"; g.fillText("JPEG", 138, 240);
+  return c;
+}
+function setFromCanvas(c) {
+  const d = c.getContext("2d").getImageData(0, 0, W, H).data, n = W * H;
+  IMG = { R: new Float32Array(n), G: new Float32Array(n), B: new Float32Array(n), rgba: d };
+  for (let i = 0; i < n; i++) { IMG.R[i] = d[4 * i]; IMG.G[i] = d[4 * i + 1]; IMG.B[i] = d[4 * i + 2]; }
+  jpegCache = {};
+}
+
+/* ======================= Codificador / decodificador ======================= */
+function huffLengths(freq) {
+  const len = new Array(256).fill(0), nodes = [];
+  freq.forEach((f, s) => { if (f) nodes.push({ f, s: [s] }); });
+  if (nodes.length === 1) { len[nodes[0].s[0]] = 1; return len; }
+  while (nodes.length > 1) {
+    nodes.sort((a, b) => a.f - b.f);
+    const a = nodes.shift(), b = nodes.shift(), s = a.s.concat(b.s);
+    s.forEach(x => len[x]++); nodes.push({ f: a.f + b.f, s });
+  }
+  return len;
+}
+function canonCodes(len) {
+  const syms = len.map((l, s) => [l, s]).filter(x => x[0]).sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  const out = {}; let code = 0, prev = syms.length ? syms[0][0] : 0;
+  syms.forEach(([l, s], i) => { if (i) code++; code <<= (l - prev); prev = l; out[s] = code.toString(2).padStart(l, "0"); });
+  return out;
+}
+function toRGBA(Y, Cb, Cr) {
+  const n = W * H, o = new Uint8ClampedArray(n * 4);
+  for (let i = 0; i < n; i++) {
+    const y = Y[i], cb = Cb[i] - 128, cr = Cr[i] - 128;
+    o[4 * i] = y + 1.402 * cr; o[4 * i + 1] = y - 0.344136 * cb - 0.714136 * cr; o[4 * i + 2] = y + 1.772 * cb; o[4 * i + 3] = 255;
+  }
+  return o;
+}
+function encode() {
+  const n = W * H, Y = new Float32Array(n), Cb = new Float32Array(n), Cr = new Float32Array(n);
+  for (let i = 0; i < n; i++) {
+    const r = IMG.R[i], g = IMG.G[i], b = IMG.B[i];
+    Y[i] = 0.299 * r + 0.587 * g + 0.114 * b;
+    Cb[i] = 128 - 0.168736 * r - 0.331264 * g + 0.5 * b;
+    Cr[i] = 128 + 0.5 * r - 0.418688 * g - 0.081312 * b;
+  }
+  const [sx, sy] = SUB === "444" ? [1, 1] : SUB === "422" ? [2, 1] : [2, 2];
+  const Wc = W / sx, Hc = H / sy;
+  const down = P => { const o = new Float32Array(Wc * Hc);
+    for (let y = 0; y < Hc; y++) for (let x = 0; x < Wc; x++) { let s = 0;
+      for (let j = 0; j < sy; j++) for (let i = 0; i < sx; i++) s += P[(y * sy + j) * W + x * sx + i];
+      o[y * Wc + x] = s / (sx * sy); } return o; };
+  const up = P => { const o = new Float32Array(n);
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) o[y * W + x] = P[Math.floor(y / sy) * Wc + Math.floor(x / sx)]; return o; };
+  const cb = down(Cb), cr = down(Cr), cbUp = up(cb), crUp = up(cr);
+  const qL = qtable(QL, QUAL), qC = qtable(QC, QUAL);
+  const freq = { dcL: new Array(256).fill(0), acL: new Array(256).fill(0), dcC: new Array(256).fill(0), acC: new Array(256).fill(0) };
+  let extra = 0, zeros = 0, coefs = 0;
+  const planes = [{ d: Y, w: W, h: H, q: qL, L: true }, { d: cb, w: Wc, h: Hc, q: qC }, { d: cr, w: Wc, h: Hc, q: qC }];
+  const recs = planes.map(P => {
+    const rec = new Float32Array(P.w * P.h), b = new Float64Array(64), dcF = P.L ? freq.dcL : freq.dcC, acF = P.L ? freq.acL : freq.acC;
+    let prev = 0;
+    for (let by = 0; by < P.h / 8; by++) for (let bx = 0; bx < P.w / 8; bx++) {
+      for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) b[y * 8 + x] = P.d[(by * 8 + y) * P.w + bx * 8 + x] - 128;
+      const F = dct(b), qv = new Int32Array(64), dq = new Float64Array(64);
+      for (let i = 0; i < 64; i++) { qv[i] = Math.round(F[i] / P.q[i]); dq[i] = qv[i] * P.q[i]; if (!qv[i]) zeros++; }
+      coefs += 64;
+      const d = qv[0] - prev; prev = qv[0]; const s = cat(d); dcF[s]++; extra += s;
+      let run = 0;
+      for (let k = 1; k < 64; k++) { const v = qv[ZZ[k]];
+        if (!v) { run++; continue; }
+        while (run > 15) { acF[0xF0]++; run -= 16; }
+        const s2 = cat(v); acF[(run << 4) | s2]++; extra += s2; run = 0; }
+      if (run) acF[0]++;
+      const r = idct(dq);
+      for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) rec[(by * 8 + y) * P.w + bx * 8 + x] = r[y * 8 + x] + 128;
+    }
+    return rec;
+  });
+  const lens = {}, codes = {}; let hbits = 0, dhtBytes = 0;
+  for (const k in freq) { lens[k] = huffLengths(freq[k]); codes[k] = canonCodes(lens[k]);
+    let ns = 0; freq[k].forEach((f, s) => { hbits += f * lens[k][s]; if (f) ns++; }); dhtBytes += 2 + 2 + 1 + 16 + ns; }
+  const header = 2 + 18 + 2 * 69 + 19 + dhtBytes + 14 + 2;
+  const bytes = Math.ceil((hbits + extra) / 8) + header;
+  const dec = toRGBA(recs[0], up(recs[1]), up(recs[2]));
+  const sub = toRGBA(Y, cbUp, crUp);
+  let mse = 0;
+  for (let i = 0; i < n; i++) { const a = IMG.R[i] - dec[4 * i], b2 = IMG.G[i] - dec[4 * i + 1], c = IMG.B[i] - dec[4 * i + 2]; mse += a * a + b2 * b2 + c * c; }
+  mse /= 3 * n;
+  return { Y, Cb, Cr, cb, cr, cbUp, crUp, Wc, Hc, sx, sy, qL, qC, freq, lens, codes, hbits, extra, header, bytes, dec, sub,
+           psnr: mse < 1e-9 ? Infinity : 10 * Math.log10(255 * 255 / mse), zeros, coefs };
+}
+// Todos los datos del bloque seleccionado (canal Y)
+function block(bx = SEL.bx, by = SEL.by) {
+  const pix = new Float64Array(64), s = new Float64Array(64);
+  for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) { pix[y * 8 + x] = E.Y[(by * 8 + y) * W + bx * 8 + x]; s[y * 8 + x] = pix[y * 8 + x] - 128; }
+  const F = dct(s), q = F.map((v, i) => Math.round(v / E.qL[i]) || 0), dq = q.map((v, i) => v * E.qL[i]);
+  return { pix, s, F, q, dq, rec: idct(dq).map(v => v + 128) };
+}
+
+/* ======================= Utilidades de dibujo ======================= */
+const $ = s => document.querySelector(s);
+const fmtN = (v, d = 0) => { const r = +v.toFixed(d); return (Object.is(r, -0) ? 0 : r).toFixed(d).replace("-", "−"); };
+const kb = b => b >= 10240 ? (b / 1024).toFixed(0) + " KB" : (b / 1024).toFixed(1).replace(".", ",") + " KB";
+function cellStyle(v, kind, scale) {
+  if (kind === "gray") { const g = clamp(Math.round(v)); return `background:rgb(${g},${g},${g});color:${g > 140 ? "#1b2430" : "#fff"}`; }
+  if (kind === "r" || kind === "g" || kind === "b") { const a = clamp(v) / 255, c = { r: "214,40,40", g: "40,150,60", b: "30,90,200" }[kind];
+    return `background:rgba(${c},${(a * .85).toFixed(3)});color:${a > .6 ? "#fff" : "#1b2430"}`; }
+  if (kind === "q") { const a = Math.min(1, Math.log(v) / Math.log(255)); return `background:rgba(255,150,0,${(a * .8).toFixed(3)});color:${a > .7 ? "#5a3300" : "#6b3f00"}`; }
+  const a = Math.min(1, Math.abs(v) / scale);
+  if (kind === "zq" && v === 0) return "background:#fff;color:#c4ccd4";
+  const c = v >= 0 ? "2,102,162" : "255,150,0";
+  return `background:rgba(${c},${(.06 + a * .82).toFixed(3)});color:${a > .55 ? (v >= 0 ? "#fff" : "#4a2a00") : "#1b2430"}`;
+}
+function mat(vals, o) {
+  const { title, sub, kind = "div", scale = 128, dec = 0, id, hl = -1, hov } = o;
+  let h = `<div class="mx${hov ? " hov" : ""}"${id ? ` id="${id}"` : ""}><div class="mx-title">${title}${sub ? ` <small>${sub}</small>` : ""}</div>
+           <div class="mx-grid" style="grid-template-columns:repeat(8,var(--cw))">`;
+  for (let i = 0; i < 64; i++) h += `<div class="cell${i === hl ? " hl" : ""}" data-i="${i}" style="${cellStyle(vals[i], kind, scale)}">${fmtN(vals[i], dec)}</div>`;
+  return h + "</div></div>";
+}
+function blit(cv, rgba, w, h, sx = 0, sy = 0, sw = w, sh = h) {
+  const t = document.createElement("canvas"); t.width = w; t.height = h;
+  t.getContext("2d").putImageData(new ImageData(rgba, w, h), 0, 0);
+  const g = cv.getContext("2d"); g.imageSmoothingEnabled = false;
+  g.clearRect(0, 0, cv.width, cv.height); g.drawImage(t, sx, sy, sw, sh, 0, 0, cv.width, cv.height);
+  return g;
+}
+const grayRGBA = (vals, w, h, off = 0) => { const o = new Uint8ClampedArray(w * h * 4);
+  for (let i = 0; i < w * h; i++) { const v = vals[i] + off; o[4 * i] = o[4 * i + 1] = o[4 * i + 2] = v; o[4 * i + 3] = 255; } return o; };
+function fig(id, label, size, sub) {
+  return `<div class="fig"><span>${label}${sub ? ` <small>${sub}</small>` : ""}</span><canvas id="${id}" width="${size}" height="${size}" style="width:${size}px;height:${size}px"></canvas></div>`;
+}
+const cv = id => document.getElementById(id);
+// recorte centrado en el bloque seleccionado, con su contorno
+function crop(id, rgba, size = 32) {
+  const c = cv(id); if (!c) return;
+  const x0 = Math.max(0, Math.min(W - size, SEL.bx * 8 + 4 - size / 2)), y0 = Math.max(0, Math.min(H - size, SEL.by * 8 + 4 - size / 2));
+  const g = blit(c, rgba, W, H, x0, y0, size, size), k = c.width / size;
+  g.strokeStyle = "#ff9600"; g.lineWidth = 2; g.strokeRect((SEL.bx * 8 - x0) * k + 1, (SEL.by * 8 - y0) * k + 1, 8 * k - 2, 8 * k - 2);
+}
+
+/* ======================= Panel de imagen ======================= */
+function drawAside() {
+  const c = $("#img"), g = blit(c, VIEW === "dec" ? E.dec : IMG.rgba, W, H), k = c.width / W;
+  g.strokeStyle = "#fff"; g.lineWidth = 4; g.strokeRect(SEL.bx * 8 * k - 1, SEL.by * 8 * k - 1, 8 * k + 2, 8 * k + 2);
+  g.strokeStyle = "#ff9600"; g.lineWidth = 2.5; g.strokeRect(SEL.bx * 8 * k - 1, SEL.by * 8 * k - 1, 8 * k + 2, 8 * k + 2);
+  $("#vq").textContent = QUAL;
+  $("#sJpg").textContent = kb(E.bytes);
+  $("#sRat").textContent = "1 : " + (W * H * 3 / E.bytes).toFixed(1).replace(".", ",");
+  $("#sPsnr").textContent = isFinite(E.psnr) ? E.psnr.toFixed(1).replace(".", ",") + " dB" : "∞";
+  $("#sBlk").textContent = `columna ${SEL.bx}, fila ${SEL.by} (píxeles ${SEL.bx * 8}–${SEL.bx * 8 + 7}, ${SEL.by * 8}–${SEL.by * 8 + 7})`;
+}
+function pickBlock(e, canvas) {
+  const r = canvas.getBoundingClientRect();
+  SEL = { bx: Math.max(0, Math.min(31, Math.floor((e.clientX - r.left) / r.width * 32))),
+          by: Math.max(0, Math.min(31, Math.floor((e.clientY - r.top) / r.height * 32))) };
+  drawAside(); renderStep();
+}
+$("#img").addEventListener("click", e => pickBlock(e, $("#img")));
+$("#view").addEventListener("click", e => { const t = e.target.closest("button"); if (!t) return;
+  VIEW = t.dataset.v; [...$("#view").children].forEach(b => b.setAttribute("aria-pressed", b === t)); drawAside(); });
+let qPending = false;
+$("#q").addEventListener("input", () => { QUAL = +$("#q").value; $("#vq").textContent = QUAL;
+  if (!qPending) { qPending = true; requestAnimationFrame(() => { qPending = false; refresh(); }); } });
+function setSub(s) { SUB = s; [...$("#sub").children].forEach(b => b.setAttribute("aria-pressed", b.dataset.s === s)); refresh(); }
+$("#sub").addEventListener("click", e => { const t = e.target.closest("button"); if (t) setSub(t.dataset.s); });
+$("#load").addEventListener("click", () => $("#file").click());
+$("#reset").addEventListener("click", () => { setFromCanvas(sampleCanvas()); refresh(); });
+$("#file").addEventListener("change", e => {
+  const f = e.target.files[0]; if (!f) return;
+  const im = new Image(); im.onload = () => {
+    const c = document.createElement("canvas"); c.width = W; c.height = H; const g = c.getContext("2d");
+    const s = Math.max(W / im.width, H / im.height), w = im.width * s, h = im.height * s;
+    g.drawImage(im, (W - w) / 2, (H - h) / 2, w, h); setFromCanvas(c); URL.revokeObjectURL(im.src); refresh();
+  };
+  im.src = URL.createObjectURL(f);
+});
+function refresh() { E = encode(); drawAside(); renderStep(); }
+
+/* ======================= Tamaño real del navegador ======================= */
+let jpegCache = {};
+function browserJpeg() {
+  if (jpegCache[QUAL]) return jpegCache[QUAL];
+  const c = document.createElement("canvas"); c.width = W; c.height = H;
+  c.getContext("2d").putImageData(new ImageData(new Uint8ClampedArray(IMG.rgba), W, H), 0, 0);
+  const u = c.toDataURL("image/jpeg", QUAL / 100);
+  if (!u.startsWith("data:image/jpeg")) return null;
+  return jpegCache[QUAL] = Math.round((u.length - u.indexOf(",") - 1) * 3 / 4);
+}
+
+/* ======================= Pasos ======================= */
+const STEPS = [
+  { g: "Codificador", t: "Píxeles RGB", f: stepRGB },
+  { t: "Espacio YCbCr", f: stepYCC },
+  { t: "Submuestreo", f: stepSub },
+  { t: "Bloques 8×8", f: stepBlocks },
+  { t: "DCT", f: stepDCT },
+  { t: "Cuantización", f: stepQuant },
+  { t: "Zigzag y RLE", f: stepZZ },
+  { t: "Huffman", f: stepHuff },
+  { g: "Decodificador", t: "Resultado", f: stepResult },
+];
+
+function stepRGB() {
+  const p = SEL.bx * 8, q = SEL.by * 8, ch = [[], [], []];
+  for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) { const i = (q + y) * W + p + x; ch[0].push(IMG.R[i]); ch[1].push(IMG.G[i]); ch[2].push(IMG.B[i]); }
+  return {
+    text: `<p>Una imagen digital es una cuadrícula de píxeles. Cada píxel guarda tres números entre 0 y 255: la cantidad de
+      <b>rojo</b>, <b>verde</b> y <b>azul</b>. Esta imagen de 256 × 256 píxeles ocupa 256·256·3 = <b>196 608 bytes</b> sin comprimir.</p>
+      <p>JPEG consigue reducir ese tamaño entre 10 y 20 veces casi sin que se note, aprovechando lo que nuestra vista
+      <b>no</b> percibe bien. Haz clic en la imagen para elegir el bloque de 8 × 8 píxeles que seguiremos en todos los pasos.</p>`,
+    formula: `píxel = (R, G, B) &nbsp; 0 ≤ R, G, B ≤ 255<br>3 canales × 8 bits = <b>24 bits por píxel</b>
+      <span class="c">Un bloque de 8×8 píxeles son 64 × 3 = 192 números.</span>`,
+    viz: `<div class="flex">${fig("z-rgb", "Bloque ampliado", 152)}${mat(ch[0], { title: "R", sub: "rojo", kind: "r" })}
+          ${mat(ch[1], { title: "G", sub: "verde", kind: "g" })}${mat(ch[2], { title: "B", sub: "azul", kind: "b" })}</div>`,
+    after() { crop("z-rgb", IMG.rgba, 8); },
+  };
+}
+
+function stepYCC() {
+  const p = SEL.bx * 8, q = SEL.by * 8, yv = [];
+  for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) yv.push(E.Y[(q + y) * W + p + x]);
+  return {
+    text: `<p>Nuestro ojo es mucho más sensible a los cambios de <b>brillo</b> que a los de <b>color</b>. Por eso JPEG pasa
+      cada píxel de RGB a <b>YCbCr</b>: <b>Y</b> es la luminancia (la imagen en blanco y negro) y <b>Cb</b> y <b>Cr</b> son las
+      diferencias de color hacia el azul y hacia el rojo (128 = sin color).</p>
+      <p>Es un simple cambio de base lineal y reversible: <b>todavía no se pierde nada</b>. Pero separa la información
+      importante (Y) de la que podremos tratar con menos cuidado (Cb, Cr).</p>`,
+    formula: `Y &nbsp;= &nbsp;0,299 R + 0,587 G + 0,114 B<br>Cb = 128 − 0,1687 R − 0,3313 G + 0,5 B<br>Cr = 128 + 0,5 R − 0,4187 G − 0,0813 B
+      <span class="c">Los pesos de Y reflejan que el ojo es más sensible al verde que al rojo, y mucho menos al azul.</span>`,
+    viz: `<div class="flex">${fig("p-y", "Y", 200, "luminancia")}${fig("p-cb", "Cb", 200, "crominancia azul")}${fig("p-cr", "Cr", 200, "crominancia roja")}</div>
+          <div class="flex" style="margin-top:16px">${mat(yv, { title: "Y del bloque", sub: "0 = negro, 255 = blanco", kind: "gray", dec: 0 })}</div>`,
+    after() {
+      blit(cv("p-y"), grayRGBA(E.Y, W, H), W, H);
+      blit(cv("p-cb"), toRGBA(new Float32Array(W * H).fill(128), E.Cb, new Float32Array(W * H).fill(128)), W, H);
+      blit(cv("p-cr"), toRGBA(new Float32Array(W * H).fill(128), new Float32Array(W * H).fill(128), E.Cr), W, H);
+    },
+  };
+}
+
+function stepSub() {
+  const n = { "444": 4, "422": 2, "420": 1 }[SUB], tot = 4 + 2 * n;
+  const name = { "444": "4:4:4 (sin submuestreo)", "422": "4:2:2 (mitad de resolución horizontal)", "420": "4:2:0 (mitad horizontal y vertical)" }[SUB];
+  const flat = new Float32Array(W * H).fill(128);
+  return {
+    text: `<p>Como el detalle de color importa poco a la vista, JPEG guarda <b>Cb y Cr con menos resolución</b>. En 4:2:0, cada
+      cuadrado de 2 × 2 píxeles comparte un único valor de Cb y otro de Cr: de 12 números por cada 4 píxeles se pasa a 6,
+      la <b>mitad de los datos</b>, y casi no se nota.</p>
+      <p>Esta es la <b>primera pérdida</b> de información. Cambia el modo en el panel de la izquierda y compara los recortes ampliados:
+      el color se «emborrona» en los bordes, pero el brillo (que va en Y) sigue nítido.</p>`,
+    formula: `Modo actual: <b>${name}</b><br>Por cada 2×2 píxeles: 4 Y + ${n} Cb + ${n} Cr = <b>${tot}</b> valores
+      <span class="c">Frente a los 12 valores originales: ${Math.round(tot / 12 * 100)} % de los datos.</span>`,
+    viz: `<div class="flex">${fig("c-o", "Original", 192, "recorte 32×32")}${fig("c-cb", "Cb guardado", 192)}${fig("c-cr", "Cr guardado", 192)}${fig("c-s", "Reconstruida", 192, "Y + Cb, Cr submuestreados")}</div>
+          <div class="facts">
+            <div class="fact"><b>${W}×${H}</b><span>resolución de Y</span></div>
+            <div class="fact"><b>${E.Wc}×${E.Hc}</b><span>resolución de Cb y Cr</span></div>
+            <div class="fact"><b>${(W * H + 2 * E.Wc * E.Hc).toLocaleString("es")}</b><span>valores a comprimir (antes ${(3 * W * H).toLocaleString("es")})</span></div>
+            <div class="fact"><b>${Math.round(tot / 12 * 100)} %</b><span>de los datos originales</span></div>
+          </div>
+          <div class="row" style="margin-top:12px">${["444", "422", "420"].map(s => `<button class="sm" data-sub="${s}"${s === SUB ? ' style="background:var(--blue-soft);border-color:#b7cfe2;font-weight:600"' : ""}>${s.split("").join(":")}</button>`).join("")}</div>`,
+    after() {
+      crop("c-o", IMG.rgba); crop("c-s", E.sub);
+      crop("c-cb", toRGBA(flat, E.cbUp, flat)); crop("c-cr", toRGBA(flat, flat, E.crUp));
+      document.querySelectorAll("[data-sub]").forEach(b => b.onclick = () => setSub(b.dataset.sub));
+    },
+  };
+}
+
+function stepBlocks() {
+  const B = block(), nb = (E.Wc / 8) * (E.Hc / 8);
+  return {
+    text: `<p>Cada plano (Y, Cb y Cr) se divide en <b>bloques de 8 × 8</b> que se comprimen por separado, uno tras otro. Trabajar con
+      bloques pequeños hace el cálculo rápido y permite adaptarse a cada zona de la imagen: unos bloques son lisos y otros tienen bordes.</p>
+      <p>Antes de transformarlos se resta 128 a cada valor, para que queden <b>centrados en cero</b> (de −128 a 127).
+      Puedes elegir un bloque haciendo clic sobre la cuadrícula.</p>`,
+    formula: `s(x, y) = Y(x, y) − 128 &nbsp;&nbsp; 0 ≤ x, y ≤ 7
+      <span class="c">Azul: más claro que el gris medio. Naranja: más oscuro.</span>`,
+    viz: `<div class="flex"><div class="fig"><span>Cuadrícula de bloques <small>32 × 32 bloques de luminancia</small></span>
+            <canvas id="grid" width="768" height="768" style="width:min(384px,100%);height:auto;aspect-ratio:1;cursor:crosshair;image-rendering:auto"></canvas></div>
+          ${fig("z-b", "Bloque (Y)", 152)}${mat(B.s, { title: "s = Y − 128", kind: "div", scale: 128 })}</div>
+          <div class="facts">
+            <div class="fact"><b>${(W / 8) * (H / 8)}</b><span>bloques de Y</span></div>
+            <div class="fact"><b>${2 * nb}</b><span>bloques de Cb + Cr</span></div>
+            <div class="fact"><b>64</b><span>valores por bloque</span></div>
+            <div class="fact"><b>${fmtN(B.s.reduce((a, b) => a + b, 0) / 64, 1)}</b><span>media de s en este bloque</span></div>
+          </div>`,
+    after() {
+      const c = cv("grid"), g = blit(c, IMG.rgba, W, H), k = c.width / W;
+      g.strokeStyle = "rgba(255,255,255,.45)"; g.lineWidth = 1;
+      for (let i = 1; i < 32; i++) { g.beginPath(); g.moveTo(i * 8 * k, 0); g.lineTo(i * 8 * k, c.height); g.moveTo(0, i * 8 * k); g.lineTo(c.width, i * 8 * k); g.stroke(); }
+      g.strokeStyle = "#ff9600"; g.lineWidth = 4; g.strokeRect(SEL.bx * 8 * k, SEL.by * 8 * k, 8 * k, 8 * k);
+      c.onclick = e => pickBlock(e, c);
+      blit(cv("z-b"), grayRGBA(B.pix, 8, 8), 8, 8);
+    },
+  };
+}
+
+function stepDCT() {
+  const B = block(), mx = Math.max(64, ...B.F.map(Math.abs).slice(1));
+  return {
+    text: `<p>La <b>transformada discreta del coseno</b> (DCT) reescribe el bloque como una suma de 64 patrones de cosenos con
+      frecuencias crecientes, de forma parecida a una serie de Fourier. Cada coeficiente F(u, v) dice cuánto de cada patrón hay en el bloque.</p>
+      <p>F(0,0), el coeficiente <b>DC</b>, es proporcional al brillo medio; los demás (<b>AC</b>) describen detalles cada vez más finos.
+      En las zonas suaves casi toda la información se concentra en la esquina superior izquierda. La DCT <b>no pierde nada</b>:
+      sólo reorganiza la información. Pasa el ratón por los coeficientes o por los patrones.</p>`,
+    formula: `F(u,v) = ¼·C(u)·C(v)·Σ<sub>x</sub>Σ<sub>y</sub> s(x,y)·cos[(2x+1)uπ/16]·cos[(2y+1)vπ/16]
+      <span class="c">C(0) = 1/√2 y C(k) = 1 para k &gt; 0. u = frecuencia horizontal, v = vertical. F(0,0) = 8 × media de s.</span>`,
+    viz: `<div class="flex"><div class="eq">${mat(B.s, { title: "s", sub: "bloque − 128", scale: 128 })}<div class="op">→</div>
+            ${mat(B.F, { title: "F = DCT(s)", sub: "coeficientes", id: "mF", hov: true, scale: mx })}</div>
+          <div class="fig"><span>Las 64 funciones base <small>u → , v ↓</small></span><canvas id="basis" width="272" height="272" style="width:272px;height:272px;cursor:pointer;image-rendering:auto"></canvas></div></div>
+          <div class="calc" id="dctro"></div>
+          <p class="panel-t" style="margin-top:18px">Reconstrucción sumando sólo los primeros coeficientes (en orden zigzag)</p>
+          <div class="flex">${fig("r-o", "Bloque original", 128)}${fig("r-n", "Con los <b id='nco-v'></b> primeros", 128)}
+            <div class="slider-in" style="flex:1 1 240px"><label for="nco">Coeficientes usados <b id="nco-l"></b></label>
+              <input id="nco" type="range" min="1" max="64" value="${NCO}">
+              <p class="note">Con unos pocos coeficientes ya se reconoce el bloque: los de alta frecuencia sólo añaden detalle fino.
+                Esa es la idea que aprovecha el paso siguiente.</p></div></div>`,
+    after() {
+      const c = cv("basis"), g = c.getContext("2d"), S = 32, gap = 2;
+      const drawBasis = hl => {
+        g.clearRect(0, 0, 272, 272);
+        for (let v = 0; v < 8; v++) for (let u = 0; u < 8; u++) {
+          const F = new Float64Array(64); F[v * 8 + u] = 1; const p = idct(F), m = Math.max(...p.map(Math.abs));
+          const im = g.createImageData(8, 8);
+          for (let i = 0; i < 64; i++) { const val = 128 + 127 * p[i] / m; im.data[4 * i] = im.data[4 * i + 1] = im.data[4 * i + 2] = val; im.data[4 * i + 3] = 255; }
+          const t = document.createElement("canvas"); t.width = t.height = 8; t.getContext("2d").putImageData(im, 0, 0);
+          g.imageSmoothingEnabled = false; g.drawImage(t, u * (S + gap) + 1, v * (S + gap) + 1, S, S);
+        }
+        if (hl >= 0) { g.strokeStyle = "#ff9600"; g.lineWidth = 3; g.strokeRect((hl % 8) * (S + gap) - .5, Math.floor(hl / 8) * (S + gap) - .5, S + 3, S + 3); }
+      };
+      const show = i => {
+        drawBasis(i);
+        document.querySelectorAll("#mF .cell").forEach(e => e.classList.toggle("hl", +e.dataset.i === i));
+        const u = i % 8, v = Math.floor(i / 8);
+        $("#dctro").innerHTML = i < 0 ? `<span class="h">Coeficiente</span><span class="dim">Pasa el ratón por un coeficiente o por un patrón para ver cuál es cuál.</span>`
+          : `<span class="h">F(${u},${v}) · ${i ? "AC" : "DC"} · posición ${ZPOS[i] + 1} en el zigzag</span>F(${u},${v}) = ${fmtN(B.F[i], 1)}
+             <span class="dim">&nbsp;— ${i ? `${u} medias ondas en horizontal y ${v} en vertical.` : `8 × media del bloque = 8 × ${fmtN(B.F[0] / 8, 1)}.`}</span>`;
+      };
+      show(0);
+      document.querySelectorAll("#mF .cell").forEach(e => e.onmouseenter = () => show(+e.dataset.i));
+      c.onmousemove = e => { const r = c.getBoundingClientRect(), k = 272 / r.width;
+        const u = Math.min(7, Math.floor((e.clientX - r.left) * k / (S + gap))), v = Math.min(7, Math.floor((e.clientY - r.top) * k / (S + gap))); show(v * 8 + u); };
+      blit(cv("r-o"), grayRGBA(B.pix, 8, 8), 8, 8);
+      const recon = () => { NCO = +$("#nco").value; $("#nco-l").textContent = NCO + " de 64"; $("#nco-v").textContent = NCO;
+        const F = new Float64Array(64); for (let k = 0; k < NCO; k++) F[ZZ[k]] = B.F[ZZ[k]];
+        blit(cv("r-n"), grayRGBA(idct(F), 8, 8, 128), 8, 8); };
+      $("#nco").oninput = recon; recon();
+    },
+  };
+}
+
+function stepQuant() {
+  const B = block(), z = B.q.filter(v => !v).length, mx = Math.max(64, ...B.F.map(Math.abs).slice(1));
+  const mq = Math.max(4, ...B.q.map(Math.abs).slice(1));
+  return {
+    text: `<p>Aquí está la verdadera compresión. Cada coeficiente se <b>divide</b> por el número correspondiente de la
+      <b>tabla de cuantización</b> y se <b>redondea</b> a entero. La tabla tiene valores pequeños para las frecuencias bajas, que
+      importan mucho, y grandes para las altas, que el ojo apenas distingue: muchos coeficientes acaban valiendo <b>0</b>.</p>
+      <p>La <b>calidad</b> del panel izquierdo escala la tabla: más calidad, divisores más pequeños y más detalle conservado.
+      El redondeo <b>no se puede deshacer</b>: es la pérdida principal de JPEG.</p>`,
+    formula: `F<sub>q</sub>(u,v) = redondeo( F(u,v) / Q(u,v) )<br>Q = escala(calidad) · Q<sub>base</sub> &nbsp; (calidad = <b>${QUAL}</b>)
+      <span class="c">Para el color (Cb, Cr) se usa otra tabla, aún más agresiva. El decodificador recupera F ≈ F<sub>q</sub>·Q.</span>`,
+    viz: `<div class="eq">${mat(B.F, { title: "F", sub: "DCT", scale: mx })}<div class="op">÷</div>
+            ${mat(E.qL, { title: "Q", sub: "tabla de luminancia", kind: "q" })}<div class="op">=</div>
+            ${mat(B.q, { title: "F<sub>q</sub>", sub: "enteros cuantizados", kind: "zq", scale: mq })}</div>
+          <div class="flex" style="margin-top:16px">${fig("q-o", "Bloque original", 128)}${fig("q-r", "Tras cuantizar", 128, "IDCT(F<sub>q</sub>·Q)")}
+            <div class="facts" style="flex:1 1 360px;margin-top:0">
+              <div class="fact"><b>${z} / 64</b><span>coeficientes nulos en este bloque</span></div>
+              <div class="fact"><b>${Math.round(E.zeros / E.coefs * 100)} %</b><span>de ceros en toda la imagen</span></div>
+              <div class="fact"><b>${E.qL[0]}</b><span>divisor del DC</span></div>
+              <div class="fact"><b>${fmtN(Math.sqrt(B.pix.reduce((s, v, i) => s + (v - B.rec[i]) ** 2, 0) / 64), 1)}</b><span>error medio del bloque (0–255)</span></div>
+            </div></div>`,
+    after() { blit(cv("q-o"), grayRGBA(B.pix, 8, 8), 8, 8); blit(cv("q-r"), grayRGBA(B.rec, 8, 8), 8, 8); },
+  };
+}
+
+function stepZZ() {
+  const B = block(), mq = Math.max(4, ...B.q.map(Math.abs).slice(1));
+  const prevB = SEL.bx > 0 ? block(SEL.bx - 1, SEL.by) : SEL.by > 0 ? block(31, SEL.by - 1) : null;
+  const prevDC = prevB ? prevB.q[0] : 0, seq = ZZ.map(i => B.q[i]);
+  let last = 0; seq.forEach((v, k) => { if (v && k) last = k; });
+  const toks = [`<span class="tok dc">DC: ${fmtN(B.q[0])} − ${fmtN(prevDC)} = ${fmtN(B.q[0] - prevDC)}</span>`];
+  let run = 0;
+  for (let k = 1; k < 64; k++) { const v = seq[k]; if (!v) { run++; continue; }
+    while (run > 15) { toks.push(`<span class="tok zrl" title="16 ceros seguidos">ZRL</span>`); run -= 16; }
+    toks.push(`<span class="tok">(${run}, ${fmtN(v)})</span>`); run = 0; }
+  if (run) toks.push(`<span class="tok eob">EOB</span>`);
+  const cw = 36, chh = 26, gp = 2, pts = ZZ.map(i => [(i % 8) * (cw + gp) + cw / 2, Math.floor(i / 8) * (chh + gp) + chh / 2].join(",")).join(" ");
+  return {
+    text: `<p>Los 64 coeficientes cuantizados se leen en <b>zigzag</b>, de las frecuencias bajas a las altas. Así los ceros, que
+      abundan en las altas frecuencias, quedan <b>agrupados al final</b>.</p>
+      <p>El <b>DC</b> se guarda como diferencia con el DC del bloque anterior, porque cambia poco de un bloque a su vecino.
+      Los <b>AC</b> se codifican con <b>RLE</b> (codificación por longitud de serie): cada valor distinto de cero se apunta como un par
+      (ceros que lo preceden, valor), y el símbolo <b>EOB</b> («fin de bloque») indica que todo lo que queda son ceros.</p>`,
+    formula: `orden: F(0,0), F(1,0), F(0,1), F(0,2), F(1,1), F(2,0)…<br>par AC = (nº de ceros previos, valor)
+      <span class="c">ZRL representa 16 ceros seguidos cuando la serie es más larga de 15.</span>`,
+    viz: `<div class="flex"><div class="mx"><div class="mx-title">F<sub>q</sub> <small>recorrido en zigzag</small></div>
+            <div style="position:relative">${mat(B.q, { title: "", kind: "zq", scale: mq }).replace('<div class="mx-title"></div>', "")}
+            <svg class="zz" width="${8 * cw + 7 * gp}" height="${8 * chh + 7 * gp}" style="top:0"><polyline points="${pts}" fill="none" stroke="#b86b00" stroke-width="1.6" stroke-opacity=".75" stroke-linejoin="round"/></svg></div></div>
+          <div style="flex:1 1 360px;min-width:0"><p class="panel-t">Secuencia en zigzag (64 valores)</p>
+            <div class="chips">${seq.map((v, k) => `<span class="chip${k === 0 ? " dc" : k > last ? " tail" : v ? "" : " z"}">${fmtN(v)}</span>`).join("")}</div>
+            <p class="panel-t">Símbolos que se codifican</p><div class="chips" style="gap:6px">${toks.join("")}</div>
+            <p class="note">De 64 números pasamos a <b>${toks.length}</b> símbolos. Los ceros rayados del final se resumen en un solo EOB.</p></div></div>`,
+  };
+}
+
+function stepHuff() {
+  const f = E.freq.acL, L = E.lens.acL, C = E.codes.acL, tot = f.reduce((a, b) => a + b, 0);
+  const rows = f.map((n, s) => ({ s, n })).filter(r => r.n).sort((a, b) => b.n - a.n).slice(0, 12);
+  const mean = f.reduce((a, n, s) => a + n * L[s], 0) / tot;
+  const desc = s => s === 0 ? "EOB · fin de bloque" : s === 0xF0 ? "ZRL · 16 ceros" : `${s >> 4} ceros + valor de ${s & 15} bit${(s & 15) > 1 ? "s" : ""}`;
+  const real = browserJpeg();
+  return {
+    text: `<p>Por último, los símbolos se codifican con <b>códigos de Huffman</b>: los más frecuentes reciben códigos de pocos bits y los
+      raros, códigos largos. Cada símbolo AC indica cuántos ceros hay antes y cuántos bits ocupa el valor; justo detrás se escriben esos bits
+      con el valor exacto. Este paso es <b>sin pérdidas</b>.</p>
+      <p>Abajo están los símbolos AC de luminancia más frecuentes de esta imagen con su código. Fíjate en que EOB y los valores pequeños
+      dominan: son el fruto de la cuantización.</p>`,
+    formula: `bits totales = Σ (longitud del código) + Σ (bits del valor)<br>longitud media AC (Y): <b>${mean.toFixed(2).replace(".", ",")} bits</b>
+      <span class="c">Aquí se usan tablas de Huffman optimizadas para la imagen (opción permitida por el estándar). Hay 4 tablas: DC y AC, para luminancia y para color.</span>`,
+    viz: `<table class="h"><thead><tr><th>Símbolo</th><th>Significado</th><th>Frecuencia</th><th>Bits</th><th>Código</th></tr></thead><tbody>
+          ${rows.map(r => `<tr><td class="m">0x${r.s.toString(16).toUpperCase().padStart(2, "0")}</td><td>${desc(r.s)}</td>
+            <td><span class="bar" style="width:${Math.max(2, r.n / rows[0].n * 120)}px"></span>${(r.n / tot * 100).toFixed(1).replace(".", ",")} %</td>
+            <td class="m">${L[r.s]}</td><td class="m code">${C[r.s]}</td></tr>`).join("")}</tbody></table>
+          <div class="facts">
+            <div class="fact"><b>${kb(E.hbits / 8)}</b><span>códigos de Huffman</span></div>
+            <div class="fact"><b>${kb(E.extra / 8)}</b><span>bits de los valores</span></div>
+            <div class="fact"><b>${kb(E.bytes)}</b><span>archivo estimado (con ${E.header} B de cabecera)</span></div>
+            <div class="fact"><b>${real ? kb(real) : "—"}</b><span>JPEG real de tu navegador, misma calidad</span></div>
+          </div>
+          <p class="note">El navegador usa tablas de Huffman estándar y su propia elección de submuestreo, así que su tamaño difiere un poco del estimado.</p>`,
+  };
+}
+
+function stepResult() {
+  const n = W * H, err = new Uint8ClampedArray(n * 4);
+  for (let i = 0; i < n; i++) { const d = (Math.abs(IMG.R[i] - E.dec[4 * i]) + Math.abs(IMG.G[i] - E.dec[4 * i + 1]) + Math.abs(IMG.B[i] - E.dec[4 * i + 2])) / 3 * 6;
+    err[4 * i] = Math.min(255, d * 1.0); err[4 * i + 1] = Math.min(255, d * .6); err[4 * i + 2] = Math.min(255, d * .1); err[4 * i + 3] = 255; }
+  const rawK = W * H * 3;
+  return {
+    text: `<p>El decodificador recorre el camino al revés: Huffman → RLE → zigzag inverso → multiplicar por Q → <b>DCT inversa</b> → sumar 128 →
+      ampliar Cb y Cr → volver a RGB. El resultado <b>no es idéntico</b> al original: se perdió lo que se redondeó al cuantizar y el detalle
+      de color del submuestreo.</p>
+      <p>Baja la calidad para ver los defectos típicos: <b>bloques</b> de 8 × 8 visibles en las zonas suaves, <b>halos</b> («ringing») junto al texto
+      y a los bordes nítidos, y <b>colores corridos</b> en los contornos del velero. El mapa de error muestra dónde se pierde más.</p>`,
+    formula: `PSNR = 10·log<sub>10</sub>(255² / ECM) = <b>${isFinite(E.psnr) ? E.psnr.toFixed(1).replace(".", ",") : "∞"} dB</b>
+      <span class="c">Por encima de unos 35 dB la diferencia suele ser difícil de ver; por debajo de 28 dB, evidente.</span>`,
+    viz: `<div class="flex">${fig("o-full", "Original", 256)}${fig("d-full", "JPEG decodificado", 256, "calidad " + QUAL)}${fig("e-full", "Error ×6", 256, "más claro = más diferencia")}</div>
+          <div class="flex" style="margin-top:16px">${fig("o-z", "Original", 192, "recorte ampliado")}${fig("d-z", "Decodificado", 192, "recorte ampliado")}
+            <div class="facts" style="flex:1 1 300px;margin-top:0;grid-template-columns:repeat(2,minmax(0,1fr))">
+              <div class="fact"><b>${kb(rawK)}</b><span>original sin comprimir</span></div>
+              <div class="fact"><b>${kb(E.bytes)}</b><span>JPEG estimado</span></div>
+              <div class="fact"><b>1 : ${(rawK / E.bytes).toFixed(1).replace(".", ",")}</b><span>razón de compresión</span></div>
+              <div class="fact"><b>${(E.bytes * 8 / n).toFixed(2).replace(".", ",")}</b><span>bits por píxel (antes 24)</span></div>
+            </div></div>`,
+    after() {
+      blit(cv("o-full"), IMG.rgba, W, H); blit(cv("d-full"), E.dec, W, H); blit(cv("e-full"), err, W, H);
+      crop("o-z", IMG.rgba, 48); crop("d-z", E.dec, 48);
+    },
+  };
+}
+
+/* ======================= Navegación ======================= */
+function renderSteps() {
+  $("#steps").innerHTML = STEPS.map((s, i) => `${s.g ? `<span class="grp">${s.g}</span>` : ""}<button data-s="${i}" class="${i < STEP ? "done" : i === STEP ? "cur" : ""}"
+    ${i === STEP ? 'aria-current="step"' : ""}><span class="n">${i + 1}</span><span class="lbl">${s.t}</span></button>`).join("");
+}
+function renderStep() {
+  const s = STEPS[STEP], r = s.f();
+  $("#st-title").textContent = s.t; $("#st-no").textContent = `Paso ${STEP + 1} de ${STEPS.length}`;
+  $("#st-text").innerHTML = r.text; $("#st-formula").innerHTML = r.formula; $("#viz").innerHTML = r.viz;
+  r.after && r.after();
+  $("#prev").disabled = STEP === 0; $("#next").disabled = STEP === STEPS.length - 1;
+  renderSteps();
+}
+const go = i => { STEP = Math.max(0, Math.min(STEPS.length - 1, i)); renderStep(); };
+$("#steps").addEventListener("click", e => { const b = e.target.closest("button"); if (b) go(+b.dataset.s); });
+$("#prev").onclick = () => go(STEP - 1); $("#next").onclick = () => go(STEP + 1);
+document.addEventListener("keydown", e => { if (e.target.tagName === "INPUT") return;
+  if (e.key === "ArrowRight") go(STEP + 1); if (e.key === "ArrowLeft") go(STEP - 1); });
+
+setFromCanvas(sampleCanvas());
+refresh();
+</script>
+</body>
+</html>

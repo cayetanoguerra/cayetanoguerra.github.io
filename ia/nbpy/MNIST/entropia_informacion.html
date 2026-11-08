@@ -1,0 +1,675 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Entropía e información</title>
+<style>
+  /* Layout: barra superior ULPGC · tira de pasos · escenario del paso a todo el ancho */
+  :root {
+    color-scheme: light;
+    /* Colores institucionales ULPGC */
+    --blue: #0266a2; --blue-dark: #014d7a; --blue-soft: #e8f1f8;
+    --orange: #ff9600; --orange-dark: #b86b00; --orange-soft: #fff3e0;
+    --bg: #f4f6f8; --panel: #ffffff; --ink: #1b2430; --muted: #5d6875;
+    --line: #e1e6eb; --hatch-a: #eef1f4; --hatch-b: #d3dae1;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .gut { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  .topbar { background: var(--panel); border-top: 4px solid var(--blue); border-bottom: 1px solid var(--line); }
+  header { max-width: 1280px; margin: 0 auto; padding-block: 18px 20px;
+           display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; }
+  .logo { height: 30px; width: auto; opacity: .9; flex-shrink: 0; margin-top: 4px; }
+  h1 { font-size: 26px; margin: 0 0 6px; letter-spacing: -.01em; color: var(--blue); text-wrap: balance; }
+  h1::after { content: ""; display: block; width: 48px; height: 3px; background: var(--orange); border-radius: 2px; margin-top: 6px; }
+  header p { margin: 0; color: var(--muted); max-width: 84ch; }
+
+  .steps-wrap { max-width: 1280px; margin: 0 auto; padding-block: 16px 0; }
+  .steps { display: flex; flex-wrap: wrap; gap: 6px; }
+  .steps button { display: flex; align-items: center; gap: 7px; padding: 5px 11px 5px 6px; font-size: 13px;
+                  background: var(--panel); border: 1px solid var(--line); border-radius: 999px; }
+  .steps button .n { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center;
+                     background: var(--blue-soft); color: var(--blue); font-weight: 700; font-size: 11px; font-variant-numeric: tabular-nums; }
+  .steps button.done .n { background: var(--blue); color: #fff; }
+  .steps button.cur { border-color: var(--blue); background: var(--blue-soft); font-weight: 600; color: var(--blue-dark); }
+  .steps button.cur .n { background: var(--orange); color: #fff; }
+
+  main { max-width: 1280px; margin: 0 auto; padding-block: 16px 28px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px;
+          box-shadow: 0 1px 2px rgba(16, 40, 64, .04); min-width: 0; }
+  .card h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: var(--blue);
+             margin: 0 0 12px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  .card h2::before { content: ""; width: 4px; height: 14px; background: var(--orange); border-radius: 2px; }
+  .note { color: var(--muted); font-size: 13px; margin: 8px 0 0; }
+  .note b { color: var(--ink); }
+
+  button { font: inherit; padding: 7px 14px; border-radius: 8px; border: 1px solid var(--line);
+           background: var(--bg); color: var(--ink); cursor: pointer; transition: background .15s, border-color .15s; }
+  button:hover { border-color: #c4ccd4; }
+  button:disabled { opacity: .45; cursor: default; }
+  button.primary { background: var(--blue); color: #fff; border-color: var(--blue); font-weight: 600; }
+  button.primary:hover { background: var(--blue-dark); border-color: var(--blue-dark); }
+  button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px solid var(--orange); outline-offset: 2px; }
+  .sm { padding: 4px 10px; font-size: 13px; }
+  input[type=range] { accent-color: var(--orange); width: 100%; margin: 4px 0 0; }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 9px; overflow: hidden; }
+  .seg button { border: 0; border-radius: 0; background: var(--panel); font-size: 13px; padding: 5px 12px; }
+  .seg button + button { border-left: 1px solid var(--line); }
+  .seg button[aria-pressed="true"] { background: var(--blue-soft); font-weight: 600; color: var(--blue-dark); }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; align-items: center; }
+
+  .stage-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  .stage-head h2 { margin-bottom: 4px; }
+  .stepno { color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+  .explain { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 16px 28px; margin-bottom: 14px; }
+  .explain .txt p { margin: 0 0 8px; max-width: 72ch; }
+  .explain .txt p:last-child { margin-bottom: 0; }
+  .formula { background: var(--blue-soft); border-radius: 10px; padding: 12px 14px; font-family: var(--mono);
+             font-size: 13.5px; line-height: 1.75; color: var(--blue-dark); align-self: start; overflow-x: auto; }
+  .formula .c { font-family: system-ui, sans-serif; color: var(--muted); font-size: 12.5px; display: block; line-height: 1.45; margin-top: 4px; }
+  .formula b { color: var(--ink); }
+  .viz { overflow-x: auto; padding: 14px 2px 8px; border-top: 1px solid var(--line); min-height: 280px; }
+  .nav { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+  .hint { color: var(--muted); font-size: 12.5px; }
+  kbd { font: 12px var(--mono); background: var(--blue-soft); color: var(--blue); border-radius: 4px; padding: 1px 5px; }
+  .panel-t { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 700; margin: 18px 0 8px; }
+  .panel-t:first-child { margin-top: 0; }
+  .cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px 28px; align-items: start; }
+  .cols > * { min-width: 0; }
+
+  .facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-top: 14px; }
+  .fact { background: var(--bg); border-radius: 8px; padding: 10px 12px; }
+  .fact b { display: block; font-size: 20px; color: var(--blue); font-variant-numeric: tabular-nums; }
+  .fact.o { background: var(--orange-soft); } .fact.o b { color: var(--orange-dark); }
+  .fact span { font-size: 12px; color: var(--muted); }
+  .calc { margin-top: 12px; padding: 10px 12px; background: var(--orange-soft); border-radius: 8px;
+          font-family: var(--mono); font-size: 13px; line-height: 1.6; color: #6b3f00; overflow-x: auto; }
+  .calc .h { font-family: system-ui, sans-serif; font-weight: 700; color: var(--orange-dark); font-size: 12px;
+             text-transform: uppercase; letter-spacing: .06em; display: block; }
+  .ok { margin-top: 12px; padding: 10px 12px; border-left: 4px solid var(--blue); background: var(--blue-soft); border-radius: 6px; font-size: 13.5px; max-width: 86ch; }
+  .ok ul { margin: 6px 0 0; padding-left: 20px; } .ok li { margin: 2px 0; }
+  .slider-in label { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); }
+  .slider-in label b { color: var(--orange-dark); font-family: var(--mono); }
+  .slider-in + .slider-in { margin-top: 10px; }
+
+  table.t { border-collapse: collapse; font-size: 13.5px; }
+  table.t th { text-align: right; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted);
+               font-weight: 700; padding: 4px 0 6px 14px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  table.t th:first-child, table.t td:first-child { text-align: left; padding-left: 0; }
+  table.t td { padding: 4px 0 4px 14px; border-bottom: 1px solid #f0f2f4; text-align: right; font-family: var(--mono);
+               font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  table.t td.l { text-align: left; font-family: system-ui, sans-serif; white-space: normal; }
+  table.t tfoot td { border-bottom: 0; border-top: 2px solid var(--line); font-weight: 700; }
+  .b { display: inline-block; height: 12px; border-radius: 3px; vertical-align: middle; background: var(--blue); }
+  .b.o { background: var(--orange); }
+  .code { color: var(--orange-dark); font-weight: 700; letter-spacing: .04em; }
+  svg text { font-family: system-ui, sans-serif; }
+  svg.plot { display: block; width: 100%; max-width: 640px; height: auto; }
+
+  /* Juego de adivinar */
+  .ngrid { display: grid; gap: 4px; width: max-content; }
+  .ncell { width: 44px; height: 38px; border-radius: 7px; border: 1px solid #c9dbea; background: var(--blue-soft); color: var(--blue-dark);
+           font: 600 14px/1 var(--mono); display: grid; place-items: center; cursor: pointer; padding: 0; transition: background .15s, transform .1s; }
+  .ncell:hover { background: #d3e5f2; }
+  .ncell.out { background: repeating-linear-gradient(45deg, var(--hatch-a) 0 5px, var(--hatch-b) 5px 6px); color: #a3adb7; border-color: var(--line); cursor: default; }
+  .ncell.last { cursor: default; }
+  .ncell.found { background: var(--orange); color: #fff; border-color: var(--orange-dark); }
+  .ncell.prev { box-shadow: inset 0 -3px 0 var(--orange); }
+  .qlog { display: grid; gap: 4px; font-size: 13.5px; margin-top: 4px; }
+  .qlog div { display: flex; gap: 10px; align-items: center; padding: 4px 8px; border-radius: 6px; background: var(--bg); }
+  .qlog .bits { margin-left: auto; font-family: var(--mono); color: var(--orange-dark); font-weight: 700; }
+  .qlog .win { background: var(--orange-soft); font-weight: 600; }
+
+  /* Secuencias */
+  .chips { display: flex; flex-wrap: wrap; gap: 3px; }
+  .chip { font: 600 12px/1 var(--mono); width: 22px; height: 22px; display: grid; place-items: center; border-radius: 5px; }
+  .chip.h { background: var(--blue); color: #fff; } .chip.t { background: var(--orange-soft); color: #7a4700; border: 1px solid #ffd699; }
+  .bits-s { font: 13px/1.9 var(--mono); word-break: break-all; }
+  .bits-s span:nth-child(odd) { color: var(--blue-dark); background: var(--blue-soft); }
+  .bits-s span:nth-child(even) { color: #7a4700; background: var(--orange-soft); }
+  .msg { font: 600 14px/1.8 var(--mono); letter-spacing: .12em; color: var(--ink); word-break: break-all; }
+
+  /* Editor de distribución */
+  #dist { display: block; width: 100%; max-width: 560px; height: 210px; border-radius: 8px; border: 1px solid var(--line);
+          cursor: ns-resize; touch-action: none; }
+
+  /* Texto */
+  textarea { width: 100%; min-height: 130px; font: 14px/1.5 system-ui, sans-serif; padding: 10px 12px; border-radius: 8px;
+             border: 1px solid var(--line); resize: vertical; color: var(--ink); background: #fff; }
+  .fbars { display: flex; align-items: flex-end; gap: 3px; height: 150px; padding-top: 6px; }
+  .fbars div { flex: 1; min-width: 12px; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; height: 100%; }
+  .fbars i { display: block; width: 100%; background: var(--blue); border-radius: 3px 3px 0 0; }
+  .fbars span { font: 11px var(--mono); color: var(--muted); margin-top: 3px; }
+
+  /* Barras de comparación */
+  .hbars { display: grid; grid-template-columns: 190px minmax(160px, 1fr) 82px; gap: 7px 12px; align-items: center; font-size: 13px; max-width: 860px; }
+  .hbars .l { color: var(--muted); text-align: right; }
+  .hbars .tr { height: 20px; background: var(--bg); border-radius: 4px; overflow: hidden; position: relative; }
+  .hbars .tr i { position: absolute; top: 0; bottom: 0; left: 0; border-radius: 4px; background: var(--blue); }
+  .hbars .tr i.o { background: var(--orange); } .hbars .tr i.g { background: #9aa6b2; }
+  .hbars .v { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  .limit { position: absolute; top: -3px; bottom: -3px; width: 2px; background: #d9480f; }
+
+  /* Información mutua */
+  .mi { display: grid; grid-template-columns: 90px minmax(260px, 1fr); gap: 8px 12px; align-items: center; max-width: 820px; font-size: 13px; }
+  .mi .l { text-align: right; font-family: var(--mono); color: var(--muted); }
+  .mi .tr { position: relative; height: 30px; }
+  .mi .s { position: absolute; top: 0; bottom: 0; border-radius: 6px; display: flex; align-items: center; justify-content: center;
+           font: 12px var(--mono); color: #fff; white-space: nowrap; overflow: hidden; }
+  .s.x { background: var(--blue); } .s.y { background: var(--orange); color: #4a2a00; }
+  .s.i { background: repeating-linear-gradient(45deg, var(--blue) 0 6px, var(--orange) 6px 12px); }
+  .s.i em { font-style: normal; background: rgba(27,36,48,.82); color: #fff; padding: 1px 7px; border-radius: 4px; }
+  .joint { border-collapse: separate; border-spacing: 4px; font-size: 13px; }
+  .joint th { font-weight: 600; color: var(--muted); padding: 2px 8px; font-size: 12.5px; }
+  .joint td.c { width: 96px; height: 54px; text-align: center; border-radius: 8px; font: 600 14px var(--mono); }
+
+  @media (max-width: 900px) {
+    .explain, .cols { grid-template-columns: minmax(0, 1fr); }
+    .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .logo { height: 24px; }
+    .hbars { grid-template-columns: 120px minmax(100px, 1fr) 62px; }
+  }
+  @media (max-width: 560px) {
+    .steps button .lbl { display: none; }
+    .steps button { padding: 5px; }
+    header { flex-direction: column-reverse; gap: 10px; }
+    .ncell { width: 36px; height: 34px; font-size: 12.5px; }
+  }
+</style>
+</head>
+<body>
+<div class="topbar gut">
+<header>
+  <div>
+    <h1>Entropía e información</h1>
+    <p>¿Cuánta información hay en un mensaje? Claude Shannon respondió en 1948 con una idea sencilla y poderosa: la información
+       se mide por la <b>incertidumbre que elimina</b>, y su unidad es el <b>bit</b>, la respuesta a una pregunta de sí o no.
+       Recorre los pasos para ver de dónde sale la fórmula de la entropía y por qué marca el límite de cualquier compresor.</p>
+  </div>
+  <img class="logo" src="logo-ulpgc.jpg" alt="ULPGC · Universidad de Las Palmas de Gran Canaria">
+</header>
+</div>
+
+<div class="steps-wrap gut"><nav class="steps" id="steps" aria-label="Pasos"></nav></div>
+
+<main class="gut">
+  <section class="card" aria-live="polite">
+    <div class="stage-head">
+      <h2 id="st-title">—</h2>
+      <span class="stepno" id="st-no"></span>
+    </div>
+    <div class="explain">
+      <div class="txt" id="st-text"></div>
+      <div class="formula" id="st-formula"></div>
+    </div>
+    <div class="viz" id="viz"></div>
+    <div class="nav">
+      <button id="prev">← Anterior</button>
+      <span class="hint">También con <kbd>←</kbd> <kbd>→</kbd></span>
+      <button id="next" class="primary">Siguiente →</button>
+    </div>
+  </section>
+</main>
+
+<script>
+/* ======================= Utilidades ======================= */
+const $ = s => document.querySelector(s);
+const log2 = Math.log2;
+const f = (v, d = 3) => !isFinite(v) ? "∞" : (Math.abs(v) < 5 * 10 ** -(d + 1) ? 0 : v).toFixed(d).replace(".", ",").replace("-", "−");
+const H = A => A.reduce((s, p) => p > 0 ? s - p * log2(p) : s, 0);
+const h2 = p => p <= 0 || p >= 1 ? 0 : -p * log2(p) - (1 - p) * log2(1 - p);
+function rng(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+  t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const CSS = getComputedStyle(document.documentElement), C = n => CSS.getPropertyValue(n).trim();
+const BLUE = C("--blue"), ORANGE = C("--orange"), MUTED = C("--muted"), LINE = C("--line");
+
+function plot({ w = 640, h = 250, x0, x1, y0, y1, series = [], points = [], xticks = [], yticks = [], xl = "", yl = "", xfmt, vline }) {
+  const L = 46, R = 14, T = 12, B = 34, pw = w - L - R, ph = h - T - B;
+  const X = x => L + (x - x0) / (x1 - x0) * pw, Y = y => T + (1 - (y - y0) / (y1 - y0)) * ph;
+  let s = `<svg class="plot" viewBox="0 0 ${w} ${h}" role="img">`;
+  yticks.forEach(t => s += `<line x1="${L}" x2="${L + pw}" y1="${Y(t)}" y2="${Y(t)}" stroke="${t === 0 ? "#c4ccd4" : LINE}"/><text x="${L - 6}" y="${Y(t) + 4}" font-size="11" fill="${MUTED}" text-anchor="end">${f(t, t % 1 ? 1 : 0)}</text>`);
+  xticks.forEach(t => s += `<line x1="${X(t)}" x2="${X(t)}" y1="${T}" y2="${T + ph}" stroke="${LINE}"/><text x="${X(t)}" y="${T + ph + 16}" font-size="11" fill="${MUTED}" text-anchor="middle">${xfmt ? xfmt(t) : f(t, t % 1 ? 1 : 0)}</text>`);
+  s += `<text x="${L + pw}" y="${h - 3}" font-size="11.5" fill="${MUTED}" text-anchor="end">${xl}</text><text x="${L + pw - 4}" y="${T + 14}" text-anchor="end" font-size="11.5" fill="${MUTED}">${yl}</text>`;
+  if (vline !== undefined) s += `<line x1="${X(vline)}" x2="${X(vline)}" y1="${T}" y2="${T + ph}" stroke="${ORANGE}" stroke-dasharray="4 3"/>`;
+  series.forEach(({ pts, color, width = 2.2, fill }) => {
+    const d = pts.map(([x, y], i) => `${i ? "L" : "M"}${X(x).toFixed(1)},${Y(Math.min(y1, Math.max(y0, y))).toFixed(1)}`).join("");
+    if (fill) s += `<path d="${d}L${X(pts[pts.length - 1][0])},${Y(y0)}L${X(pts[0][0])},${Y(y0)}Z" fill="${fill}"/>`;
+    s += `<path d="${d}" fill="none" stroke="${color}" stroke-width="${width}" stroke-linejoin="round"/>`;
+  });
+  points.forEach(({ x, y, label, color = ORANGE }) => s += `<circle cx="${X(x)}" cy="${Y(Math.min(y, y1))}" r="6" fill="${color}" stroke="#fff" stroke-width="2"/>
+    ${label ? `<text x="${X(x) + (X(x) > L + pw - 120 ? -10 : 10)}" y="${Y(Math.min(y, y1)) - 9}" font-size="12" font-weight="700" fill="#1b2430" text-anchor="${X(x) > L + pw - 120 ? "end" : "start"}">${label}</text>` : ""}`);
+  return s + "</svg>";
+}
+function hbars(rows, max, limit) {   // rows: [label, value, cls]
+  return `<div class="hbars">${rows.map(([l, v, cls]) => `<div class="l">${l}</div><div class="tr"><i class="${cls || ""}" style="width:${Math.min(100, v / max * 100)}%"></i>
+    ${limit !== undefined ? `<span class="limit" style="left:${limit / max * 100}%"></span>` : ""}</div><div class="v">${f(v, 3)}</div>`).join("")}</div>`;
+}
+
+/* ======================= Paso 1: adivina el número ======================= */
+const G = { N: 16, secret: 0, lo: 1, hi: 16, log: [] };
+function newGame(N = G.N) { G.N = N; G.lo = 1; G.hi = N; G.log = []; G.secret = 1 + Math.floor(Math.random() * N); }
+newGame();
+function ask(x) {
+  if (G.lo === G.hi || x < G.lo || x >= G.hi) return;
+  const before = G.hi - G.lo + 1, yes = G.secret <= x;
+  if (yes) G.hi = x; else G.lo = x + 1;
+  const after = G.hi - G.lo + 1;
+  G.log.push({ x, yes, before, after, bits: log2(before / after) });
+}
+function stepGuess() {
+  const n = G.hi - G.lo + 1, done = n === 1, got = log2(G.N / n), cols = G.N <= 16 ? (G.N <= 8 ? G.N : 8) : 8;
+  const cells = Array.from({ length: G.N }, (_, i) => i + 1).map(k => {
+    const out = k < G.lo || k > G.hi, cls = done && k === G.lo ? "found" : out ? "out" : k === G.hi ? "last" : "";
+    return `<button class="ncell ${cls}" data-k="${k}" ${out || k === G.hi || done ? "tabindex='-1'" : `title="¿Es menor o igual que ${k}?"`}>${k}</button>`;
+  }).join("");
+  return {
+    text: `<p>He pensado un número entre 1 y <b>${G.N}</b>. Tú sólo puedes hacer preguntas del tipo <b>«¿es menor o igual que k?»</b>:
+      haz clic en un número k para preguntarlo. ¿Cuántas preguntas necesitas, como mínimo, para estar seguro?</p>
+      <p>Si cada pregunta parte los candidatos por la mitad, cada respuesta elimina la mitad de la incertidumbre. Eso es <b>un bit</b> de
+      información. Con N candidatos hacen falta log₂ N preguntas: ${G.N} = 2<sup>${log2(G.N)}</sup>, así que bastan <b>${log2(G.N)}</b>.
+      Prueba también a hacer una pregunta mala, como «¿es ≤ 1?», y fíjate en cuánta información obtienes.</p>`,
+    formula: `información de una respuesta = log₂ (candidatos antes / candidatos después)<br>
+      información total = log₂ N = log₂ ${G.N} = <b>${log2(G.N)} bits</b>
+      <span class="c">Una respuesta que deja la mitad de candidatos aporta exactamente 1 bit. Una que casi no descarta nada, casi 0 bits.</span>`,
+    viz: `<div class="cols"><div>
+        <div class="row" style="margin-top:0"><span class="note" style="margin:0">Números:</span>
+          <div class="seg" id="gN">${[8, 16, 32, 64].map(v => `<button data-n="${v}" aria-pressed="${v === G.N}">1–${v}</button>`).join("")}</div></div>
+        <div class="ngrid" style="grid-template-columns:repeat(${cols}, auto);margin-top:12px" id="grid">${cells}</div>
+        <div class="row"><button class="primary sm" id="gBest" ${done ? "disabled" : ""}>Pregunta óptima (por la mitad)</button>
+          <button class="sm" id="gNew">Nuevo número</button></div></div>
+      <div><p class="panel-t">Preguntas</p><div class="qlog">${G.log.length ? G.log.map((q, i) =>
+          `<div><span>${i + 1}. ¿Es ≤ ${q.x}? <b>${q.yes ? "Sí" : "No"}</b> → quedan ${q.after}</span><span class="bits">+${f(q.bits, 2)} bits</span></div>`).join("")
+          : `<div><span class="note" style="margin:0">Todavía no has preguntado nada.</span></div>`}
+          ${done ? `<div class="win"><span>¡Es el ${G.lo}! ${G.log.length} pregunta${G.log.length > 1 ? "s" : ""}; con la estrategia óptima bastan ${log2(G.N)}.</span><span class="bits">${f(got, 2)} bits</span></div>` : ""}</div>
+        <div class="facts" style="grid-template-columns:repeat(2,minmax(0,1fr))">
+          <div class="fact"><b>${n}</b><span>candidatos restantes</span></div>
+          <div class="fact"><b>${G.log.length}</b><span>preguntas hechas</span></div>
+          <div class="fact o"><b>${f(got, 2)}</b><span>bits obtenidos</span></div>
+          <div class="fact"><b>${f(log2(n), 2)}</b><span>bits que aún faltan</span></div></div></div></div>`,
+    after() {
+      $("#grid").onclick = e => { const b = e.target.closest(".ncell"); if (!b) return; ask(+b.dataset.k); renderStep(); };
+      $("#gBest").onclick = () => { ask(Math.floor((G.lo + G.hi - 1) / 2)); renderStep(); };
+      $("#gNew").onclick = () => { newGame(); renderStep(); };
+      $("#gN").onclick = e => { const b = e.target.closest("button"); if (b) { newGame(+b.dataset.n); renderStep(); } };
+    },
+  };
+}
+
+/* ======================= Paso 2: sorpresa ======================= */
+let SP = -1;   // log10 p
+const EXAMPLES = [
+  ["Sale cara al lanzar una moneda", 1 / 2],
+  ["Sale un 6 en un dado", 1 / 6],
+  ["Aciertas el número del paso anterior (1 de 16)", 1 / 16],
+  ["Aciertas una carta de la baraja española", 1 / 40],
+  ["Dos caras seguidas", 1 / 4],
+  ["Aciertas la Primitiva (6 de 49)", 1 / 13983816],
+  ["Mañana amanece", 0.999999],
+];
+function stepSurprise() {
+  const pts = []; for (let i = 0; i <= 300; i++) { const lp = -5 + 5 * i / 300; pts.push([lp, -log2(10 ** lp)]); }
+  return {
+    text: `<p>En el juego, la pregunta «¿es ≤ 1?» casi siempre responde «no», y entonces apenas informa. Pero si responde «sí», de golpe
+      lo sabemos todo: 4 bits. La información de un suceso depende de lo <b>improbable</b> que sea: cuanto más raro, más nos <b>sorprende</b>.</p>
+      <p>Shannon definió la sorpresa (o autoinformación) de un suceso de probabilidad p como <b>−log₂ p</b>. Es 0 para lo seguro, 1 bit para
+      un suceso de probabilidad ½, y crece sin límite al acercarse p a 0. El logaritmo hace que las sorpresas de sucesos independientes <b>se sumen</b>:
+      dos caras seguidas son 1 + 1 = 2 bits, igual que −log₂ ¼.</p>`,
+    formula: `I(x) = −log₂ p(x) &nbsp; bits<br>p = <b id="spP"></b> → I = <b id="spI"></b> bits
+      <span class="c">Independientes: I(x e y) = −log₂ [p(x)·p(y)] = I(x) + I(y).</span>`,
+    viz: `<div class="cols"><div><div id="spPlot"></div>
+        <div class="slider-in"><label for="spS">Probabilidad del suceso (escala logarítmica) <b id="spL"></b></label>
+          <input id="spS" type="range" min="-5" max="0" step="0.01" value="${SP}"></div></div>
+      <div><table class="t" style="width:100%"><thead><tr><th>Suceso</th><th>p</th><th>sorpresa</th></tr></thead><tbody>
+        ${EXAMPLES.map(([d, p]) => `<tr><td class="l">${d}</td><td>${p < .001 ? "1/" + Math.round(1 / p).toLocaleString("es") : f(p, p > .99 ? 6 : 3)}</td><td><b>${f(-log2(p), 2)}</b></td></tr>`).join("")}</tbody></table>
+        <p class="note">Escribir un número entre 1 y 14 millones requiere unos 24 dígitos binarios: es exactamente la sorpresa de acertar la Primitiva.</p></div></div>`,
+    after() {
+      const draw = () => { const p = 10 ** SP, I = -log2(p);
+        $("#spPlot").innerHTML = plot({ x0: -5, x1: 0, y0: 0, y1: 17, xticks: [-5, -4, -3, -2, -1, 0], yticks: [0, 4, 8, 12, 16],
+          xfmt: t => t === 0 ? "1" : "10" + "⁻" + "⁰¹²³⁴⁵"[-t], xl: "probabilidad p", yl: "sorpresa −log₂ p (bits)",
+          series: [{ pts, color: "#9aa6b2" }], points: [{ x: SP, y: I, label: f(I, 2) + " bits" }] });
+        $("#spP").textContent = p < .001 ? p.toExponential(1).replace(".", ",") : f(p, 3); $("#spI").textContent = f(I, 2); $("#spL").textContent = "p = " + $("#spP").textContent; };
+      $("#spS").oninput = e => { SP = +e.target.value; draw(); }; draw();
+    },
+  };
+}
+
+/* ======================= Paso 3: la moneda ======================= */
+let CP = 0.5; const CU = (() => { const r = rng(2024); return Array.from({ length: 96 }, r); })();
+function stepCoin() {
+  const pts = []; for (let i = 0; i <= 200; i++) pts.push([i / 200, h2(i / 200)]);
+  return {
+    text: `<p>Ahora no miremos un suceso, sino una <b>fuente</b> que produce resultados sin parar, como una moneda que se lanza una y otra vez.
+      La <b>entropía</b> es la sorpresa <b>media</b> por lanzamiento: la sorpresa de cada resultado ponderada por lo a menudo que sale.</p>
+      <p>Mueve la probabilidad de cara. Con una moneda justa (p = ½) no hay forma de prever nada: 1 bit por lanzamiento, el máximo.
+      Si la moneda está trucada, la secuencia se vuelve <b>previsible</b> y cada lanzamiento aporta menos. Con p = 0 o p = 1 no aporta nada:
+      ya sabemos lo que va a salir.</p>`,
+    formula: `H(p) = −p·log₂ p − (1−p)·log₂ (1−p)<br>p = <b id="cpP"></b> → H = <b id="cpH"></b> bits/lanzamiento
+      <span class="c">Es la media de las dos sorpresas: p·I(cara) + (1−p)·I(cruz).</span>`,
+    viz: `<div class="cols"><div><div id="cpPlot"></div>
+        <div class="slider-in"><label for="cpS">Probabilidad de cara p <b id="cpL"></b></label><input id="cpS" type="range" min="0" max="1" step="0.01" value="${CP}"></div></div>
+      <div><p class="panel-t">96 lanzamientos de esta moneda</p><div class="chips" id="cpSeq"></div>
+        <div class="facts" style="grid-template-columns:repeat(2,minmax(0,1fr))" id="cpFacts"></div></div></div>`,
+    after() {
+      const draw = () => { const p = CP, Hh = h2(p), nh = CU.filter(u => u < p).length;
+        $("#cpPlot").innerHTML = plot({ x0: 0, x1: 1, y0: 0, y1: 1.1, xticks: [0, .25, .5, .75, 1], yticks: [0, .25, .5, .75, 1],
+          xfmt: t => f(t, 2).replace(",00", ""), xl: "probabilidad de cara p", yl: "H (bits)", series: [{ pts, color: BLUE, fill: "rgba(2,102,162,.10)" }],
+          points: [{ x: p, y: Hh, label: f(Hh, 3) + " bits" }] });
+        $("#cpSeq").innerHTML = CU.map(u => u < p ? `<span class="chip h">C</span>` : `<span class="chip t">X</span>`).join("");
+        $("#cpFacts").innerHTML = `<div class="fact o"><b>${f(Hh, 3)}</b><span>bits por lanzamiento</span></div>
+          <div class="fact"><b>${Math.round(1000 * Hh)}</b><span>bits para guardar 1000 lanzamientos</span></div>
+          <div class="fact"><b>${f(p > 0 ? -log2(p) : Infinity, 2)}</b><span>sorpresa de una cara</span></div>
+          <div class="fact"><b>${f(p < 1 ? -log2(1 - p) : Infinity, 2)}</b><span>sorpresa de una cruz</span></div>`;
+        $("#cpP").textContent = f(p, 2); $("#cpH").textContent = f(Hh, 3); $("#cpL").textContent = f(p, 2) + ` · ${nh} caras`; };
+      $("#cpS").oninput = e => { CP = +e.target.value; draw(); }; draw();
+    },
+  };
+}
+
+/* ======================= Distribución compartida (pasos 4, 5 y 7) ======================= */
+const SYM = ["A", "B", "C", "D", "E", "F", "G", "H"], NS = 8;
+const PRESETS = {
+  dyad: ["Diádica", [.5, .25, .125, .0625, .03125, .015625, .0078125, .0078125]],
+  unif: ["Uniforme", Array(8).fill(1 / 8)],
+  skew: ["Sesgada", [.35, .2, .15, .1, .08, .06, .04, .02]],
+  sure: ["Casi segura", [.93, .01, .01, .01, .01, .01, .01, .01]],
+};
+let D = PRESETS.dyad[1].slice();
+function setVal(A, i, v) {
+  v = Math.max(0, Math.min(1, v)); if (v < .002) v = 0; if (v > .998) v = 1;
+  const rest = 1 - v, s = A.reduce((a, b, j) => j === i ? a : a + b, 0);
+  return A.map((x, j) => j === i ? v : s < 1e-9 ? rest / (NS - 1) : x * rest / s);
+}
+const presetBtns = () => `<div class="row">${Object.entries(PRESETS).map(([k, [n]]) => `<button class="sm" data-pre="${k}">${n}</button>`).join("")}</div>`;
+function bindPresets(redraw) { document.querySelectorAll("[data-pre]").forEach(b => b.onclick = () => { D = PRESETS[b.dataset.pre][1].slice(); redraw(); }); }
+
+const EP = { l: 32, r: 10, t: 20, b: 22 };
+function drawDist(cv) {
+  const r = cv.getBoundingClientRect(), d = window.devicePixelRatio || 1;
+  cv.width = Math.round(r.width * d); cv.height = Math.round(r.height * d);
+  const g = cv.getContext("2d"); g.setTransform(d, 0, 0, d, 0, 0);
+  const W = r.width, Hh = r.height, pw = W - EP.l - EP.r, ph = Hh - EP.t - EP.b, slot = pw / NS;
+  g.fillStyle = "#fff"; g.fillRect(0, 0, W, Hh); g.font = "10.5px system-ui, sans-serif";
+  for (const y of [0, .25, .5, .75, 1]) { const yy = EP.t + ph * (1 - y);
+    g.strokeStyle = y ? LINE : "#c4ccd4"; g.beginPath(); g.moveTo(EP.l, yy); g.lineTo(W - EP.r, yy); g.stroke();
+    if (y % .5 === 0) { g.fillStyle = MUTED; g.textAlign = "right"; g.textBaseline = "middle"; g.fillText(f(y, 1).replace(",0", ""), EP.l - 6, yy); } }
+  D.forEach((v, i) => { const x = EP.l + slot * i + slot * .2, w = slot * .6, y = EP.t + ph * (1 - v);
+    g.fillStyle = BLUE; g.fillRect(x, y, w, EP.t + ph - y);
+    g.fillStyle = "#1b2430"; g.textAlign = "center"; g.textBaseline = "bottom"; g.font = "600 11px system-ui, sans-serif"; g.fillText(f(v, 3), x + w / 2, Math.max(EP.t - 2, y - 3));
+    g.fillStyle = MUTED; g.textBaseline = "top"; g.font = "600 12px system-ui, sans-serif"; g.fillText(SYM[i], x + w / 2, EP.t + ph + 5); });
+}
+function attachDist(cv, onChange) {
+  let drag = false;
+  // Se reescala siempre a partir de la distribución del inicio del arrastre y sobre la barra agarrada,
+  // para que las demás conserven sus proporciones aunque lleguen a valer 0 por el camino.
+  let base = null, idx = 0;
+  const apply = e => { const r = cv.getBoundingClientRect(), ph = r.height - EP.t - EP.b;
+    D = setVal(base, idx, 1 - (e.clientY - r.top - EP.t) / ph); onChange(); };
+  cv.onpointerdown = e => { const r = cv.getBoundingClientRect(), pw = r.width - EP.l - EP.r;
+    idx = Math.max(0, Math.min(NS - 1, Math.floor((e.clientX - r.left - EP.l) / (pw / NS)))); base = D.slice();
+    drag = true; cv.setPointerCapture(e.pointerId); apply(e); };
+  cv.onpointermove = e => drag && apply(e);
+  cv.onpointerup = cv.onpointercancel = () => drag = false;
+}
+
+/* ======================= Paso 4: entropía de una distribución ======================= */
+function stepDist() {
+  return {
+    text: `<p>Lo mismo vale para una fuente con más símbolos. Aquí la fuente emite las letras A…H con las probabilidades de las barras;
+      <b>arrástralas</b> para cambiarlas. La entropía vuelve a ser la sorpresa media.</p>
+      <p>Con 8 símbolos la entropía nunca supera <b>log₂ 8 = 3 bits</b>, que se alcanza cuando todos son igual de probables (máxima
+      incertidumbre), y vale 0 cuando uno de ellos es seguro. La diferencia con el máximo es la <b>redundancia</b>: lo previsible
+      que es la fuente y, como veremos, lo que se puede comprimir.</p>`,
+    formula: `H(X) = −Σ<sub>x</sub> p(x)·log₂ p(x)<br>0 ≤ H(X) ≤ log₂ n<br>H = <b id="dH"></b> bits &nbsp; (máx. 3)
+      <span class="c">redundancia = 1 − H / log₂ n</span>`,
+    viz: `<div class="cols"><div><canvas id="dist" aria-label="Distribución; arrastra las barras"></canvas>${presetBtns()}
+        <div class="facts" id="dFacts"></div></div><div id="dTable"></div></div>`,
+    after() {
+      const cv = $("#dist");
+      const draw = () => { drawDist(cv); const Hh = H(D);
+        $("#dH").textContent = f(Hh);
+        $("#dFacts").innerHTML = `<div class="fact o"><b>${f(Hh)}</b><span>H (bits/símbolo)</span></div><div class="fact"><b>3,000</b><span>máximo log₂ 8</span></div>
+          <div class="fact"><b>${f((1 - Hh / 3) * 100, 1)} %</b><span>redundancia</span></div><div class="fact"><b>${f(2 ** Hh, 2)}</b><span>símbolos «efectivos» 2<sup>H</sup></span></div>`;
+        const mx = Math.log2(Math.E) / Math.E;   // escala fija: máximo de −p·log₂p (0,531 en p = 1/e)
+        $("#dTable").innerHTML = `<table class="t" style="width:100%"><thead><tr><th>Símbolo</th><th>p</th><th>sorpresa</th><th>p · sorpresa</th><th></th></tr></thead><tbody>
+          ${D.map((p, i) => { const c = p > 0 ? -p * log2(p) : 0; return `<tr><td>${SYM[i]}</td><td>${f(p)}</td><td>${f(p > 0 ? -log2(p) : Infinity, 2)}</td><td>${f(c)}</td>
+          <td style="text-align:left;width:130px"><span class="b" style="width:${c / mx * 120}px"></span></td></tr>`; }).join("")}</tbody>
+          <tfoot><tr><td colspan="3">H = suma</td><td>${f(Hh)}</td><td></td></tr></tfoot></table>
+          <p class="note">2<sup>H</sup> es el número de símbolos equiprobables que tendrían la misma incertidumbre: la fuente «se comporta como» un dado de ${f(2 ** Hh, 1)} caras.</p>
+          <p class="note">Las barras usan una escala fija. Cada término −p·log₂ p vale como mucho <b>0,531 bits</b>, cuando p = 1/e ≈ 0,37: un símbolo muy raro aporta poco (sorprende mucho, pero casi nunca sale) y uno casi seguro también (sale siempre, pero no sorprende).</p>`; };
+      attachDist(cv, draw); bindPresets(draw); draw();
+    },
+  };
+}
+
+/* ======================= Paso 5: códigos y Huffman ======================= */
+function huffman(P) {
+  let nodes = P.map((p, i) => ({ p, sym: i })).filter(n => n.p > 0);
+  if (nodes.length === 1) return { tree: { p: 1, kids: [nodes[0]] }, codes: { [nodes[0].sym]: "0" } };
+  while (nodes.length > 1) {
+    nodes.sort((a, b) => a.p - b.p || (a.sym ?? 99) - (b.sym ?? 99));
+    const a = nodes.shift(), b = nodes.shift(); nodes.push({ p: a.p + b.p, kids: [b, a] });
+  }
+  const codes = {}; const walk = (n, c) => { if (n.kids) n.kids.forEach((k, i) => walk(k, c + i)); else codes[n.sym] = c || "0"; };
+  walk(nodes[0], ""); return { tree: nodes[0], codes };
+}
+function treeSVG(tree) {
+  let leaf = 0, depth = 0; const pos = new Map();
+  const lay = (n, d) => { depth = Math.max(depth, d);
+    if (!n.kids) { pos.set(n, [leaf++, d]); return; }
+    n.kids.forEach(k => lay(k, d + 1)); const xs = n.kids.map(k => pos.get(k)[0]); pos.set(n, [(Math.min(...xs) + Math.max(...xs)) / 2, d]); };
+  lay(tree, 0);
+  const DX = 58, DY = Math.min(52, 300 / Math.max(1, depth)), w = Math.max(1, leaf) * DX + 20, h = depth * DY + 60;
+  const P = n => { const [x, d] = pos.get(n); return [10 + DX / 2 + x * DX, 20 + d * DY]; };
+  let s = `<svg viewBox="0 0 ${w} ${h}" width="${w}" style="max-width:100%;height:auto;display:block">`;
+  const edges = n => { if (!n.kids) return; const [x, y] = P(n);
+    n.kids.forEach((k, i) => { const [x2, y2] = P(k); s += `<line x1="${x}" y1="${y}" x2="${x2}" y2="${y2}" stroke="#c4ccd4" stroke-width="1.5"/>
+      <text x="${(x + x2) / 2 + (i ? 7 : -7)}" y="${(y + y2) / 2}" font-size="11" font-weight="700" fill="${ORANGE}" text-anchor="middle">${i}</text>`; edges(k); }); };
+  const nodes = n => { const [x, y] = P(n);
+    if (n.kids) { s += `<circle cx="${x}" cy="${y}" r="5" fill="#9aa6b2"/>`; n.kids.forEach(nodes); }
+    else s += `<rect x="${x - 17}" y="${y - 13}" width="34" height="26" rx="6" fill="${BLUE}"/><text x="${x}" y="${y + 4.5}" font-size="13" font-weight="700" fill="#fff" text-anchor="middle">${SYM[n.sym]}</text>
+      <text x="${x}" y="${y + 28}" font-size="10.5" fill="${MUTED}" text-anchor="middle">${f(n.p, n.p < .1 ? 3 : 2)}</text>`; };
+  edges(tree); nodes(tree); return s + "</svg>";
+}
+let MSEED = 7;
+function sample(P, n, seed) { const r = rng(seed), out = [];
+  for (let k = 0; k < n; k++) { let u = r(), i = 0; while (i < NS - 1 && u >= P[i]) { u -= P[i]; i++; } while (P[i] === 0 && i > 0) i--; out.push(i); } return out; }
+function stepCodes() {
+  return {
+    text: `<p>¿Para qué sirve este número? Para guardar o transmitir mensajes de la fuente con bits hacen falta <b>códigos</b>. El más ingenuo usa
+      3 bits para cada una de las 8 letras (000, 001, …). Pero si damos <b>códigos cortos a las letras frecuentes</b> y largos a las raras, la
+      longitud media baja. El <b>algoritmo de Huffman</b> construye el mejor código posible: une repetidamente los dos símbolos menos probables.</p>
+      <p>El <b>teorema de codificación de Shannon</b> asegura que ningún código puede bajar de H bits por símbolo de media, y que siempre se
+      puede quedar a menos de 1 bit de ese límite. Con la distribución «Diádica» (potencias de ½) Huffman lo alcanza exactamente. Cambia la distribución con las barras del paso anterior o con los botones.</p>`,
+    formula: `H ≤ L<sub>Huffman</sub> &lt; H + 1<br>L = Σ p(x) · longitud(código(x))
+      <span class="c">Cada código ideal mediría −log₂ p bits, la sorpresa del símbolo. Huffman lo redondea a enteros.</span>`,
+    viz: `${presetBtns()}<div class="cols" style="margin-top:12px"><div><p class="panel-t">Árbol de Huffman <small style="text-transform:none;letter-spacing:0;font-weight:400">(0 = izquierda, 1 = derecha)</small></p><div id="hTree"></div></div>
+      <div id="hTable"></div></div>
+      <p class="panel-t">Un mensaje de 40 símbolos <button class="sm" id="hMsg" style="margin-left:8px;text-transform:none;letter-spacing:0">Otro mensaje</button></p>
+      <div id="hEnc"></div>`,
+    after() {
+      const draw = () => {
+        const { tree, codes } = huffman(D), Hh = H(D), L = D.reduce((s, p, i) => s + (p > 0 ? p * codes[i].length : 0), 0);
+        $("#hTree").innerHTML = treeSVG(tree);
+        $("#hTable").innerHTML = `<table class="t" style="width:100%"><thead><tr><th>Símbolo</th><th>p</th><th>−log₂ p</th><th>código Huffman</th><th>bits</th><th>fijo</th></tr></thead><tbody>
+          ${D.map((p, i) => `<tr><td>${SYM[i]}</td><td>${f(p)}</td><td>${f(p > 0 ? -log2(p) : Infinity, 2)}</td><td class="code">${p > 0 ? codes[i] : "—"}</td><td>${p > 0 ? codes[i].length : "—"}</td><td>${i.toString(2).padStart(3, "0")}</td></tr>`).join("")}</tbody></table>
+          <div style="margin-top:14px">${hbars([["código fijo", 3, "g"], ["Huffman L", L, "o"], ["entropía H", Hh]], 3.2, Hh)}</div>`;
+        const m = sample(D, 40, MSEED), hb = m.map(i => codes[i]), nh = hb.join("").length;
+        $("#hEnc").innerHTML = `<div class="msg">${m.map(i => SYM[i]).join("")}</div>
+          <p class="note" style="margin-top:10px">Con código fijo: <b>${40 * 3} bits</b></p><div class="bits-s">${m.map(i => `<span>${i.toString(2).padStart(3, "0")}</span>`).join("")}</div>
+          <p class="note" style="margin-top:10px">Con Huffman: <b>${nh} bits</b> (${f(nh / 40, 2)} por símbolo; la entropía predice ${f(40 * Hh, 1)} bits)</p><div class="bits-s">${hb.map(c => `<span>${c}</span>`).join("")}</div>
+          <p class="note">Ningún código de Huffman es prefijo de otro, así que la cadena se decodifica sin separadores: basta recorrer el árbol desde la raíz.</p>`;
+      };
+      bindPresets(draw); $("#hMsg").onclick = () => { MSEED++; draw(); }; draw();
+    },
+  };
+}
+
+/* ======================= Paso 6: entropía de un texto ======================= */
+const SAMPLE_TXT = `En mil novecientos cuarenta y ocho, Claude Shannon publicó un artículo que cambió para siempre la forma de entender la comunicación. Su idea central es que la información no tiene que ver con el significado de un mensaje, sino con la incertidumbre que elimina. Un mensaje que ya conocíamos no nos informa de nada; uno inesperado nos informa mucho. Gracias a esa idea sabemos cuánto se puede comprimir un archivo, cuántos datos caben por un cable y cómo proteger una señal del ruido. Las lenguas humanas son muy redundantes: después de una q casi siempre viene una u, y muchas palabras se adivinan antes de terminar de leerlas.`;
+let TXT = SAMPLE_TXT;
+function normText(s) {
+  return s.toLowerCase().replace(/ñ/g, "\u0001").normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/\u0001/g, "ñ")
+    .replace(/[^a-zñ]+/g, " ").replace(/\s+/g, " ").trim();
+}
+function textStats(s) {
+  const c = {}, pairs = {}; for (const ch of s) c[ch] = (c[ch] || 0) + 1;
+  for (let i = 1; i < s.length; i++) { const k = s[i - 1] + s[i]; pairs[k] = (pairs[k] || 0) + 1; }
+  const n = s.length, np = Math.max(1, n - 1), H0 = H(Object.values(c).map(v => v / n)), H2 = H(Object.values(pairs).map(v => v / np));
+  const prev = {}; for (let i = 1; i < s.length; i++) prev[s[i - 1]] = (prev[s[i - 1]] || 0) + 1;
+  const Hprev = H(Object.values(prev).map(v => v / np));
+  return { c, n, H0, H1: Math.max(0, H2 - Hprev), A: Object.keys(c).length };
+}
+function stepText() {
+  return {
+    text: `<p>Una lengua también es una fuente de símbolos. Si contamos cuántas veces aparece cada letra de un texto (más el espacio) podemos calcular su
+      entropía: cuántos bits por carácter harían falta con un código de Huffman para esas frecuencias. Escribe o pega aquí el texto que quieras.</p>
+      <p>Pero las letras no son independientes: tras una «q» casi siempre viene una «u». Si tenemos en cuenta la <b>letra anterior</b>, la incertidumbre
+      sobre la siguiente baja: es la <b>entropía condicional</b>. Shannon estimó que, aprovechando todo el contexto, el inglés tiene alrededor de
+      <b>1 bit por letra</b>: la mayor parte de lo que escribimos es predecible.</p>`,
+    formula: `H₀ = −Σ p(c)·log₂ p(c) &nbsp; (letras sueltas)<br>H₁ = H(X<sub>n</sub> | X<sub>n−1</sub>) = H(pares) − H(letra)
+      <span class="c">Con textos cortos, H₁ sale algo optimista: hay pocos ejemplos de cada par. Se normaliza a minúsculas sin tildes; la ñ se conserva.</span>`,
+    viz: `<textarea id="tIn" spellcheck="false" aria-label="Texto a analizar"></textarea>
+      <div class="row"><button class="sm" id="tS">Texto de ejemplo</button><button class="sm" id="tR">Letras al azar</button><button class="sm" id="tA">«abababab…»</button></div>
+      <p class="panel-t">Frecuencia de cada carácter (␣ = espacio)</p><div class="fbars" id="tBars"></div><div id="tFacts"></div>`,
+    after() {
+      const ta = $("#tIn"); ta.value = TXT;
+      const draw = () => { TXT = ta.value; const s = normText(TXT);
+        if (s.length < 2) { $("#tBars").innerHTML = ""; $("#tFacts").innerHTML = `<p class="note">Escribe al menos un par de letras.</p>`; return; }
+        const st = textStats(s), ent = Object.entries(st.c).sort((a, b) => b[1] - a[1]), mx = ent[0][1];
+        $("#tBars").innerHTML = ent.map(([ch, v]) => `<div title="${ch === " " ? "espacio" : ch}: ${f(v / st.n * 100, 1)} %"><i style="height:${v / mx * 100}%"></i><span>${ch === " " ? "␣" : ch}</span></div>`).join("");
+        $("#tFacts").innerHTML = `<div class="facts"><div class="fact"><b>${st.n.toLocaleString("es")}</b><span>caracteres analizados</span></div>
+            <div class="fact"><b>${f(log2(st.A), 2)}</b><span>log₂ de ${st.A} símbolos distintos</span></div>
+            <div class="fact o"><b>${f(st.H0, 2)}</b><span>H₀ bits por carácter</span></div>
+            <div class="fact o"><b>${f(st.H1, 2)}</b><span>H₁ conociendo la letra anterior</span></div></div>
+          <div style="margin-top:14px">${hbars([["ASCII / UTF-8", 8, "g"], [`código fijo (${st.A} símbolos)`, Math.ceil(log2(st.A))], ["entropía H₀", st.H0, "o"], ["entropía condicional H₁", st.H1, "o"]], 8.2)}</div>
+          <p class="note">Guardar este texto con 8 bits por carácter ocupa ${st.n.toLocaleString("es")} bytes; con un código ideal para H₀, unos ${Math.round(st.n * st.H0 / 8).toLocaleString("es")} bytes; aprovechando la letra anterior, unos ${Math.round(st.n * st.H1 / 8).toLocaleString("es")}.</p>`; };
+      ta.oninput = draw;
+      $("#tS").onclick = () => { ta.value = SAMPLE_TXT; draw(); };
+      $("#tR").onclick = () => { const al = "abcdefghijklmnñopqrstuvwxyz "; ta.value = Array.from({ length: 600 }, () => al[Math.floor(Math.random() * al.length)]).join(""); draw(); };
+      $("#tA").onclick = () => { ta.value = "ab".repeat(300); draw(); };
+      draw();
+    },
+  };
+}
+
+/* ======================= Paso 7: compresión real ======================= */
+let ctoken = 0;
+async function deflateSize(u8) {
+  for (const fmt of ["deflate-raw", "deflate"]) {
+    try { const cs = new Blob([u8]).stream().pipeThrough(new CompressionStream(fmt)); return (await new Response(cs).arrayBuffer()).byteLength; }
+    catch (e) { /* probar el siguiente formato */ }
+  }
+  return null;
+}
+function stepCompress() {
+  return {
+    text: `<p>La entropía no es sólo una cuenta teórica: es el <b>límite de cualquier compresor sin pérdidas</b>. Aquí generamos 50 000 símbolos de la
+      fuente A…H, guardados como letras (8 bits cada una), y los comprimimos con <b>DEFLATE</b>, el algoritmo de los archivos ZIP y PNG, que tu navegador
+      lleva incorporado.</p>
+      <p>Por muy listo que sea, el compresor <b>nunca baja de H bits por símbolo</b> (la línea roja): sólo puede eliminar la redundancia. Por eso los
+      datos ya comprimidos, o el ruido aleatorio, no se pueden comprimir más: su entropía ya es máxima.</p>`,
+    formula: `bits/símbolo tras comprimir ≥ H(X)
+      <span class="c">DEFLATE combina dos ideas: sustituye repeticiones por referencias (LZ77) y después aplica códigos de Huffman.</span>`,
+    viz: `${presetBtns()}<p class="note">Para cambiar la distribución con detalle, vuelve al paso 4: se usa la misma.</p>
+      <div id="cBars" style="margin-top:14px"><p class="note">Comprimiendo…</p></div><div id="cFacts"></div>`,
+    after() {
+      const run = async () => {
+        const my = ++ctoken, N = 50000, m = sample(D, N, 99), u8 = new Uint8Array(N); m.forEach((v, i) => u8[i] = 65 + v);
+        if (typeof CompressionStream === "undefined") { $("#cBars").innerHTML = `<p class="note">Tu navegador no ofrece CompressionStream; prueba con una versión reciente de Chrome, Edge, Firefox o Safari.</p>`; return; }
+        const [sz, rnd] = await Promise.all([deflateSize(u8), deflateSize(crypto.getRandomValues(new Uint8Array(N)))]);
+        if (my !== ctoken || !$("#cBars")) return;
+        const Hh = H(D), { codes } = huffman(D), L = D.reduce((s, p, i) => s + (p > 0 ? p * codes[i].length : 0), 0), bd = sz * 8 / N;
+        $("#cBars").innerHTML = hbars([["sin comprimir (1 byte)", 8, "g"], ["código fijo de 3 bits", 3, "g"], ["DEFLATE (ZIP)", bd, "o"], ["Huffman ideal", L, "o"], ["entropía H", Hh]], 8.2, Hh);
+        $("#cFacts").innerHTML = `<div class="facts"><div class="fact"><b>${(N / 1024).toFixed(1).replace(".", ",")} KB</b><span>datos originales</span></div>
+          <div class="fact o"><b>${(sz / 1024).toFixed(1).replace(".", ",")} KB</b><span>tras DEFLATE</span></div>
+          <div class="fact"><b>${(N * Hh / 8 / 1024).toFixed(1).replace(".", ",")} KB</b><span>límite de Shannon N·H/8</span></div>
+          <div class="fact"><b>${f(rnd * 8 / N, 2)}</b><span>bits/byte al comprimir bytes aleatorios</span></div></div>
+          <p class="note">Los bytes aleatorios tienen 8 bits de entropía por byte: el compresor no gana nada (incluso añade algo de cabecera).</p>`;
+      };
+      bindPresets(run); run();
+    },
+  };
+}
+
+/* ======================= Paso 8: información mutua ======================= */
+const MI = { r: .3, a: .9, b: .15 };
+function stepMutual() {
+  return {
+    text: `<p>Con dos variables podemos preguntarnos cuánto nos dice una de la otra. X es el tiempo (sol o lluvia) e Y si un vecino sale con paraguas.
+      Si vemos el paraguas, nuestra incertidumbre sobre el tiempo baja de H(X) a H(X | Y). Lo que baja es la <b>información mutua</b> I(X; Y).</p>
+      <p>Es simétrica (el tiempo informa sobre el paraguas tanto como el paraguas sobre el tiempo) y vale 0 sólo si las variables son <b>independientes</b>.
+      Los árboles de decisión la usan con el nombre de <b>ganancia de información</b> para elegir qué pregunta hacer primero, exactamente como en el juego del paso 1.</p>`,
+    formula: `I(X; Y) = H(X) − H(X | Y) = H(Y) − H(Y | X)<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= H(X) + H(Y) − H(X, Y)<br>I = <b id="miI"></b> bits
+      <span class="c">También es la divergencia KL entre p(x, y) y p(x)·p(y): mide cuánto se aleja la realidad de la independencia.</span>`,
+    viz: `<div class="cols"><div>
+        <div class="slider-in"><label for="mR">Probabilidad de lluvia <b id="vR"></b></label><input id="mR" type="range" min="0" max="1" step=".01" value="${MI.r}"></div>
+        <div class="slider-in"><label for="mA">P(paraguas | lluvia) <b id="vA"></b></label><input id="mA" type="range" min="0" max="1" step=".01" value="${MI.a}"></div>
+        <div class="slider-in"><label for="mB">P(paraguas | sol) <b id="vB"></b></label><input id="mB" type="range" min="0" max="1" step=".01" value="${MI.b}"></div>
+        <div class="row"><button class="sm" data-mi="ind">Independientes</button><button class="sm" data-mi="det">El paraguas lo dice todo</button><button class="sm" data-mi="ex">Ejemplo</button></div></div>
+      <div><p class="panel-t">Distribución conjunta p(x, y)</p><div id="mJoint"></div></div></div>
+      <p class="panel-t">Cómo se reparte la incertidumbre (bits)</p><div id="mBars"></div><div id="mFacts"></div>`,
+    after() {
+      const draw = () => {
+        const { r, a, b } = MI, J = [[r * a, r * (1 - a)], [(1 - r) * b, (1 - r) * (1 - b)]];   // filas: lluvia, sol; columnas: paraguas sí, no
+        const px = [r, 1 - r], py = [J[0][0] + J[1][0], J[0][1] + J[1][1]];
+        const HX = H(px), HY = H(py), HXY = H(J.flat()), I = Math.max(0, HX + HY - HXY), HXgY = HXY - HY, HYgX = HXY - HX, mx = Math.max(HXY, .01);
+        $("#vR").textContent = f(r, 2); $("#vA").textContent = f(a, 2); $("#vB").textContent = f(b, 2); $("#miI").textContent = f(I);
+        const cell = v => `<td class="c" style="background:rgba(2,102,162,${(.08 + v * .85).toFixed(3)});color:${v > .5 ? "#fff" : "#1b2430"}">${f(v, 3)}</td>`;
+        $("#mJoint").innerHTML = `<table class="joint"><tr><th></th><th>☂ paraguas</th><th>sin paraguas</th><th>p(x)</th></tr>
+          <tr><th>🌧 lluvia</th>${cell(J[0][0])}${cell(J[0][1])}<th>${f(px[0], 2)}</th></tr><tr><th>☀ sol</th>${cell(J[1][0])}${cell(J[1][1])}<th>${f(px[1], 2)}</th></tr>
+          <tr><th>p(y)</th><th>${f(py[0], 2)}</th><th>${f(py[1], 2)}</th><th></th></tr></table>`;
+        const seg = (l, w, cls, t) => w > 1e-6 ? `<div class="s ${cls}" style="left:${l / mx * 100}%;width:${w / mx * 100}%">${w / mx > .09 ? (cls === "i" ? `<em>${t}</em>` : t) : ""}</div>` : "";
+        $("#mBars").innerHTML = `<div class="mi">
+          <div class="l">H(X)</div><div class="tr">${seg(0, HXgY, "x", "H(X|Y) " + f(HXgY, 2))}${seg(HXgY, I, "i", "I " + f(I, 2))}</div>
+          <div class="l">H(Y)</div><div class="tr">${seg(HXgY, I, "i", "I " + f(I, 2))}${seg(HXgY + I, HYgX, "y", "H(Y|X) " + f(HYgX, 2))}</div>
+          <div class="l">H(X,Y)</div><div class="tr">${seg(0, HXgY, "x", f(HXgY, 2))}${seg(HXgY, I, "i", f(I, 2))}${seg(HXgY + I, HYgX, "y", f(HYgX, 2))}</div></div>`;
+        $("#mFacts").innerHTML = `<div class="facts"><div class="fact"><b>${f(HX)}</b><span>H(X): incertidumbre sobre el tiempo</span></div>
+          <div class="fact"><b>${f(HXgY)}</b><span>H(X | Y): la que queda tras ver el paraguas</span></div>
+          <div class="fact o"><b>${f(I)}</b><span>I(X; Y): información que da el paraguas</span></div>
+          <div class="fact"><b>${HX > 1e-9 ? f(I / HX * 100, 1) + " %" : "—"}</b><span>de la incertidumbre eliminada</span></div></div>`;
+      };
+      [["#mR", "r"], ["#mA", "a"], ["#mB", "b"]].forEach(([id, k]) => $(id).oninput = e => { MI[k] = +e.target.value; draw(); });
+      const set = v => { Object.assign(MI, v); $("#mR").value = MI.r; $("#mA").value = MI.a; $("#mB").value = MI.b; draw(); };
+      document.querySelectorAll("[data-mi]").forEach(bt => bt.onclick = () => set({ ind: { a: .4, b: .4 }, det: { a: 1, b: 0 }, ex: { r: .3, a: .9, b: .15 } }[bt.dataset.mi]));
+      draw();
+    },
+  };
+}
+
+/* ======================= Navegación ======================= */
+const STEPS = [
+  { t: "Adivina el número", f: stepGuess },
+  { t: "Sorpresa", f: stepSurprise },
+  { t: "Una moneda", f: stepCoin },
+  { t: "Entropía", f: stepDist },
+  { t: "Códigos", f: stepCodes },
+  { t: "Un texto", f: stepText },
+  { t: "Compresión", f: stepCompress },
+  { t: "Información mutua", f: stepMutual },
+];
+function renderSteps() {
+  $("#steps").innerHTML = STEPS.map((s, i) => `<button data-s="${i}" class="${i < STEP ? "done" : i === STEP ? "cur" : ""}"${i === STEP ? ' aria-current="step"' : ""}>
+    <span class="n">${i + 1}</span><span class="lbl">${s.t}</span></button>`).join("");
+}
+let STEP = 0;
+function renderStep() {
+  const s = STEPS[STEP], r = s.f();
+  $("#st-title").textContent = s.t; $("#st-no").textContent = `Paso ${STEP + 1} de ${STEPS.length}`;
+  $("#st-text").innerHTML = r.text; $("#st-formula").innerHTML = r.formula; $("#viz").innerHTML = r.viz;
+  r.after && r.after();
+  $("#prev").disabled = STEP === 0; $("#next").disabled = STEP === STEPS.length - 1;
+  renderSteps();
+}
+const go = i => { STEP = Math.max(0, Math.min(STEPS.length - 1, i)); renderStep(); };
+$("#steps").addEventListener("click", e => { const b = e.target.closest("button"); if (b) go(+b.dataset.s); });
+$("#prev").onclick = () => go(STEP - 1); $("#next").onclick = () => go(STEP + 1);
+document.addEventListener("keydown", e => { if (["INPUT", "TEXTAREA"].includes(e.target.tagName)) return;
+  if (e.key === "ArrowRight") go(STEP + 1); if (e.key === "ArrowLeft") go(STEP - 1); });
+window.addEventListener("resize", () => { const c = $("#dist"); if (c) drawDist(c); });
+renderStep();
+</script>
+</body>
+</html>

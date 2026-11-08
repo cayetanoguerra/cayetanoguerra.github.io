@@ -1,0 +1,560 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Series de Fourier</title>
+<style>
+  /* Layout: barra superior ULPGC · [controles | gráfica de f(x) + coeficientes] */
+  :root {
+    color-scheme: light;
+    /* Colores institucionales ULPGC */
+    --blue: #0266a2; --blue-dark: #014d7a; --blue-soft: #e8f1f8;
+    --orange: #ff9600; --orange-dark: #b86b00; --orange-soft: #fff3e0;
+    --bg: #f4f6f8; --panel: #ffffff; --ink: #1b2430; --muted: #5d6875;
+    --line: #e1e6eb;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .gut { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  .topbar { background: var(--panel); border-top: 4px solid var(--blue); border-bottom: 1px solid var(--line); }
+  header { max-width: 1280px; margin: 0 auto; padding-block: 18px 20px;
+           display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; }
+  .logo { height: 30px; width: auto; opacity: .9; flex-shrink: 0; margin-top: 4px; }
+  h1 { font-size: 26px; margin: 0 0 6px; letter-spacing: -.01em; color: var(--blue); text-wrap: balance; }
+  h1::after { content: ""; display: block; width: 48px; height: 3px; background: var(--orange); border-radius: 2px; margin-top: 6px; }
+  header p { margin: 0; color: var(--muted); max-width: 84ch; }
+
+  main { max-width: 1280px; margin: 0 auto; padding-block: 16px 28px; display: grid; gap: 16px;
+         grid-template-columns: 290px minmax(0, 1fr); align-items: start; }
+  .col { display: grid; gap: 16px; min-width: 0; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px;
+          box-shadow: 0 1px 2px rgba(16, 40, 64, .04); min-width: 0; }
+  .card h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: var(--blue);
+             margin: 0 0 12px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  .card h2::before { content: ""; width: 4px; height: 14px; background: var(--orange); border-radius: 2px; }
+  .card h2 + * { margin-top: 0; }
+  .sec + .sec { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); }
+  .note { color: var(--muted); font-size: 13px; margin: 8px 0 0; }
+  .note b { color: var(--ink); }
+
+  button { font: inherit; padding: 7px 14px; border-radius: 8px; border: 1px solid var(--line);
+           background: var(--bg); color: var(--ink); cursor: pointer; transition: background .15s, border-color .15s; }
+  button:hover { border-color: #c4ccd4; }
+  button.primary { background: var(--blue); color: #fff; border-color: var(--blue); font-weight: 600; }
+  button.primary:hover { background: var(--blue-dark); border-color: var(--blue-dark); }
+  button.primary.running { background: var(--orange-dark); border-color: var(--orange-dark); }
+  button:focus-visible, input:focus-visible { outline: 3px solid var(--orange); outline-offset: 2px; }
+  input[type=range] { accent-color: var(--orange); width: 100%; margin: 4px 0 0; }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .grid2 button { padding: 6px 8px; font-size: 13px; text-align: left; display: flex; align-items: center; gap: 8px; }
+  .grid2 button[aria-pressed="true"] { background: var(--blue-soft); border-color: #b7cfe2; color: var(--blue-dark); font-weight: 600; }
+  .grid2 svg { flex-shrink: 0; }
+  .slider label { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); }
+  .slider label b { color: var(--ink); font-variant-numeric: tabular-nums; font-family: var(--mono); font-size: 13px; }
+  .slider + .slider { margin-top: 10px; }
+  .kbar { display: flex; align-items: center; gap: 10px 18px; padding: 12px 16px; flex-wrap: wrap; }
+  .kbar label { font-size: 14px; color: var(--muted); white-space: nowrap; }
+  .kbar label b { color: var(--orange-dark); font-family: var(--mono); font-variant-numeric: tabular-nums;
+                  display: inline-block; min-width: 7ch; }
+  .kbar input { flex: 1 1 220px; width: auto; margin: 0; }
+  .kbar button { white-space: nowrap; min-width: 172px; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 10px; }
+
+  .seg { display: flex; border: 1px solid var(--line); border-radius: 9px; overflow: hidden; }
+  .seg button { flex: 1; border: 0; border-radius: 0; background: var(--panel); font-size: 13px; padding: 6px 8px; }
+  .seg button + button { border-left: 1px solid var(--line); }
+  .seg button[aria-pressed="true"] { background: var(--blue-soft); font-weight: 600; color: var(--blue-dark); }
+
+  .stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .stat { background: var(--bg); border-radius: 8px; padding: 6px 10px; }
+  .stat span { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+  .stat b { font-size: 19px; font-variant-numeric: tabular-nums; }
+
+  /* Gráficas */
+  .head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 12.5px; color: var(--muted); margin-bottom: 8px; }
+  .legend > span { display: inline-flex; align-items: center; gap: 6px; }
+  .legend i { width: 20px; height: 3px; border-radius: 2px; display: inline-block; }
+  canvas { display: block; width: 100%; border-radius: 8px; border: 1px solid var(--line); touch-action: none; }
+  #wave { height: 300px; cursor: crosshair; }
+  #coef { height: 300px; cursor: ns-resize; }
+  .formula { margin-top: 12px; background: var(--blue-soft); border-radius: 10px; padding: 10px 14px; font-family: var(--mono);
+             font-size: 13.5px; line-height: 1.7; color: var(--blue-dark); overflow-x: auto; white-space: nowrap; }
+  .formula .c { font-family: system-ui, sans-serif; color: var(--muted); font-size: 12.5px; }
+  .readout { margin-top: 10px; padding: 10px 12px; background: var(--orange-soft); border-radius: 8px; font-family: var(--mono);
+             font-size: 13px; line-height: 1.6; color: #6b3f00; min-height: 66px; overflow-x: auto; }
+  .readout .h { font-family: system-ui, sans-serif; font-weight: 700; color: var(--orange-dark); font-size: 12px;
+                text-transform: uppercase; letter-spacing: .06em; display: block; }
+  .readout .dim { color: var(--muted); font-family: system-ui, sans-serif; }
+  .tip { margin-top: 10px; padding: 10px 12px; border-left: 4px solid var(--blue); background: var(--blue-soft); border-radius: 6px;
+         font-size: 13.5px; display: none; }
+  .tip.on { display: block; }
+
+  @media (max-width: 900px) {
+    main { grid-template-columns: minmax(0, 1fr); }
+    aside { order: 2; }
+    .logo { height: 24px; }
+    #wave, #coef { height: 250px; }
+  }
+  @media (max-width: 560px) { header { flex-direction: column-reverse; gap: 10px; } }
+</style>
+</head>
+<body>
+<div class="topbar gut">
+<header>
+  <div>
+    <h1>Series de Fourier</h1>
+    <p>Cualquier función periódica razonable puede escribirse como una suma de senos y cosenos cuyas frecuencias son
+       múltiplos de la fundamental. Elige una forma de onda o <b>dibújala con el ratón</b>, observa sus coeficientes
+       y cómo la suma parcial S<sub>K</sub>(x) se va pareciendo a f(x) al añadir armónicos. También puedes
+       <b>arrastrar las barras</b> de los coeficientes para sintetizar tu propia onda y escucharla.</p>
+  </div>
+  <img class="logo" src="logo-ulpgc.jpg" alt="ULPGC · Universidad de Las Palmas de Gran Canaria">
+</header>
+</div>
+
+<main class="gut">
+  <aside class="card">
+    <div class="sec">
+      <h2>Forma de onda</h2>
+      <div class="grid2" id="presets"></div>
+    </div>
+    <div class="sec">
+      <h2>Operaciones sobre f(x)</h2>
+      <div class="grid2" id="ops"></div>
+    </div>
+    <div class="sec">
+      <h2>Coeficientes como</h2>
+      <div class="seg" id="mode">
+        <button data-m="ab" aria-pressed="true">aₙ y bₙ</button>
+        <button data-m="mp" aria-pressed="false">Amplitud y fase</button>
+      </div>
+    </div>
+    <div class="sec">
+      <h2>Sonido</h2>
+      <div class="slider"><label for="sF">Frecuencia fundamental <b id="vF"></b></label>
+        <input id="sF" type="range" min="0" max="1" step="0.001" value="0.4"></div>
+      <div class="row"><button id="play"><span>🔊 Escuchar S<sub>K</sub></span></button></div>
+      <p class="note">Suena la suma parcial: al añadir armónicos cambia el <b>timbre</b>, no la nota.</p>
+    </div>
+    <div class="sec">
+      <h2>Medidas</h2>
+      <div class="stats">
+        <div class="stat"><span>Error RMS</span><b id="mRms">—</b></div>
+        <div class="stat"><span>Energía recogida</span><b id="mEn">—</b></div>
+        <div class="stat"><span>Máximo de S<sub>K</sub></span><b id="mMax">—</b></div>
+        <div class="stat"><span>Máximo de f</span><b id="mFmax">—</b></div>
+      </div>
+      <p class="note">La energía recogida usa la igualdad de Parseval: (1/π)∫f² dx = a₀²/2 + Σ(aₙ² + bₙ²).</p>
+    </div>
+  </aside>
+
+  <div class="col">
+    <section class="card">
+      <div class="head">
+        <h2>La función y su suma parcial</h2>
+      </div>
+      <div class="legend">
+        <span><i style="background: var(--blue)"></i>f(x) original</span>
+        <span><i style="background: var(--orange)"></i><span>S<sub>K</sub>(x) con <b id="lK">5</b> armónicos</span></span>
+        <span><i style="background: repeating-linear-gradient(90deg, #5d6875 0 4px, transparent 4px 7px)"></i>armónico señalado</span>
+      </div>
+      <canvas id="wave" aria-label="Gráfica de f(x) en un periodo; arrastra para dibujar"></canvas>
+      <div class="formula" id="formula"></div>
+      <div class="tip" id="gibbs"><b>Fenómeno de Gibbs.</b> Cerca de cada salto, S<sub>K</sub> se pasa del valor de f en torno a un 9 % del salto,
+        por muchos armónicos que añadas: la oscilación se estrecha, pero su altura no desaparece.</div>
+    </section>
+
+    <section class="card kbar">
+      <label for="sK">Número de armónicos <b>K = <span id="vK"></span></b></label>
+      <input id="sK" type="range" min="0" max="64" step="1" value="5">
+      <button id="build" class="primary">▶ Construir la suma</button>
+    </section>
+
+    <section class="card">
+      <div class="head">
+        <h2 id="coefTitle">Coeficientes</h2>
+      </div>
+      <canvas id="coef" aria-label="Coeficientes de Fourier; arrastra las barras para cambiarlos"></canvas>
+      <div class="readout" id="readout"></div>
+      <p class="note">Las barras atenuadas (n &gt; K) no entran en la suma parcial. Arrastra arriba y abajo para cambiar un
+        coeficiente; desliza en horizontal para ir modificando varios.</p>
+    </section>
+  </div>
+</main>
+
+<script>
+/* ======================= Muestreo y tablas ======================= */
+const N = 1024, MAXN = 64, PI = Math.PI;
+const X = new Float64Array(N);
+for (let k = 0; k < N; k++) X[k] = -PI + 2 * PI * k / N;
+const COS = [], SIN = [];
+for (let n = 0; n <= MAXN; n++) {
+  const c = new Float64Array(N), s = new Float64Array(N);
+  for (let k = 0; k < N; k++) { c[k] = Math.cos(n * X[k]); s[k] = Math.sin(n * X[k]); }
+  COS.push(c); SIN.push(s);
+}
+let f = new Float64Array(N);
+const a = new Float64Array(MAXN + 1), b = new Float64Array(MAXN + 1);
+const S = new Float64Array(N);
+let K = 5, mode = "ab", hoverN = -1, preset = "square";
+
+function analyze() {
+  for (let n = 0; n <= MAXN; n++) {
+    let sa = 0, sb = 0; const c = COS[n], s = SIN[n];
+    for (let k = 0; k < N; k++) { sa += f[k] * c[k]; sb += f[k] * s[k]; }
+    a[n] = Math.abs(sa * 2 / N) < 1e-9 ? 0 : sa * 2 / N;
+    b[n] = Math.abs(sb * 2 / N) < 1e-9 ? 0 : sb * 2 / N;
+  }
+  b[0] = 0;
+}
+function synth() {
+  for (let k = 0; k < N; k++) S[k] = a[0] / 2;
+  for (let n = 1; n <= K; n++) {
+    const an = a[n], bn = b[n]; if (!an && !bn) continue;
+    const c = COS[n], s = SIN[n];
+    for (let k = 0; k < N; k++) S[k] += an * c[k] + bn * s[k];
+  }
+}
+// Cambiar un coeficiente modifica f sumándole la diferencia de ese armónico
+function setCoef(n, na, nb) {
+  const da = na - a[n], db = n === 0 ? 0 : nb - b[n];
+  const c = COS[n], s = SIN[n];
+  for (let k = 0; k < N; k++) f[k] += n === 0 ? da / 2 : da * c[k] + db * s[k];
+  analyze(); preset = null; changed();
+}
+
+/* ======================= Formas de onda ======================= */
+const PRESETS = {
+  sine:     ["Seno",              x => Math.sin(x)],
+  cosine:   ["Coseno",            x => Math.cos(x)],
+  square:   ["Cuadrada",          x => x === 0 || Math.abs(x) === PI ? 0 : Math.sign(x)],
+  triangle: ["Triangular",        x => 1 - 2 * Math.abs(x) / PI],
+  saw:      ["Diente de sierra",  x => Math.abs(x) === PI ? 0 : x / PI],
+  pulse:    ["Pulso",             x => Math.abs(x) < PI / 8 ? 1 : Math.abs(x) === PI / 8 ? .5 : 0],
+  halfsine: ["Semionda",          x => Math.max(0, Math.sin(x))],
+  parab:    ["Parábola",          x => 2 * x * x / (PI * PI) - 1],
+  noise:    ["Ruido",             null],
+  blank:    ["En blanco",         x => 0],
+};
+const ICON = {
+  sine: "M1 8 C4 -1 7 -1 10 8 S16 17 19 8", cosine: "M1 2 C5 2 6 14 10 14 S15 2 19 2",
+  square: "M1 14 H6 V2 H14 V14 H19", triangle: "M1 14 L10 2 L19 14", saw: "M1 14 L10 2 V14 L19 2",
+  pulse: "M1 14 H8 V2 H12 V14 H19", halfsine: "M1 14 C3 1 8 1 10 14 H19", parab: "M1 2 Q10 26 19 2",
+  noise: "M1 9 L3 4 L5 12 L7 6 L9 13 L11 3 L13 10 L15 5 L17 12 L19 7", blank: "M1 8 H19",
+};
+const icon = d => `<svg width="20" height="16" viewBox="0 0 20 16" aria-hidden="true"><path d="${d}" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>`;
+
+function loadPreset(key) {
+  preset = key;
+  if (key === "noise") {
+    let s = 12345 + Math.floor(Math.random() * 1e6);
+    const r = () => (s = (s * 16807) % 2147483647) / 2147483647;
+    // ruido «suave»: 64 valores aleatorios mantenidos entre muestras
+    const v = [...Array(64)].map(() => r() * 2 - 1);
+    for (let k = 0; k < N; k++) f[k] = v[Math.floor(k * 64 / N)];
+  } else {
+    const fn = PRESETS[key][1];
+    for (let k = 0; k < N; k++) f[k] = fn(X[k]);
+  }
+  analyze(); changed();
+}
+
+/* Operaciones: transforman la f actual (como en el applet de Falstad) */
+const OPS = {
+  shift:   ["Desfasar π/8",    () => { const s = N / 16; f = Float64Array.from(f, (_, k) => f[(k - s + N) % N]); }],
+  invert:  ["Invertir",        () => { f = f.map(v => -v); }],
+  clip:    ["Recortar",        () => { const m = Math.max(...f.map(Math.abs)) / 2; f = f.map(v => Math.max(-m, Math.min(m, v))); }],
+  rect:    ["Rectificar",      () => { f = f.map(v => Math.max(0, v)); }],
+  full:    ["Rect. completa",  () => { f = f.map(Math.abs); }],
+  quant:   ["Cuantizar",       () => { f = f.map(v => Math.round(v * 2) / 2); }],
+  resamp:  ["Remuestrear",     () => { const s = N / 16; f = Float64Array.from(f, (_, k) => f[Math.floor(k / s) * s]); }],
+  smooth:  ["Fijar f = S_K",() => { synth(); f = Float64Array.from(S); }],
+};
+
+const presetsEl = document.getElementById("presets"), opsEl = document.getElementById("ops");
+presetsEl.innerHTML = Object.entries(PRESETS).map(([k, [name]]) =>
+  `<button data-p="${k}" aria-pressed="false">${icon(ICON[k])}${name}</button>`).join("");
+opsEl.innerHTML = Object.entries(OPS).map(([k, [name]]) =>
+  `<button data-o="${k}"><span>${name.replace("S_K", "S<sub>K</sub>")}</span></button>`).join("");
+presetsEl.addEventListener("click", e => { const t = e.target.closest("button"); if (t) loadPreset(t.dataset.p); });
+opsEl.addEventListener("click", e => { const t = e.target.closest("button"); if (!t) return;
+  OPS[t.dataset.o][1](); preset = null; analyze(); changed(); });
+
+/* ======================= Controles ======================= */
+const $ = id => document.getElementById(id);
+const sK = $("sK"), sF = $("sF");
+const freq = () => Math.round(55 * Math.pow(2, sF.value * 4));   // 55 Hz … 880 Hz
+sK.addEventListener("input", () => { stopBuild(); K = +sK.value; changed(); });
+sF.addEventListener("input", () => { $("vF").textContent = freq() + " Hz"; if (osc) osc.frequency.setTargetAtTime(freq(), actx.currentTime, .02); });
+$("vF").textContent = freq() + " Hz";
+$("mode").addEventListener("click", e => { const t = e.target.closest("button"); if (!t) return;
+  mode = t.dataset.m; [...$("mode").children].forEach(x => x.setAttribute("aria-pressed", x === t)); changed(); });
+
+let buildTimer = null;
+function stopBuild() { clearTimeout(buildTimer); buildTimer = null; $("build").textContent = "▶ Construir la suma"; $("build").classList.remove("running"); }
+$("build").addEventListener("click", () => {
+  if (buildTimer) return stopBuild();
+  $("build").textContent = "■ Detener"; $("build").classList.add("running");
+  K = 0; sK.value = 0; changed();
+  const step = () => {
+    if (K >= MAXN) return stopBuild();
+    K++; sK.value = K; changed();
+    buildTimer = setTimeout(step, Math.max(55, 650 - 70 * K));
+  };
+  buildTimer = setTimeout(step, 500);
+});
+
+/* ======================= Sonido (Web Audio, PeriodicWave) ======================= */
+let actx = null, osc = null, gain = null;
+$("play").addEventListener("click", () => {
+  if (osc) { gain.gain.setTargetAtTime(0, actx.currentTime, .03); const o = osc; setTimeout(() => o.stop(), 200); osc = null;
+             $("play").innerHTML = "<span>🔊 Escuchar S<sub>K</sub></span>"; $("play").classList.remove("primary"); return; }
+  actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+  actx.resume();
+  osc = actx.createOscillator(); gain = actx.createGain(); gain.gain.value = 0;
+  osc.frequency.value = freq(); osc.connect(gain).connect(actx.destination);
+  updateSound(); osc.start();
+  $("play").innerHTML = "■ Silenciar"; $("play").classList.add("primary");
+});
+function updateSound() {
+  if (!osc) return;
+  const L = Math.max(2, K + 1), re = new Float32Array(L), im = new Float32Array(L);
+  let e = 0;
+  for (let n = 1; n <= K; n++) { re[n] = a[n]; im[n] = b[n]; e += a[n] * a[n] + b[n] * b[n]; }
+  if (e < 1e-8) { gain.gain.setTargetAtTime(0, actx.currentTime, .02); return; }
+  osc.setPeriodicWave(actx.createPeriodicWave(re, im));
+  gain.gain.setTargetAtTime(.14, actx.currentTime, .02);
+}
+
+/* ======================= Dibujo en canvas ======================= */
+function fit(cv) {
+  const r = cv.getBoundingClientRect(), d = window.devicePixelRatio || 1;
+  if (cv.width !== Math.round(r.width * d) || cv.height !== Math.round(r.height * d)) {
+    cv.width = Math.round(r.width * d); cv.height = Math.round(r.height * d);
+  }
+  const g = cv.getContext("2d"); g.setTransform(d, 0, 0, d, 0, 0);
+  return { g, W: r.width, H: r.height };
+}
+const CSS = getComputedStyle(document.documentElement), C = n => CSS.getPropertyValue(n).trim();
+const BLUE = C("--blue"), ORANGE = C("--orange"), INK = C("--ink"), MUTED = C("--muted"), LINE = C("--line");
+const fmt = (v, d = 3) => (Math.abs(v) < 5e-4 ? 0 : v).toFixed(d).replace("-", "−");
+const sub = n => String(n).split("").map(c => "₀₁₂₃₄₅₆₇₈₉"[c]).join("");
+
+/* --- f(x) --- */
+const wave = $("wave"), YR = 1.6, WP = { l: 38, r: 12, t: 12, b: 26 };
+function waveGeom(W, H) {
+  const pw = W - WP.l - WP.r, ph = H - WP.t - WP.b;
+  return { pw, ph, px: k => WP.l + pw * k / N, py: y => WP.t + ph * (1 - (y + YR) / (2 * YR)) };
+}
+function drawWave() {
+  const { g, W, H } = fit(wave), { pw, ph, px, py } = waveGeom(W, H);
+  g.clearRect(0, 0, W, H); g.fillStyle = "#fff"; g.fillRect(0, 0, W, H);
+  g.font = "11px system-ui, sans-serif"; g.fillStyle = MUTED; g.lineWidth = 1;
+  // rejilla
+  g.textAlign = "right"; g.textBaseline = "middle";
+  for (const y of [-1.5, -1, -.5, 0, .5, 1, 1.5]) {
+    g.strokeStyle = y === 0 ? "#c4ccd4" : (y % 1 ? "#f1f3f5" : LINE);
+    g.beginPath(); g.moveTo(WP.l, py(y)); g.lineTo(WP.l + pw, py(y)); g.stroke();
+    if (!(y % .5) && Math.abs(y) <= 1.5 && (y % 1 === 0)) g.fillText(fmt(y, 0), WP.l - 6, py(y));
+  }
+  g.textAlign = "center"; g.textBaseline = "top";
+  ["−π", "−π/2", "0", "π/2", "π"].forEach((t, i) => {
+    const x = WP.l + pw * i / 4;
+    g.strokeStyle = i === 2 ? "#c4ccd4" : LINE; g.beginPath(); g.moveTo(x, WP.t); g.lineTo(x, WP.t + ph); g.stroke();
+    g.fillText(t, x, WP.t + ph + 6);
+  });
+  const line = (arr, color, w, dash) => {
+    g.strokeStyle = color; g.lineWidth = w; g.setLineDash(dash || []); g.beginPath();
+    for (let k = 0; k <= N; k++) { const y = Math.max(-YR, Math.min(YR, arr(k % N))); k ? g.lineTo(px(k), py(y)) : g.moveTo(px(k), py(y)); }
+    g.stroke(); g.setLineDash([]);
+  };
+  g.lineJoin = "round";
+  line(k => f[k], BLUE, 2.2);
+  line(k => S[k], ORANGE, 2.2);
+  if (hoverN >= 0) {
+    const n = hoverN;
+    line(k => n === 0 ? a[0] / 2 : a[n] * COS[n][k] + b[n] * SIN[n][k], MUTED, 1.6, [5, 4]);
+  }
+}
+
+let drawing = false, last = null;
+function waveToSample(e) {
+  const r = wave.getBoundingClientRect(), { pw, ph } = waveGeom(r.width, r.height);
+  const k = Math.round((e.clientX - r.left - WP.l) / pw * N);
+  const y = YR - (e.clientY - r.top - WP.t) / ph * 2 * YR;
+  return [Math.max(0, Math.min(N - 1, k)), Math.max(-1.5, Math.min(1.5, y))];
+}
+function paint(p) {
+  const [k1, y1] = p, [k0, y0] = last || p;
+  const lo = Math.min(k0, k1), hi = Math.max(k0, k1);
+  for (let k = lo; k <= hi; k++) f[k] = hi === lo ? y1 : y0 + (y1 - y0) * (k - k0) / (k1 - k0);
+  last = p;
+}
+wave.addEventListener("pointerdown", e => { drawing = true; last = null; wave.setPointerCapture(e.pointerId); paint(waveToSample(e)); preset = null; analyze(); changed(); });
+wave.addEventListener("pointermove", e => { if (!drawing) return; paint(waveToSample(e)); analyze(); changed(); });
+const endDraw = () => { drawing = false; last = null; };
+wave.addEventListener("pointerup", endDraw); wave.addEventListener("pointercancel", endDraw);
+
+/* --- Coeficientes --- */
+const coef = $("coef"), CP = { l: 44, r: 12, t: 8, b: 22, gap: 26 }, AR = 1.4;
+function coefGeom(W, H) {
+  const pw = W - CP.l - CP.r, phh = (H - CP.t - CP.b - CP.gap) / 2, slot = pw / (MAXN + 1);
+  const top = { y0: CP.t, h: phh }, bot = { y0: CP.t + phh + CP.gap, h: phh };
+  return { pw, slot, top, bot };
+}
+// valores y rangos de cada panel según el modo
+function panelSpec(which) {
+  if (mode === "ab") return which === 0
+    ? { name: "aₙ · cosenos", color: BLUE, min: -AR, max: AR, val: n => n === 0 ? a[0] / 2 : a[n], ticks: [-1, 0, 1] }
+    : { name: "bₙ · senos", color: ORANGE, min: -AR, max: AR, val: n => n === 0 ? null : b[n], ticks: [-1, 0, 1] };
+  return which === 0
+    ? { name: "Amplitud Aₙ", color: BLUE, min: 0, max: AR, val: n => n === 0 ? Math.abs(a[0]) / 2 : Math.hypot(a[n], b[n]), ticks: [0, .5, 1] }
+    : { name: "Fase φₙ", color: ORANGE, min: -PI, max: PI, val: n => amp(n) < 1e-4 ? null : phase(n), ticks: [-PI, 0, PI], tl: ["−π", "0", "π"] };
+}
+const amp = n => n === 0 ? Math.abs(a[0]) / 2 : Math.hypot(a[n], b[n]);
+const phase = n => n === 0 ? (a[0] < 0 ? PI : 0) : Math.atan2(b[n], a[n]);
+
+function drawCoef() {
+  const { g, W, H } = fit(coef), G = coefGeom(W, H);
+  g.clearRect(0, 0, W, H); g.fillStyle = "#fff"; g.fillRect(0, 0, W, H);
+  g.font = "11px system-ui, sans-serif";
+  [G.top, G.bot].forEach((P, which) => {
+    const sp = panelSpec(which), yv = v => P.y0 + P.h * (1 - (v - sp.min) / (sp.max - sp.min));
+    // ejes
+    g.textAlign = "right"; g.textBaseline = "middle"; g.fillStyle = MUTED;
+    sp.ticks.forEach((t, i) => {
+      g.strokeStyle = t === 0 ? "#c4ccd4" : LINE; g.lineWidth = 1;
+      g.beginPath(); g.moveTo(CP.l, yv(t)); g.lineTo(CP.l + G.pw, yv(t)); g.stroke();
+      g.fillText(sp.tl ? sp.tl[i] : fmt(t, t % 1 ? 1 : 0), CP.l - 6, yv(t));
+    });
+    // banda n > K
+    if (K < MAXN) { g.fillStyle = "rgba(244,246,248,.7)"; g.fillRect(CP.l + G.slot * (K + 1), P.y0, G.slot * (MAXN - K), P.h); }
+    // barras
+    const base = yv(Math.max(sp.min, 0));
+    for (let n = 0; n <= MAXN; n++) {
+      const v = sp.val(n); if (v === null) continue;
+      const x = CP.l + G.slot * n, bw = Math.max(1, G.slot * .7), cv = Math.max(sp.min, Math.min(sp.max, v));
+      g.globalAlpha = n <= K ? 1 : .28;
+      g.fillStyle = sp.color;
+      const y = yv(cv); g.fillRect(x + (G.slot - bw) / 2, Math.min(y, base), bw, Math.max(1, Math.abs(base - y)));
+      if (Math.abs(v) > 1e-4 && G.slot > 7) { g.beginPath(); g.arc(x + G.slot / 2, y, Math.min(3, G.slot * .3), 0, 7); g.fill(); }
+    }
+    g.globalAlpha = 1;
+    // etiqueta del panel
+    g.textAlign = "left"; g.textBaseline = "top"; g.font = "600 12px system-ui, sans-serif";
+    const lw = g.measureText(sp.name).width;
+    g.fillStyle = "rgba(255,255,255,.85)"; g.fillRect(CP.l + 4, P.y0 + 2, lw + 8, 17);
+    g.fillStyle = sp.color === ORANGE ? C("--orange-dark") : C("--blue-dark"); g.fillText(sp.name, CP.l + 8, P.y0 + 4);
+    g.font = "11px system-ui, sans-serif";
+  });
+  // marca del armónico señalado y separador K
+  if (hoverN >= 0) {
+    const x = CP.l + G.slot * hoverN;
+    g.strokeStyle = INK; g.globalAlpha = .55; g.setLineDash([3, 3]); g.lineWidth = 1;
+    g.strokeRect(x + .5, CP.t + .5, G.slot - 1, H - CP.t - CP.b - 1); g.setLineDash([]); g.globalAlpha = 1;
+  }
+  const xk = CP.l + G.slot * (K + 1);
+  g.strokeStyle = ORANGE; g.lineWidth = 2; g.beginPath(); g.moveTo(xk, CP.t); g.lineTo(xk, H - CP.b); g.stroke();
+  // eje n
+  g.fillStyle = MUTED; g.textAlign = "center"; g.textBaseline = "top";
+  for (let n = 0; n <= MAXN; n += (G.slot < 9 ? 16 : 8)) g.fillText(n, CP.l + G.slot * (n + .5), H - CP.b + 5);
+  g.textAlign = "right"; g.fillText("n", CP.l - 6, H - CP.b + 5);
+  g.textAlign = "center"; g.fillStyle = C("--orange-dark"); g.font = "600 11px system-ui, sans-serif";
+  g.fillText("K = " + K, Math.min(W - 24, Math.max(CP.l + 18, xk)), CP.t + G.top.h + CP.gap / 2 - 6);
+}
+
+let dragPanel = -1;
+function coefHit(e) {
+  const r = coef.getBoundingClientRect(), G = coefGeom(r.width, r.height);
+  const x = e.clientX - r.left, y = e.clientY - r.top;
+  const n = Math.max(0, Math.min(MAXN, Math.floor((x - CP.l) / G.slot)));
+  const panel = y < G.top.y0 + G.top.h + CP.gap / 2 ? 0 : 1;
+  return { n, panel, y, G, inside: x >= CP.l };
+}
+function applyDrag(h) {
+  const P = dragPanel === 0 ? h.G.top : h.G.bot, sp = panelSpec(dragPanel);
+  let v = sp.min + (1 - (h.y - P.y0) / P.h) * (sp.max - sp.min);
+  v = Math.max(sp.min, Math.min(sp.max, v));
+  const n = h.n;
+  if (mode === "ab") {
+    if (dragPanel === 0) setCoef(n, n === 0 ? 2 * v : v, b[n]);
+    else if (n > 0) setCoef(n, a[n], v);
+  } else {
+    if (n === 0) { if (dragPanel === 0) setCoef(0, 2 * v * (a[0] < 0 ? -1 : 1), 0); return; }
+    if (Math.abs(v) < .01 && dragPanel === 0) v = 0;
+    const A = dragPanel === 0 ? v : amp(n), ph = dragPanel === 0 ? (amp(n) < 1e-4 ? PI / 2 : phase(n)) : v;
+    setCoef(n, A * Math.cos(ph), A * Math.sin(ph));
+  }
+}
+coef.addEventListener("pointerdown", e => { const h = coefHit(e); if (!h.inside) return;
+  dragPanel = h.panel; coef.setPointerCapture(e.pointerId); hoverN = h.n; applyDrag(h); });
+coef.addEventListener("pointermove", e => { const h = coefHit(e);
+  if (dragPanel >= 0) { hoverN = h.n; applyDrag(h); return; }
+  const nh = h.inside ? h.n : -1; if (nh !== hoverN) { hoverN = nh; changed(true); } });
+const endDrag = () => { dragPanel = -1; };
+coef.addEventListener("pointerup", endDrag); coef.addEventListener("pointercancel", endDrag);
+coef.addEventListener("pointerleave", () => { if (dragPanel < 0 && hoverN >= 0) { hoverN = -1; changed(true); } });
+
+/* ======================= Textos y medidas ======================= */
+function updateTexts() {
+  $("vK").textContent = K; $("lK").textContent = K;
+  $("coefTitle").textContent = mode === "ab" ? "Coeficientes aₙ y bₙ" : "Amplitud y fase de cada armónico";
+  [...presetsEl.children].forEach(x => x.setAttribute("aria-pressed", x.dataset.p === preset));
+  $("formula").innerHTML = mode === "ab"
+    ? `S<sub>K</sub>(x) = a₀/2 + Σ<sub>n=1…${K}</sub> ( aₙ·cos(nx) + bₙ·sin(nx) )
+       &nbsp;&nbsp;<span class="c">con aₙ = (1/π)∫ f(x)·cos(nx) dx, &nbsp;bₙ = (1/π)∫ f(x)·sin(nx) dx</span>`
+    : `S<sub>K</sub>(x) = a₀/2 + Σ<sub>n=1…${K}</sub> Aₙ·cos(nx − φₙ)
+       &nbsp;&nbsp;<span class="c">con Aₙ = √(aₙ² + bₙ²), &nbsp;φₙ = atan2(bₙ, aₙ)</span>`;
+  // lectura del armónico señalado
+  const n = hoverN, ro = $("readout");
+  if (n < 0) {
+    ro.innerHTML = `<span class="h">Armónico</span><span class="dim">Pasa el ratón (o toca) sobre una barra para ver ese término sobre la gráfica.</span>`;
+  } else if (n === 0) {
+    ro.innerHTML = `<span class="h">n = 0 · término constante</span>a₀/2 = ${fmt(a[0] / 2)}
+      <span class="dim">&nbsp;— es el valor medio de f(x) en un periodo.</span>`;
+  } else {
+    const ph = phase(n) * 180 / PI, inc = n <= K;
+    ro.innerHTML = `<span class="h">n = ${n} · ${n === 1 ? "fundamental" : n + "º armónico"} · frecuencia ${n}·f₀${osc ? " = " + n * freq() + " Hz" : ""}</span>
+      a${sub(n)} = ${fmt(a[n])} &nbsp; b${sub(n)} = ${fmt(b[n])} &nbsp; A${sub(n)} = ${fmt(amp(n))} &nbsp; φ${sub(n)} = ${amp(n) < 1e-4 ? "—" : fmt(ph, 1) + "°"}<br>
+      <span class="dim">${inc ? "Incluido en S<sub>K</sub>." : "Fuera de S<sub>K</sub>: sube K hasta " + n + " para añadirlo."}</span>`;
+  }
+  // medidas
+  let e2 = 0, ef = 0, mx = -Infinity, fm = -Infinity;
+  for (let k = 0; k < N; k++) { const d = f[k] - S[k]; e2 += d * d; ef += f[k] * f[k]; mx = Math.max(mx, S[k]); fm = Math.max(fm, f[k]); }
+  let cap = a[0] * a[0] / 2; for (let n = 1; n <= K; n++) cap += a[n] * a[n] + b[n] * b[n];
+  const Ef = ef * 2 / N;
+  $("mRms").textContent = fmt(Math.sqrt(e2 / N));
+  $("mEn").textContent = Ef < 1e-9 ? "—" : (Math.min(1, cap / Ef) * 100).toFixed(1).replace(".", ",") + " %";
+  $("mMax").textContent = fmt(mx); $("mFmax").textContent = fmt(fm);
+  // Gibbs: la función tiene saltos y ya hay bastantes términos
+  let jump = false; for (let k = 0; k < N; k++) if (Math.abs(f[k] - f[(k + 1) % N]) > .5) { jump = true; break; }
+  $("gibbs").classList.toggle("on", jump && K >= 9);
+}
+
+/* ======================= Bucle ======================= */
+let dirty = true, soundDirty = true;
+function changed(hoverOnly) { dirty = true; if (!hoverOnly) soundDirty = true; }
+function frame() {
+  if (dirty) {
+    dirty = false; synth(); drawWave(); drawCoef(); updateTexts();
+    if (soundDirty) { soundDirty = false; updateSound(); }
+  }
+  requestAnimationFrame(frame);
+}
+new ResizeObserver(() => changed(true)).observe(wave);
+new ResizeObserver(() => changed(true)).observe(coef);
+document.addEventListener("keydown", e => {
+  if (e.target.tagName === "INPUT") return;
+  if (e.key === "ArrowRight" || e.key === "+") { K = Math.min(MAXN, K + 1); sK.value = K; changed(); }
+  if (e.key === "ArrowLeft" || e.key === "-") { K = Math.max(0, K - 1); sK.value = K; changed(); }
+});
+loadPreset("square");
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
