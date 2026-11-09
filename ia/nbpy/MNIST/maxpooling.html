@@ -1,0 +1,601 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Max-pooling</title>
+<style>
+  :root {
+    color-scheme: light;
+    /* Colores institucionales ULPGC */
+    --blue: #0266a2; --blue-dark: #014d7a; --blue-soft: #e8f1f8;
+    --orange: #ff9600; --orange-dark: #b86b00; --orange-soft: #fff3e0;
+    --bg: #f4f6f8; --panel: #ffffff; --ink: #1b2430; --muted: #5d6875;
+    --line: #e1e6eb; --red: #d9480f;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .gut { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  .topbar { background: var(--panel); border-top: 4px solid var(--blue); border-bottom: 1px solid var(--line); }
+  header { max-width: 1280px; margin: 0 auto; padding-block: 18px 20px;
+           display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; }
+  .logo { height: 30px; width: auto; opacity: .9; flex-shrink: 0; margin-top: 4px; }
+  h1 { font-size: 26px; margin: 0 0 6px; letter-spacing: -.01em; color: var(--blue); text-wrap: balance; }
+  h1::after { content: ""; display: block; width: 48px; height: 3px; background: var(--orange); border-radius: 2px; margin-top: 6px; }
+  header p { margin: 0; color: var(--muted); max-width: 88ch; }
+
+  .steps-wrap { max-width: 1280px; margin: 0 auto; padding-block: 16px 0; }
+  .steps { display: flex; flex-wrap: wrap; gap: 6px; }
+  .steps button { display: flex; align-items: center; gap: 7px; padding: 5px 11px 5px 6px; font-size: 13px;
+                  background: var(--panel); border: 1px solid var(--line); border-radius: 999px; }
+  .steps button .n { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center;
+                     background: var(--blue-soft); color: var(--blue); font-weight: 700; font-size: 11px; font-variant-numeric: tabular-nums; }
+  .steps button.done .n { background: var(--blue); color: #fff; }
+  .steps button.cur { border-color: var(--blue); background: var(--blue-soft); font-weight: 600; color: var(--blue-dark); }
+  .steps button.cur .n { background: var(--orange); color: #fff; }
+
+  main { max-width: 1280px; margin: 0 auto; padding-block: 16px 28px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px;
+          box-shadow: 0 1px 2px rgba(16, 40, 64, .04); min-width: 0; }
+  .card h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: var(--blue);
+             margin: 0 0 12px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  .card h2::before { content: ""; width: 4px; height: 14px; background: var(--orange); border-radius: 2px; }
+
+  button { font: inherit; padding: 7px 14px; border-radius: 8px; border: 1px solid var(--line);
+           background: var(--bg); color: var(--ink); cursor: pointer; transition: background .15s, border-color .15s; }
+  button:hover { border-color: #c4ccd4; }
+  button:disabled { opacity: .45; cursor: default; }
+  button.primary { background: var(--blue); color: #fff; border-color: var(--blue); font-weight: 600; }
+  button.primary:hover { background: var(--blue-dark); border-color: var(--blue-dark); }
+  button.primary.running { background: var(--orange-dark); border-color: var(--orange-dark); }
+  button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid var(--orange); outline-offset: 2px; }
+  .sm { padding: 4px 10px; font-size: 13px; }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 9px; overflow: hidden; flex-wrap: wrap; }
+  .seg button { border: 0; border-radius: 0; background: var(--panel); font-size: 13px; padding: 5px 11px; }
+  .seg button + button { border-left: 1px solid var(--line); }
+  .seg button[aria-pressed="true"] { background: var(--blue-soft); font-weight: 600; color: var(--blue-dark); }
+  .row { display: flex; flex-wrap: wrap; gap: 8px 14px; margin-top: 10px; align-items: center; }
+  .ctl { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+  .ctl b { color: var(--orange-dark); font-family: var(--mono); }
+
+  .stage-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  .stage-head h2 { margin-bottom: 4px; }
+  .stepno { color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+  .explain { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 16px 28px; margin-bottom: 14px; }
+  .explain .txt p { margin: 0 0 8px; max-width: 74ch; }
+  .explain .txt p:last-child { margin-bottom: 0; }
+  .formula { background: var(--blue-soft); border-radius: 10px; padding: 12px 14px; font-family: var(--mono);
+             font-size: 13.5px; line-height: 1.75; color: var(--blue-dark); align-self: start; overflow-x: auto; }
+  .formula .c { font-family: system-ui, sans-serif; color: var(--muted); font-size: 12.5px; display: block; line-height: 1.45; margin-top: 4px; }
+  .formula b { color: var(--ink); }
+  .viz { overflow-x: auto; padding: 14px 2px 8px; border-top: 1px solid var(--line); min-height: 300px; }
+  .nav { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+  .hint { color: var(--muted); font-size: 12.5px; }
+  kbd { font: 12px var(--mono); background: var(--blue-soft); color: var(--blue); border-radius: 4px; padding: 1px 5px; }
+  .facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-top: 14px; }
+  .fact { background: var(--bg); border-radius: 8px; padding: 10px 12px; }
+  .fact b { display: block; font-size: 20px; color: var(--blue); font-variant-numeric: tabular-nums; }
+  .fact.o { background: var(--orange-soft); } .fact.o b { color: var(--orange-dark); }
+  .fact span { font-size: 12px; color: var(--muted); }
+  .calc { margin-top: 12px; padding: 10px 12px; background: var(--orange-soft); border-radius: 8px;
+          font-family: var(--mono); font-size: 13px; line-height: 1.7; color: #6b3f00; overflow-x: auto; }
+  .calc .h { font-family: system-ui, sans-serif; font-weight: 700; color: var(--orange-dark); font-size: 12px;
+             text-transform: uppercase; letter-spacing: .06em; display: block; }
+  .calc b { color: #3d2400; }
+  .ok { margin-top: 12px; padding: 10px 12px; border-left: 4px solid var(--blue); background: var(--blue-soft); border-radius: 6px; font-size: 13.5px; max-width: 90ch; }
+
+  /* Rejillas de valores */
+  .flow { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 22px; }
+  .fig { display: flex; flex-direction: column; gap: 6px; }
+  .fig > span { font-size: 12.5px; font-weight: 700; color: var(--blue-dark); }
+  .fig small { font-weight: 400; color: var(--muted); }
+  .arrow { color: var(--blue); font-size: 13px; text-align: center; display: flex; flex-direction: column; align-items: center; }
+  .arrow::before { content: "→"; font-size: 28px; line-height: 1; }
+  .arrow.back::before { content: "←"; }
+  .grid { display: grid; gap: 2px; user-select: none; --cs: 36px; }
+  .grid .c { width: var(--cs); height: var(--cs); border-radius: 4px; display: grid; place-items: center;
+             font: 12px var(--mono); font-variant-numeric: tabular-nums; position: relative; cursor: pointer; transition: background .15s; }
+  .grid .c.win { box-shadow: inset 0 0 0 2px var(--orange); }
+  .grid .c.max { box-shadow: inset 0 0 0 3px var(--orange-dark); font-weight: 800; }
+  .grid .c.max::after { content: ""; position: absolute; inset: -3px; border-radius: 6px; border: 2px solid var(--orange); }
+  .grid .c.sel { box-shadow: inset 0 0 0 3px var(--orange-dark); font-weight: 800; }
+  .grid .c.off { background-image: repeating-linear-gradient(45deg, transparent 0 4px, rgba(217, 72, 15, .28) 4px 6px) !important; }
+  .grid .c.chg { box-shadow: inset 0 0 0 3px var(--red); }
+  .grid .c.empty { color: transparent; }
+  .grid .c.zero { color: #a9b3bd; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12.5px; color: var(--muted); margin-top: 10px; }
+  .legend i { display: inline-block; width: 14px; height: 14px; border-radius: 3px; vertical-align: -2px; margin-right: 5px; }
+
+  /* Imágenes */
+  canvas.px { image-rendering: pixelated; display: block; border-radius: 8px; border: 1px solid var(--line); background: #000; }
+  #draw { width: 196px; height: 196px; touch-action: none; cursor: crosshair; image-rendering: auto; }
+  .maps { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 14px 18px; }
+  .maps canvas { width: 150px; height: 150px; }
+
+  table.t { border-collapse: collapse; font-size: 13.5px; margin-top: 4px; min-width: 460px; }
+  table.t th, table.t td { padding: 6px 12px; border-bottom: 1px solid var(--line); text-align: left; }
+  table.t th { font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+  table.t td.n { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  table.t tr.pool td { color: var(--orange-dark); background: var(--orange-soft); }
+  table.t tr.big td.n { color: var(--red); font-weight: 700; }
+  pre.code { background: #0f2233; color: #e3eef7; border-radius: 10px; padding: 12px 14px; font: 13px/1.6 var(--mono); overflow-x: auto; margin: 0; }
+  pre.code .k { color: #ffb84d; } pre.code .cm { color: #8aa4b8; }
+  .cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px 28px; align-items: start; }
+  .cols > * { min-width: 0; }
+  .sw { display: flex; align-items: center; gap: 8px; font-size: 13.5px; cursor: pointer; }
+  .sw input { accent-color: var(--orange); width: 16px; height: 16px; }
+
+  @media (max-width: 900px) {
+    .explain, .cols { grid-template-columns: minmax(0, 1fr); }
+    .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .logo { height: 24px; }
+  }
+  @media (max-width: 560px) {
+    .steps button .lbl { display: none; }
+    .steps button { padding: 5px; }
+    header { flex-direction: column-reverse; gap: 10px; }
+    .grid { --cs: 30px; }
+    .grid .c { font-size: 10.5px; }
+    .flow { gap: 10px 14px; }
+    .arrow { flex-basis: 100%; flex-direction: row; gap: 8px; }
+    .arrow::before { content: "↓"; font-size: 22px; }
+    .arrow.back::before { content: "↑"; }
+    .maps canvas { width: 130px; height: 130px; }
+  }
+</style>
+</head>
+<body>
+<div class="topbar gut">
+<header>
+  <div>
+    <h1>Max-pooling</h1>
+    <p>Después de cada capa convolutiva, las redes suelen reducir el tamaño de sus mapas de características quedándose solo con el
+       <b>valor máximo</b> de cada pequeña región. Es una operación muy sencilla, sin parámetros que aprender, que elimina el 75 % de los datos
+       conservando casi toda la información útil. Aquí puedes ver cómo funciona, qué controlan su tamaño de ventana y su paso, por qué
+       hace la red más robusta a pequeños desplazamientos y cuántos pesos nos ahorra.</p>
+  </div>
+  <img class="logo" src="logo-ulpgc.jpg" alt="ULPGC · Universidad de Las Palmas de Gran Canaria">
+</header>
+</div>
+
+<div class="steps-wrap gut">
+  <nav class="steps" id="steps" aria-label="Pasos"></nav>
+</div>
+
+<main class="gut">
+  <section class="card" aria-live="polite">
+    <div class="stage-head">
+      <h2 id="st-title">—</h2>
+      <span class="stepno" id="st-no"></span>
+    </div>
+    <div class="explain">
+      <div class="txt" id="st-text"></div>
+      <div class="formula" id="st-formula"></div>
+    </div>
+    <div class="viz" id="viz"></div>
+    <div class="nav">
+      <button id="prev">← Anterior</button>
+      <span class="hint">También con <kbd>←</kbd> <kbd>→</kbd></span>
+      <button id="next" class="primary">Siguiente →</button>
+    </div>
+  </section>
+</main>
+
+<script>
+/* =====================================================================
+   Utilidades
+   ===================================================================== */
+const $ = s => document.querySelector(s);
+const fmt = (v, d = 0) => (Math.abs(v) < 5 * 10 ** -(d + 1) ? 0 : v).toFixed(d).replace(".", ",").replace("-", "−");
+const num = v => Math.round(v).toLocaleString("es");
+function mulberry(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a);
+  t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+let anim = null;
+const stopAnim = () => { if (anim) { clearTimeout(anim); anim = null; } };
+
+// Matriz H×W de enteros 0..9 con algo de estructura (manchas), como un mapa de características tras ReLU
+function featureMap(H, W, seed) {
+  const r = mulberry(seed), M = [];
+  const blobs = Array.from({ length: 3 }, () => ({ y: r() * H, x: r() * W, s: .7 + r() * 1.1, a: 4 + r() * 6 }));
+  for (let i = 0; i < H; i++) { M.push([]);
+    for (let j = 0; j < W; j++) {
+      let v = r() * 3.2;
+      blobs.forEach(b => { v += b.a * Math.exp(-((i - b.y) ** 2 + (j - b.x) ** 2) / (2 * b.s * b.s)); });
+      M[i].push(Math.min(9, Math.round(v)));
+    } }
+  return M;
+}
+
+// Pooling de una matriz (array de arrays). Devuelve la salida y, para cada celda, la posición ganadora.
+function pool(M, k, s, mode = "max") {
+  const H = M.length, W = M[0].length, Ho = Math.floor((H - k) / s) + 1, Wo = Math.floor((W - k) / s) + 1, out = [], arg = [];
+  for (let i = 0; i < Ho; i++) { out.push([]); arg.push([]);
+    for (let j = 0; j < Wo; j++) {
+      let best = -Infinity, bi = 0, bj = 0, sum = 0;
+      for (let m = 0; m < k; m++) for (let n = 0; n < k; n++) {
+        const v = M[i * s + m][j * s + n]; sum += v;
+        if (v > best) { best = v; bi = i * s + m; bj = j * s + n; }
+      }
+      out[i].push(mode === "max" ? best : sum / (k * k)); arg[i].push([bi, bj]);
+    } }
+  return { out, arg, Ho, Wo };
+}
+
+// Color de una celda: de gris claro (0) a azul ULPGC (vmax)
+function cellColor(v, vmax) {
+  const t = Math.max(0, Math.min(1, Math.abs(v) / vmax)), a = [244, 246, 248], b = [2, 102, 162];
+  const c = a.map((x, i) => Math.round(x + (b[i] - x) * t));
+  return { bg: `rgb(${c})`, fg: t > .5 ? "#fff" : "#1b2430" };
+}
+
+// Dibuja una rejilla de valores. opts: vmax, d (decimales), cls(i,j) -> clases extra, show(i,j) -> mostrar valor
+function grid(M, opts = {}) {
+  const { vmax = 9, d = 0, cls = () => "", show = () => true, id = "" } = opts;
+  const H = M.length, W = M[0].length;
+  let h = `<div class="grid" ${id ? `id="${id}"` : ""} style="grid-template-columns:repeat(${W}, var(--cs))">`;
+  for (let i = 0; i < H; i++) for (let j = 0; j < W; j++) {
+    const v = M[i][j], vis = show(i, j), col = vis ? cellColor(v, vmax) : { bg: "#fff", fg: "transparent" };
+    h += `<div class="c ${cls(i, j)} ${vis ? (v === 0 ? "zero" : "") : "empty"}" data-i="${i}" data-j="${j}" style="background:${col.bg};color:${col.fg}">${vis ? fmt(v, d) : ""}</div>`;
+  }
+  return h + "</div>";
+}
+const cellOf = e => { const c = e.target.closest(".c"); return c ? [+c.dataset.i, +c.dataset.j] : null; };
+const fig = (title, sub, body) => `<div class="fig"><span>${title} <small>${sub}</small></span>${body}</div>`;
+
+/* =====================================================================
+   Pasos
+   ===================================================================== */
+let STEP = 0;
+const S1 = { seed: 7, sel: [0, 0], shown: 16 };
+const S2 = { seed: 11, N: 8, k: 2, s: 2, sel: [0, 0] };
+const S3 = { seed: 7, sel: [1, 1] };
+const S4 = { pos: [2, 2] };
+const S5 = { kernel: "v", mode: "max" };
+const S6 = { seed: 3, sel: [0, 0] };
+const S7 = { p1: true, p2: true };
+
+const STEPS = [
+  /* ------------------------------------------------------------------ 1 */
+  { t: "La idea", f() {
+    return {
+      text: `<p>Una capa convolutiva produce, para cada filtro, un <b>mapa de características</b>: una matriz en la que cada valor indica con qué intensidad
+             se ha encontrado esa característica (un borde, una esquina…) en cada zona de la imagen.</p>
+             <p><b>Max-pooling</b> divide cada mapa en regiones de 2×2 que no se solapan y se queda solo con el <b>valor más alto</b> de cada una.
+             El razonamiento es sencillo: lo importante es <i>si</i> la característica aparece en esa zona, no en qué píxel exacto.</p>
+             <p>Pulsa <b>Reproducir</b> para ver el recorrido de la ventana, o pasa el ratón (o toca) cualquier celda.</p>`,
+      formula: `y<sub>i,j</sub> = max<sub>m,n ∈ {0,1}</sub> x<sub>2i+m, 2j+n</sub>
+                <span class="c">Cada salida y<sub>i,j</sub> es el máximo de un bloque de 2×2 de la entrada x. Se aplica a cada canal por separado: con 32 mapas de entrada salen 32 mapas de salida.</span>`,
+      viz: `<div class="flow" id="f1"></div>
+            <div class="calc" id="c1"></div>
+            <div class="row"><button class="primary" id="play1">▶ Reproducir</button><button id="new1">Nuevo mapa</button></div>
+            <div class="facts"><div class="fact"><b>64</b><span>valores de entrada (8×8)</span></div><div class="fact"><b>16</b><span>valores de salida (4×4)</span></div>
+              <div class="fact o"><b>75 %</b><span>de los datos se descartan</span></div><div class="fact"><b>0</b><span>parámetros que aprender</span></div></div>`,
+      after() {
+        const paint = () => {
+          const X = featureMap(8, 8, S1.seed), P = pool(X, 2, 2), [si, sj] = S1.sel, [ai, aj] = P.arg[si][sj];
+          const inW = (i, j) => Math.floor(i / 2) === si && Math.floor(j / 2) === sj;
+          $("#f1").innerHTML = fig("Mapa de características", "8×8", grid(X, { id: "g1in", cls: (i, j) => (inW(i, j) ? "win" : "") + (i === ai && j === aj ? " max" : "") }))
+            + `<div class="arrow">max 2×2</div>`
+            + fig("Tras max-pooling", "4×4", grid(P.out, { id: "g1out", cls: (i, j) => i === si && j === sj ? "sel" : "", show: (i, j) => i * 4 + j < S1.shown }));
+          const w = [X[2 * si][2 * sj], X[2 * si][2 * sj + 1], X[2 * si + 1][2 * sj], X[2 * si + 1][2 * sj + 1]];
+          $("#c1").innerHTML = `<span class="h">Ventana (${si}, ${sj})</span>y<sub>${si},${sj}</sub> = max(${w.join(", ")}) = <b>${P.out[si][sj]}</b>`;
+          const pick = t => { if (anim || t[0] !== S1.sel[0] || t[1] !== S1.sel[1] || S1.shown < 16) { stopAnim(); S1.sel = t; S1.shown = 16; setPlay(); paint(); } };
+          $("#g1in").onpointerover = $("#g1in").onclick = e => { const c = cellOf(e); if (c && e.pointerType !== "touch") pick([c[0] >> 1, c[1] >> 1]); else if (c && e.type === "click") pick([c[0] >> 1, c[1] >> 1]); };
+          $("#g1out").onpointerover = $("#g1out").onclick = e => { const c = cellOf(e); if (c && (e.type === "click" || e.pointerType !== "touch")) pick(c); };
+        };
+        const setPlay = () => { $("#play1").textContent = anim ? "■ Detener" : "▶ Reproducir"; $("#play1").classList.toggle("running", !!anim); };
+        $("#play1").onclick = () => {
+          if (anim) { stopAnim(); S1.shown = 16; setPlay(); paint(); return; }
+          let k = 0; const tickf = () => { S1.sel = [k >> 2, k & 3]; S1.shown = k + 1; paint(); k++;
+            anim = k < 16 ? setTimeout(tickf, 650) : null; setPlay(); };
+          S1.shown = 0; tickf();
+        };
+        $("#new1").onclick = () => { stopAnim(); S1.seed++; S1.shown = 16; setPlay(); paint(); };
+        paint();
+      } };
+  } },
+
+  /* ------------------------------------------------------------------ 2 */
+  { t: "Ventana y paso", f() {
+    return {
+      text: `<p>El pooling tiene dos hiperparámetros: el <b>tamaño de la ventana</b> <i>k</i> y el <b>paso</b> (<i>stride</i>) <i>s</i>, que indica
+             cuántas celdas avanza la ventana cada vez. Lo habitual es <i>k</i> = 2 y <i>s</i> = 2, que reduce cada dimensión a la mitad.</p>
+             <p>Si el paso es menor que la ventana, las ventanas se <b>solapan</b> (la misma celda participa en varias salidas). Si el tamaño no encaja
+             exactamente, las últimas filas y columnas <b>se ignoran</b>: aparecen rayadas en rojo. Es lo que pasa en la red de la clase 6: 11×11 → 5×5.</p>
+             <p>Cambia los valores y haz clic en las celdas de salida.</p>`,
+      formula: `H<sub>salida</sub> = ⌊(H − k) / s⌋ + 1
+                <span class="c">Con H = 8, k = 2, s = 2: ⌊6 / 2⌋ + 1 = 4. Con H = 11: ⌊9 / 2⌋ + 1 = 5, y la última fila y columna se pierden.</span>
+                <br>nn.MaxPool2d(kernel_size=<b>k</b>, stride=<b>s</b>)
+                <span class="c">En PyTorch, si no se indica el paso, se toma igual al tamaño de la ventana.</span>`,
+      viz: `<div class="row" style="margin-top:0">
+              <span class="ctl">Entrada <span class="seg" id="sN">${[6, 7, 8, 9, 10, 11].map(v => `<button data-v="${v}">${v}×${v}</button>`).join("")}</span></span>
+              <span class="ctl">Ventana <i>k</i> <span class="seg" id="sK">${[2, 3].map(v => `<button data-v="${v}">${v}</button>`).join("")}</span></span>
+              <span class="ctl">Paso <i>s</i> <span class="seg" id="sS">${[1, 2, 3].map(v => `<button data-v="${v}">${v}</button>`).join("")}</span></span>
+            </div>
+            <div class="flow" id="f2" style="margin-top:14px"></div>
+            <div class="legend"><span><i style="box-shadow:inset 0 0 0 2px #ff9600"></i>ventana seleccionada</span>
+              <span><i style="background:repeating-linear-gradient(45deg,#fff 0 4px,rgba(217,72,15,.4) 4px 6px)"></i>celdas que ninguna ventana cubre</span></div>
+            <div class="facts" id="facts2"></div>`,
+      after() {
+        const seg = (id, key) => { const el = $(id);
+          el.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", +b.dataset.v === S2[key]));
+          el.onclick = e => { const b = e.target.closest("button"); if (!b) return; S2[key] = +b.dataset.v; S2.sel = [0, 0]; paint(); }; };
+        const paint = () => {
+          seg("#sN", "N"); seg("#sK", "k"); seg("#sS", "s");
+          const { N, k, s } = S2, X = featureMap(N, N, S2.seed + N), P = pool(X, k, s);
+          if (S2.sel[0] >= P.Ho || S2.sel[1] >= P.Wo) S2.sel = [0, 0];
+          const [si, sj] = S2.sel, [ai, aj] = P.arg[si][sj], cover = (P.Ho - 1) * s + k;
+          const inW = (i, j) => i >= si * s && i < si * s + k && j >= sj * s && j < sj * s + k;
+          $("#f2").innerHTML = fig("Entrada", `${N}×${N}`, grid(X, { cls: (i, j) => (inW(i, j) ? "win" : "") + (i === ai && j === aj ? " max" : "") + (i >= cover || j >= cover ? " off" : "") }))
+            + `<div class="arrow">k=${k}, s=${s}</div>`
+            + fig("Salida", `${P.Ho}×${P.Wo}`, grid(P.out, { id: "g2out", cls: (i, j) => i === si && j === sj ? "sel" : "" }));
+          $("#g2out").onpointerover = $("#g2out").onclick = e => { const c = cellOf(e); if (c && (c[0] !== S2.sel[0] || c[1] !== S2.sel[1])) { S2.sel = c; paint(); } };
+          const lost = N * N - cover * cover;
+          $("#facts2").innerHTML = `<div class="fact"><b>${P.Ho}×${P.Wo}</b><span>tamaño de salida</span></div>
+            <div class="fact o"><b>${fmt(100 * (1 - P.Ho * P.Wo / (N * N)), 0)} %</b><span>reducción del número de valores</span></div>
+            <div class="fact"><b>${s < k ? "Sí" : "No"}</b><span>ventanas solapadas</span></div>
+            <div class="fact"><b>${lost}</b><span>celdas ignoradas</span></div>`;
+        };
+        paint();
+      } };
+  } },
+
+  /* ------------------------------------------------------------------ 3 */
+  { t: "Máximo o media", f() {
+    return {
+      text: `<p>Max-pooling no es la única opción. El <b>average pooling</b> (pooling por media) sustituye cada región por la <b>media</b> de sus valores.</p>
+             <p>La diferencia es importante. El máximo responde a la pregunta <i>«¿aparece la característica en esta zona?»</i>: basta un único valor alto
+             para que la salida sea alta. La media la diluye con los valores bajos que la rodean y produce un resultado más suave. Por eso, en las capas
+             intermedias de las redes convolutivas, el máximo suele funcionar mejor.</p>
+             <p>La media se sigue usando mucho en la versión <b>global</b> (<i>global average pooling</i>): al final de la red, cada mapa completo se
+             reduce a un único número, su media, antes de la capa de clasificación.</p>`,
+      formula: `max: y<sub>i,j</sub> = max<sub>m,n</sub> x<sub>2i+m, 2j+n</sub><br>
+                media: y<sub>i,j</sub> = ¼ Σ<sub>m,n</sub> x<sub>2i+m, 2j+n</sub>
+                <span class="c">En PyTorch: nn.MaxPool2d(2) y nn.AvgPool2d(2). El pooling global: nn.AdaptiveAvgPool2d(1).</span>`,
+      viz: `<div class="flow" id="f3"></div><div class="calc" id="c3"></div>
+            <div class="row"><button id="new3">Nuevo mapa</button></div>`,
+      after() {
+        const paint = () => {
+          const X = featureMap(8, 8, S3.seed), M = pool(X, 2, 2), A = pool(X, 2, 2, "avg"), [si, sj] = S3.sel, [ai, aj] = M.arg[si][sj];
+          const inW = (i, j) => Math.floor(i / 2) === si && Math.floor(j / 2) === sj, sel = (i, j) => i === si && j === sj ? "sel" : "";
+          $("#f3").innerHTML = fig("Entrada", "8×8", grid(X, { id: "g3in", cls: (i, j) => (inW(i, j) ? "win" : "") + (i === ai && j === aj ? " max" : "") }))
+            + `<div class="arrow">2×2</div>`
+            + `<div class="flow" style="gap:18px">` + fig("Max-pooling", "4×4", grid(M.out, { id: "g3m", cls: sel }))
+            + fig("Average pooling", "4×4", grid(A.out, { id: "g3a", d: 1, cls: sel })) + `</div>`;
+          const w = [X[2 * si][2 * sj], X[2 * si][2 * sj + 1], X[2 * si + 1][2 * sj], X[2 * si + 1][2 * sj + 1]];
+          $("#c3").innerHTML = `<span class="h">Ventana (${si}, ${sj})</span>max(${w.join(", ")}) = <b>${M.out[si][sj]}</b><br>
+             (${w.join(" + ")}) / 4 = <b>${fmt(A.out[si][sj], 2)}</b>`;
+          const h = e => { const c = cellOf(e); if (!c) return; const t = e.currentTarget.id === "g3in" ? [c[0] >> 1, c[1] >> 1] : c;
+            if (t[0] !== S3.sel[0] || t[1] !== S3.sel[1]) { S3.sel = t; paint(); } };
+          ["#g3in", "#g3m", "#g3a"].forEach(id => { $(id).onpointerover = h; $(id).onclick = h; });
+        };
+        $("#new3").onclick = () => { S3.seed++; paint(); };
+        paint();
+      } };
+  } },
+
+  /* ------------------------------------------------------------------ 4 */
+  { t: "Pequeños desplazamientos", f() {
+    return {
+      text: `<p>Una ventaja menos evidente del max-pooling es que hace la red más <b>robusta a pequeños desplazamientos</b>. Imagina que un filtro ha
+             detectado una característica muy localizada, por ejemplo una esquina, que aparece como un único valor alto en el mapa. Si el objeto se mueve
+             un píxel, ese valor se mueve también un píxel. Pero, mientras siga dentro de la misma ventana de 2×2, la salida del pooling
+             <b>no cambia en absoluto</b>: para las capas siguientes es como si nada se hubiera movido.</p>
+             <p>Desplázala con los botones (o con <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd>) y compara la salida con la original.
+             Las celdas que cambian se marcan en rojo. En una imagen de verdad la tolerancia no es perfecta, pero con varias capas de pooling seguidas se
+             va acumulando: tras dos capas, la ventana efectiva ya es de 4×4 píxeles.</p>`,
+      formula: `Desplazamiento de 1 píxel:
+                <span class="c">· la entrada cambia en muchas celdas<br>· la salida del pooling solo cambia si el máximo salta a otra ventana de 2×2</span>`,
+      viz: `<div class="row" style="margin-top:0"><span class="seg" id="mv"><button data-d="0,-1">← Izquierda</button><button data-d="-1,0">↑ Arriba</button>
+              <button data-d="1,0">↓ Abajo</button><button data-d="0,1">→ Derecha</button></span><button id="rs4">Volver al origen</button></div>
+            <div class="flow" id="f4" style="margin-top:14px"></div>
+            <div class="facts" id="facts4"></div>`,
+      after() {
+        const PAT = [[9]];
+        const make = ([r, c]) => { const M = Array.from({ length: 8 }, () => Array(8).fill(0));
+          PAT.forEach((row, a) => row.forEach((v, b) => { M[r + a][c + b] = v; })); return M; };
+        const X0 = make([2, 2]), P0 = pool(X0, 2, 2).out;
+        const paint = () => {
+          const X = make(S4.pos), P = pool(X, 2, 2);
+          let ci = 0, co = 0;
+          X.forEach((r, i) => r.forEach((v, j) => { if (v !== X0[i][j]) ci++; }));
+          P.out.forEach((r, i) => r.forEach((v, j) => { if (v !== P0[i][j]) co++; }));
+          $("#f4").innerHTML = fig("Mapa de características", `desplazado (${S4.pos[1] - 2}, ${S4.pos[0] - 2})`, grid(X, { cls: (i, j) => X[i][j] !== X0[i][j] ? "chg" : "" }))
+            + `<div class="arrow">max 2×2</div>`
+            + fig("Salida actual", "4×4", grid(P.out, { cls: (i, j) => P.out[i][j] !== P0[i][j] ? "chg" : "" }))
+            + fig("Salida original", "4×4", grid(P0));
+          $("#facts4").innerHTML = `<div class="fact"><b>${ci} / 64</b><span>celdas de entrada que cambian</span></div>
+            <div class="fact o"><b>${co} / 16</b><span>celdas de salida que cambian</span></div>
+            <div class="fact"><b>${co === 0 ? "Idéntica" : "Distinta"}</b><span>salida del pooling</span></div>
+            <div class="fact"><b>(${S4.pos[0] >> 1}, ${S4.pos[1] >> 1})</b><span>ventana donde está el máximo (origen: (1, 1))</span></div>`;
+        };
+        const move = (dr, dc) => { S4.pos = [Math.max(0, Math.min(7, S4.pos[0] + dr)), Math.max(0, Math.min(7, S4.pos[1] + dc))]; paint(); };
+        $("#mv").onclick = e => { const b = e.target.closest("button"); if (b) move(...b.dataset.d.split(",").map(Number)); };
+        $("#rs4").onclick = () => { S4.pos = [2, 2]; paint(); };
+        STEP_KEYS = e => { const k = { w: [-1, 0], a: [0, -1], s: [1, 0], d: [0, 1] }[e.key.toLowerCase()]; if (k) move(...k); };
+        paint();
+      } };
+  } },
+
+  /* ------------------------------------------------------------------ 5 */
+  { t: "Sobre una imagen", f() {
+    return {
+      text: `<p>Veamos el efecto sobre una imagen de verdad. Dibuja un dígito en el recuadro (o usa el ejemplo). La imagen de 28×28 pasa por un filtro
+             convolutivo de 3×3 seguido de ReLU, como los de la clase 6, y el mapa resultante se reduce con pooling de 2×2 tres veces seguidas.</p>
+             <p>Fíjate en que, con max-pooling, los trazos que el filtro ha detectado siguen siendo claramente visibles aunque el mapa se reduzca a la
+             mitad, a la cuarta y a la octava parte. Con la media, en cambio, la respuesta se va difuminando.</p>`,
+      formula: `28×28 → conv 3×3 + ReLU → 26×26<br>→ pool → 13×13 → pool → 6×6 → pool → 3×3
+                <span class="c">676 valores se convierten en 169, luego en 36 y finalmente en 9.</span>`,
+      viz: `<div class="row" style="margin-top:0">
+              <span class="ctl">Filtro <span class="seg" id="kern"><button data-v="v">Bordes verticales</button><button data-v="h">Bordes horizontales</button>
+                <button data-v="d">Diagonal</button><button data-v="i">Ninguno</button></span></span>
+              <span class="ctl">Pooling <span class="seg" id="pm"><button data-v="max">Máximo</button><button data-v="avg">Media</button></span></span></div>
+            <div class="maps" id="f5" style="margin-top:14px">
+              <div class="fig"><span>Dibuja aquí <small>28×28</small></span><canvas id="draw" class="px" width="280" height="280"></canvas>
+                <div class="row" style="margin-top:4px"><button class="sm" id="clr">Borrar</button><button class="sm" id="ex">Ejemplo</button></div></div>
+            </div>`,
+      after() {
+        const KER = { v: [[-1, 0, 1], [-1, 0, 1], [-1, 0, 1]], h: [[-1, -1, -1], [0, 0, 0], [1, 1, 1]], d: [[-2, -1, 0], [-1, 0, 1], [0, 1, 2]], i: null };
+        const cv = $("#draw"), g = cv.getContext("2d"), small = document.createElement("canvas"); small.width = small.height = 28;
+        const sg = small.getContext("2d", { willReadFrequently: true });
+        const outs = ["Convolución + ReLU", "Pooling 1", "Pooling 2", "Pooling 3"].map((t, i) => {
+          const f = document.createElement("div"); f.className = "fig"; f.innerHTML = `<span>${t} <small></small></span><canvas class="px"></canvas>`;
+          $("#f5").appendChild(f); return f; });
+        const example = () => { g.fillStyle = "#000"; g.fillRect(0, 0, 280, 280); g.fillStyle = "#fff";
+          g.font = "bold 230px system-ui, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("4", 140, 152); update(); };
+        const segs = () => {
+          $("#kern").querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b.dataset.v === S5.kernel));
+          $("#pm").querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b.dataset.v === S5.mode));
+        };
+        const show = (f, M, vmax, label) => {
+          const H = M.length, W = M[0].length, c = f.querySelector("canvas"); c.width = W; c.height = H;
+          const cg = c.getContext("2d"), im = cg.createImageData(W, H);
+          for (let i = 0; i < H; i++) for (let j = 0; j < W; j++) { const v = Math.round(255 * Math.min(1, M[i][j] / vmax)), q = 4 * (i * W + j);
+            im.data[q] = im.data[q + 1] = im.data[q + 2] = v; im.data[q + 3] = 255; }
+          cg.putImageData(im, 0, 0); f.querySelector("small").textContent = label;
+        };
+        function update() {
+          segs();
+          sg.imageSmoothingEnabled = true; sg.clearRect(0, 0, 28, 28); sg.drawImage(cv, 0, 0, 28, 28);
+          const d = sg.getImageData(0, 0, 28, 28).data, I = [];
+          for (let i = 0; i < 28; i++) { I.push([]); for (let j = 0; j < 28; j++) I[i].push(d[4 * (i * 28 + j)] / 255); }
+          const K = KER[S5.kernel]; let C;
+          if (!K) C = I.slice(1, 27).map(r => r.slice(1, 27));
+          else { C = [];
+            for (let i = 0; i < 26; i++) { C.push([]); for (let j = 0; j < 26; j++) { let s = 0;
+              for (let m = 0; m < 3; m++) for (let n = 0; n < 3; n++) s += I[i + m][j + n] * K[m][n];
+              C[i].push(Math.max(0, s)); } } }
+          const vmax = Math.max(1e-6, ...C.flat());
+          const P1 = pool(C, 2, 2, S5.mode).out, P2 = pool(P1, 2, 2, S5.mode).out, P3 = pool(P2, 2, 2, S5.mode).out;
+          [[C, "26×26"], [P1, "13×13"], [P2, "6×6"], [P3, "3×3"]].forEach(([M, l], i) => show(outs[i], M, vmax, l));
+        }
+        let drawing = false, last = null;
+        const pos = e => { const r = cv.getBoundingClientRect(); return [(e.clientX - r.left) * 280 / r.width, (e.clientY - r.top) * 280 / r.height]; };
+        cv.onpointerdown = e => { drawing = true; last = pos(e); cv.setPointerCapture(e.pointerId); };
+        cv.onpointermove = e => { if (!drawing) return; const p = pos(e);
+          g.strokeStyle = "#fff"; g.lineWidth = 22; g.lineCap = "round"; g.beginPath(); g.moveTo(...last); g.lineTo(...p); g.stroke(); last = p; update(); };
+        cv.onpointerup = cv.onpointercancel = () => { drawing = false; };
+        $("#clr").onclick = () => { g.fillStyle = "#000"; g.fillRect(0, 0, 280, 280); update(); };
+        $("#ex").onclick = example;
+        $("#kern").onclick = e => { const b = e.target.closest("button"); if (b) { S5.kernel = b.dataset.v; update(); } };
+        $("#pm").onclick = e => { const b = e.target.closest("button"); if (b) { S5.mode = b.dataset.v; update(); } };
+        example();
+      } };
+  } },
+
+  /* ------------------------------------------------------------------ 6 */
+  { t: "Retropropagación", f() {
+    return {
+      text: `<p>Durante el entrenamiento, el gradiente de la pérdida tiene que atravesar también las capas de pooling. ¿Cómo se reparte entre las cuatro
+             celdas de cada ventana?</p>
+             <p>Como la salida es igual al máximo, solo la celda <b>ganadora</b> ha influido en ella: si cambiásemos ligeramente cualquiera de las otras
+             tres, la salida no variaría. Por tanto, el gradiente pasa <b>íntegro a la celda ganadora</b> y las demás reciben <b>cero</b>. Por eso la capa
+             necesita recordar, en la fase hacia delante, qué posición fue la máxima en cada ventana.</p>
+             <p>Haz clic en una celda de salida para ver hacia dónde va su gradiente.</p>`,
+      formula: `∂y<sub>i,j</sub> / ∂x<sub>p,q</sub> = 1 si x<sub>p,q</sub> es el máximo de la ventana, 0 en otro caso
+                <span class="c">Con average pooling, en cambio, el gradiente se reparte a partes iguales: ¼ para cada celda de la ventana.</span>`,
+      viz: `<div class="flow" id="f6"></div><div class="calc" id="c6"></div>
+            <div class="row"><button id="new6">Nuevos valores</button></div>`,
+      after() {
+        const paint = () => {
+          const r = mulberry(S6.seed), X = Array.from({ length: 4 }, () => Array.from({ length: 4 }, () => Math.round(r() * 9)));
+          const G = Array.from({ length: 2 }, () => Array.from({ length: 2 }, () => Math.round((r() * 2 - 1) * 10) / 10 || 0.3));
+          const P = pool(X, 2, 2), dX = X.map(row => row.map(() => 0));
+          P.arg.forEach((row, i) => row.forEach(([a, b], j) => { dX[a][b] = G[i][j]; }));
+          const [si, sj] = S6.sel, [ai, aj] = P.arg[si][sj];
+          const inW = (i, j) => (i >> 1) === si && (j >> 1) === sj, sel = (i, j) => i === si && j === sj ? "sel" : "";
+          const gmax = Math.max(...G.flat().map(Math.abs));
+          $("#f6").innerHTML = `<div class="flow">` + fig("Entrada x", "4×4", grid(X, { cls: (i, j) => (inW(i, j) ? "win" : "") + (i === ai && j === aj ? " max" : "") }))
+            + `<div class="arrow">max 2×2</div>` + fig("Salida y", "2×2", grid(P.out, { id: "g6y", cls: sel })) + `</div>`
+            + `<div class="flow" style="margin-top:14px">` + fig("Gradiente ∂L/∂x", "lo que recibe la entrada", grid(dX, { d: 1, vmax: gmax, cls: (i, j) => (inW(i, j) ? "win" : "") + (i === ai && j === aj ? " max" : "") }))
+            + `<div class="arrow back">retropropagación</div>` + fig("Gradiente ∂L/∂y", "llega desde la capa siguiente", grid(G, { id: "g6g", d: 1, vmax: gmax, cls: sel })) + `</div>`;
+          $("#c6").innerHTML = `<span class="h">Ventana (${si}, ${sj})</span>El gradiente ${fmt(G[si][sj], 1)} pasa a la celda (${ai}, ${aj}), que contenía el máximo (${X[ai][aj]}). Las otras tres celdas reciben 0.`;
+          const h = e => { const c = cellOf(e); if (c && (c[0] !== S6.sel[0] || c[1] !== S6.sel[1])) { S6.sel = c; paint(); } };
+          ["#g6y", "#g6g"].forEach(id => { $(id).onclick = h; $(id).onpointerover = h; });
+        };
+        $("#new6").onclick = () => { S6.seed++; paint(); };
+        paint();
+      } };
+  } },
+
+  /* ------------------------------------------------------------------ 7 */
+  { t: "En PyTorch", f() {
+    return {
+      text: `<p>¿Cuánto nos ahorra el pooling? Esta es la red convolutiva para MNIST que describimos en la clase 6, con una capa <i>fully connected</i> de 128
+             neuronas antes de la salida. Activa y desactiva las capas de pooling y observa el número de parámetros.</p>
+             <p>El pooling no tiene parámetros, pero reduce el tamaño de los mapas, y eso hace que la capa <i>fully connected</i> que viene después
+             necesite muchísimos menos pesos. Menos pesos significa una red más rápida y con menos tendencia al sobreajuste.</p>`,
+      formula: `nn.MaxPool2d(kernel_size=2)
+                <span class="c">Entrada: (N, C, H, W) → salida: (N, C, ⌊H/2⌋, ⌊W/2⌋). El número de canales C no cambia.</span>
+                <br>pesos FC = entradas × neuronas + neuronas`,
+      viz: `<div class="cols">
+              <div>
+                <div class="row" style="margin-top:0;gap:8px 20px"><label class="sw"><input type="checkbox" id="p1"> Max-pooling tras la 1.ª convolución</label>
+                  <label class="sw"><input type="checkbox" id="p2"> Max-pooling tras la 2.ª convolución</label></div>
+                <div style="overflow-x:auto;margin-top:10px"><table class="t" id="tab"></table></div>
+                <div class="facts" id="facts7" style="grid-template-columns:repeat(2,minmax(0,1fr))"></div>
+              </div>
+              <pre class="code" id="code7"></pre>
+            </div>`,
+      after() {
+        const paint = () => {
+          $("#p1").checked = S7.p1; $("#p2").checked = S7.p2;
+          const rows = []; let h = 28, total = 0;
+          const add = (name, shape, p, cls = "") => { rows.push({ name, shape, p, cls }); total += p; };
+          add("Entrada", `1 × 28 × 28`, 0);
+          h -= 2; add("Conv2d(1, 32, 3) + ReLU", `32 × ${h} × ${h}`, 32 * 9 + 32);
+          if (S7.p1) { h = Math.floor(h / 2); add("MaxPool2d(2)", `32 × ${h} × ${h}`, 0, "pool"); }
+          h -= 2; add("Conv2d(32, 64, 3) + ReLU", `64 × ${h} × ${h}`, 64 * 32 * 9 + 64);
+          if (S7.p2) { h = Math.floor(h / 2); add("MaxPool2d(2)", `64 × ${h} × ${h}`, 0, "pool"); }
+          const flat = 64 * h * h; add("Flatten", `${num(flat)}`, 0);
+          const fc = flat * 128 + 128; add(`Linear(${num(flat)}, 128) + ReLU`, "128", fc, "big");
+          add("Linear(128, 10)", "10", 128 * 10 + 10);
+          $("#tab").innerHTML = `<tr><th>Capa</th><th>Salida</th><th style="text-align:right">Parámetros</th></tr>` +
+            rows.map(r => `<tr class="${r.cls}"><td>${r.name}</td><td class="n" style="text-align:left">${r.shape}</td><td class="n">${num(r.p)}</td></tr>`).join("");
+          $("#facts7").innerHTML = `<div class="fact"><b>${num(total)}</b><span>parámetros en total</span></div>
+            <div class="fact o"><b>${fmt(100 * fc / total, 1)} %</b><span>están en la capa fully connected</span></div>`;
+          const L = [];
+          L.push(`model = nn.Sequential(`);
+          L.push(`    nn.Conv2d(<span class="k">1</span>, <span class="k">32</span>, kernel_size=<span class="k">3</span>),`, `    nn.ReLU(),`);
+          if (S7.p1) L.push(`    nn.MaxPool2d(<span class="k">2</span>),`);
+          L.push(`    nn.Conv2d(<span class="k">32</span>, <span class="k">64</span>, kernel_size=<span class="k">3</span>),`, `    nn.ReLU(),`);
+          if (S7.p2) L.push(`    nn.MaxPool2d(<span class="k">2</span>),`);
+          L.push(`    nn.Flatten(),  <span class="cm"># ${num(flat)} valores</span>`, `    nn.Linear(<span class="k">${flat}</span>, <span class="k">128</span>),`, `    nn.ReLU(),`,
+                 `    nn.Linear(<span class="k">128</span>, <span class="k">10</span>)`, `)`);
+          $("#code7").innerHTML = L.join("\n");
+        };
+        $("#p1").onchange = e => { S7.p1 = e.target.checked; paint(); };
+        $("#p2").onchange = e => { S7.p2 = e.target.checked; paint(); };
+        paint();
+      } };
+  } },
+];
+
+/* =====================================================================
+   Navegación
+   ===================================================================== */
+let STEP_KEYS = null;
+function renderSteps() {
+  $("#steps").innerHTML = STEPS.map((s, i) => `<button data-s="${i}" class="${i < STEP ? "done" : i === STEP ? "cur" : ""}"${i === STEP ? ' aria-current="step"' : ""}>
+    <span class="n">${i + 1}</span><span class="lbl">${s.t}</span></button>`).join("");
+}
+function renderStep() {
+  stopAnim(); STEP_KEYS = null;
+  const s = STEPS[STEP], r = s.f();
+  $("#st-title").textContent = s.t; $("#st-no").textContent = `Paso ${STEP + 1} de ${STEPS.length}`;
+  $("#st-text").innerHTML = r.text; $("#st-formula").innerHTML = r.formula; $("#viz").innerHTML = r.viz;
+  r.after && r.after();
+  $("#prev").disabled = STEP === 0; $("#next").disabled = STEP === STEPS.length - 1;
+  renderSteps();
+}
+const go = i => { STEP = Math.max(0, Math.min(STEPS.length - 1, i)); renderStep(); };
+$("#steps").addEventListener("click", e => { const b = e.target.closest("button"); if (b) go(+b.dataset.s); });
+$("#prev").onclick = () => go(STEP - 1); $("#next").onclick = () => go(STEP + 1);
+document.addEventListener("keydown", e => { if (e.target.tagName === "INPUT") return;
+  if (e.key === "ArrowRight") go(STEP + 1); else if (e.key === "ArrowLeft") go(STEP - 1); else if (STEP_KEYS) STEP_KEYS(e); });
+renderStep();
+</script>
+</body>
+</html>
