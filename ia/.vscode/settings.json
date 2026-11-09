@@ -1,0 +1,8 @@
+{
+    "python.defaultInterpreterPath": "${workspaceFolder}/nbpy/nlp/.venv/bin/python",
+    "python-envs.workspaceSearchPaths": [
+        ".venv",
+        "*/.venv",
+        "nbpy/nlp/.venv"
+    ]
+}

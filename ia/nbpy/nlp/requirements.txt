@@ -1,0 +1,53 @@
+# Python 3.11. Versiones compatibles con los notebooks antiguos de torchtext.
+numpy==1.26.4
+torch==2.3.0
+torchtext==0.18.0
+torchdata==0.7.1
+torchvision==0.18.0
+portalocker>=2.0.0,<3
+
+# Hugging Face: conservar las API de Trainer y SFTTrainer de los notebooks.
+transformers==4.44.2
+tokenizers==0.19.1
+huggingface-hub>=0.23.2,<1
+datasets==2.21.0
+# PyArrow 26 requiere NumPy 2 en ejecución; torchtext necesita NumPy 1.
+pyarrow==20.0.0
+accelerate==0.34.2
+peft==0.12.0
+trl==0.11.4
+sentencepiece
+protobuf
+sacrebleu
+wandb
+# Los ejercicios que utilizan bitsandbytes requieren CUDA.
+bitsandbytes==0.42.0
+
+# Procesamiento de texto, visualización y aplicaciones.
+nltk
+spacy>=3.8,<3.9
+es-core-news-sm @ https://github.com/explosion/spacy-models/releases/download/es_core_news_sm-3.8.0/es_core_news_sm-3.8.0-py3-none-any.whl
+tiktoken
+tabulate
+pandas<3
+matplotlib
+plotly
+scikit-learn
+beautifulsoup4
+lxml
+requests
+flask
+python-dotenv
+openai
+Pillow
+# Las versiones 4.12 y posteriores requieren NumPy 2; torchtext necesita NumPy 1.
+opencv-python==4.11.0.86
+chromadb
+ctransformers
+llama-cpp-python
+
+# Ejecución de notebooks y kernel para el IDE.
+ipykernel
+ipywidgets
+nbformat
+jupyterlab

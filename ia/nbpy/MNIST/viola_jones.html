@@ -1,0 +1,919 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Detector de Viola-Jones</title>
+<style>
+  /* Layout: barra superior ULPGC · tira de pasos · escenario del paso a todo el ancho */
+  :root {
+    color-scheme: light;
+    /* Colores institucionales ULPGC */
+    --blue: #0266a2; --blue-dark: #014d7a; --blue-soft: #e8f1f8;
+    --orange: #ff9600; --orange-dark: #b86b00; --orange-soft: #fff3e0;
+    --bg: #f4f6f8; --panel: #ffffff; --ink: #1b2430; --muted: #5d6875;
+    --line: #e1e6eb; --hatch-a: #eef1f4; --hatch-b: #d3dae1; --red: #d9480f;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .gut { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  .topbar { background: var(--panel); border-top: 4px solid var(--blue); border-bottom: 1px solid var(--line); }
+  header { max-width: 1280px; margin: 0 auto; padding-block: 18px 20px;
+           display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; }
+  .logo { height: 30px; width: auto; opacity: .9; flex-shrink: 0; margin-top: 4px; }
+  h1 { font-size: 26px; margin: 0 0 6px; letter-spacing: -.01em; color: var(--blue); text-wrap: balance; }
+  h1::after { content: ""; display: block; width: 48px; height: 3px; background: var(--orange); border-radius: 2px; margin-top: 6px; }
+  header p { margin: 0; color: var(--muted); max-width: 88ch; }
+
+  .steps-wrap { max-width: 1280px; margin: 0 auto; padding-block: 16px 0; display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; align-items: center; }
+  .steps { display: flex; flex-wrap: wrap; gap: 6px; }
+  .steps button { display: flex; align-items: center; gap: 7px; padding: 5px 11px 5px 6px; font-size: 13px;
+                  background: var(--panel); border: 1px solid var(--line); border-radius: 999px; }
+  .steps button .n { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center;
+                     background: var(--blue-soft); color: var(--blue); font-weight: 700; font-size: 11px; font-variant-numeric: tabular-nums; }
+  .steps button.done .n { background: var(--blue); color: #fff; }
+  .steps button.cur { border-color: var(--blue); background: var(--blue-soft); font-weight: 600; color: var(--blue-dark); }
+  .steps button.cur .n { background: var(--orange); color: #fff; }
+  .status { font-size: 12.5px; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+  .status .pb { width: 120px; height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; }
+  .status .pb i { display: block; height: 100%; background: var(--orange); width: 0; transition: width .2s; }
+  .status.fin .pb i { background: var(--blue); }
+
+  main { max-width: 1280px; margin: 0 auto; padding-block: 16px 28px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px;
+          box-shadow: 0 1px 2px rgba(16, 40, 64, .04); min-width: 0; }
+  .card h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: var(--blue);
+             margin: 0 0 12px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  .card h2::before { content: ""; width: 4px; height: 14px; background: var(--orange); border-radius: 2px; }
+  .note { color: var(--muted); font-size: 13px; margin: 8px 0 0; }
+  .note b { color: var(--ink); }
+
+  button { font: inherit; padding: 7px 14px; border-radius: 8px; border: 1px solid var(--line);
+           background: var(--bg); color: var(--ink); cursor: pointer; transition: background .15s, border-color .15s; }
+  button:hover { border-color: #c4ccd4; }
+  button:disabled { opacity: .45; cursor: default; }
+  button.primary { background: var(--blue); color: #fff; border-color: var(--blue); font-weight: 600; }
+  button.primary:hover { background: var(--blue-dark); border-color: var(--blue-dark); }
+  button.primary.running { background: var(--orange-dark); border-color: var(--orange-dark); }
+  button:focus-visible, input:focus-visible { outline: 3px solid var(--orange); outline-offset: 2px; }
+  .sm { padding: 4px 10px; font-size: 13px; }
+  input[type=range] { accent-color: var(--orange); }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 9px; overflow: hidden; flex-wrap: wrap; }
+  .seg button { border: 0; border-radius: 0; background: var(--panel); font-size: 13px; padding: 5px 11px; display: flex; align-items: center; gap: 6px; }
+  .seg button + button { border-left: 1px solid var(--line); }
+  .seg button[aria-pressed="true"] { background: var(--blue-soft); font-weight: 600; color: var(--blue-dark); }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; align-items: center; }
+  .ctl { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+  .ctl b { color: var(--orange-dark); font-family: var(--mono); min-width: 3.5ch; }
+
+  .stage-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  .stage-head h2 { margin-bottom: 4px; }
+  .stepno { color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+  .explain { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 16px 28px; margin-bottom: 14px; }
+  .explain .txt p { margin: 0 0 8px; max-width: 74ch; }
+  .explain .txt p:last-child { margin-bottom: 0; }
+  .formula { background: var(--blue-soft); border-radius: 10px; padding: 12px 14px; font-family: var(--mono);
+             font-size: 13.5px; line-height: 1.75; color: var(--blue-dark); align-self: start; overflow-x: auto; }
+  .formula .c { font-family: system-ui, sans-serif; color: var(--muted); font-size: 12.5px; display: block; line-height: 1.45; margin-top: 4px; }
+  .formula b { color: var(--ink); }
+  .viz { overflow-x: auto; padding: 14px 2px 8px; border-top: 1px solid var(--line); min-height: 300px; }
+  .nav { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+  .hint { color: var(--muted); font-size: 12.5px; }
+  kbd { font: 12px var(--mono); background: var(--blue-soft); color: var(--blue); border-radius: 4px; padding: 1px 5px; }
+  .panel-t { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 700; margin: 16px 0 8px; }
+  .panel-t:first-child { margin-top: 0; }
+  .cols { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 20px 28px; align-items: start; }
+  .cols > * { min-width: 0; }
+  .facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-top: 14px; }
+  .fact { background: var(--bg); border-radius: 8px; padding: 10px 12px; }
+  .fact b { display: block; font-size: 20px; color: var(--blue); font-variant-numeric: tabular-nums; }
+  .fact.o { background: var(--orange-soft); } .fact.o b { color: var(--orange-dark); }
+  .fact span { font-size: 12px; color: var(--muted); }
+  .calc { margin-top: 12px; padding: 10px 12px; background: var(--orange-soft); border-radius: 8px;
+          font-family: var(--mono); font-size: 13px; line-height: 1.7; color: #6b3f00; overflow-x: auto; }
+  .calc .h { font-family: system-ui, sans-serif; font-weight: 700; color: var(--orange-dark); font-size: 12px;
+             text-transform: uppercase; letter-spacing: .06em; display: block; }
+  .calc b { color: #3d2400; }
+  .ok { margin-top: 12px; padding: 10px 12px; border-left: 4px solid var(--blue); background: var(--blue-soft); border-radius: 6px; font-size: 13.5px; max-width: 90ch; }
+  .wait { padding: 40px 10px; text-align: center; color: var(--muted); }
+  .wait .pb { width: 260px; height: 8px; margin: 12px auto 0; background: var(--line); border-radius: 4px; overflow: hidden; }
+  .wait .pb i { display: block; height: 100%; background: var(--orange); }
+
+  canvas.px { image-rendering: pixelated; display: block; border-radius: 8px; border: 1px solid var(--line); }
+  canvas.sc { display: block; border-radius: 8px; border: 1px solid var(--line); width: 100%; height: auto; }
+  .fig { display: flex; flex-direction: column; gap: 6px; }
+  .fig > span { font-size: 12.5px; font-weight: 700; color: var(--blue-dark); }
+  .fig small { font-weight: 400; color: var(--muted); }
+  svg text { font-family: system-ui, sans-serif; }
+  .gal { display: grid; grid-template-columns: repeat(12, 48px); gap: 4px; }
+  .gal div { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .gal canvas { width: 48px; height: 48px; image-rendering: pixelated; border-radius: 4px; border: 2px solid transparent; }
+  .gal span { font: 10.5px var(--mono); color: var(--muted); }
+  .ftypes button svg { display: block; }
+
+  /* Imagen integral */
+  .grids { display: flex; gap: 28px; flex-wrap: wrap; align-items: flex-start; }
+  .grid { display: grid; gap: 2px; user-select: none; touch-action: none; }
+  .grid .c { width: 40px; height: 30px; border-radius: 3px; display: grid; place-items: center; font: 10px var(--mono); position: relative; }
+  .grid .c.sel { box-shadow: inset 0 0 0 2px var(--orange); }
+  .grid .c.corner { box-shadow: inset 0 0 0 3px var(--orange-dark); font-weight: 700; }
+  .grid .c.corner::after { content: attr(data-l); position: absolute; top: -1px; left: 2px; font: 700 10px system-ui; color: var(--orange-dark);
+                           background: #fff; border-radius: 3px; padding: 0 2px; line-height: 12px; }
+  .grid .c.build { box-shadow: inset 0 0 0 3px var(--blue); }
+  .grid .c.dep { box-shadow: inset 0 0 0 2px #6fa8d0; }
+  .grid .lab { font-size: 11px; color: var(--muted); display: grid; place-items: center; }
+
+  /* Cascada */
+  .casc { display: flex; align-items: stretch; gap: 0; flex-wrap: nowrap; width: max-content; padding: 6px 0 4px; }
+  .stg { width: 150px; border: 2px solid var(--blue); border-radius: 12px; padding: 10px; background: var(--blue-soft); display: flex; flex-direction: column; gap: 6px; align-items: center; position: relative; }
+  .stg h4 { margin: 0; font-size: 13px; color: var(--blue-dark); }
+  .stg .m { font: 11.5px var(--mono); color: var(--muted); text-align: center; line-height: 1.5; }
+  .stg canvas { width: 72px; height: 72px; image-rendering: pixelated; border-radius: 6px; border: 1px solid #c9dbea; }
+  .arr { width: 44px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; color: var(--blue); font-size: 12px; }
+  .arr::before { content: "→"; font-size: 24px; line-height: 1; }
+  .arr span { font: 10.5px var(--mono); color: var(--muted); }
+  .rej { margin-top: 6px; font: 11.5px var(--mono); color: var(--red); text-align: center; }
+  .final { width: 92px; border: 2px solid var(--orange); background: var(--orange-soft); border-radius: 12px; display: grid; place-items: center; font-weight: 700; color: var(--orange-dark); text-align: center; padding: 8px; }
+  .funnel { display: grid; grid-template-columns: 160px minmax(200px, 1fr) 150px; gap: 6px 12px; align-items: center; font-size: 13px; max-width: 900px; }
+  .funnel .l { text-align: right; color: var(--muted); }
+  .funnel .tr { height: 22px; background: var(--bg); border-radius: 4px; position: relative; overflow: hidden; }
+  .funnel .tr i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--blue); border-radius: 4px; }
+  .funnel .tr i.f { background: var(--orange); }
+  .funnel .v { font-family: var(--mono); font-size: 12.5px; }
+
+  .tiles { display: flex; flex-wrap: wrap; gap: 8px; }
+  .tile { display: flex; flex-direction: column; align-items: center; gap: 2px; font: 10.5px var(--mono); color: var(--muted); }
+  .tile canvas { width: 72px; height: 72px; image-rendering: pixelated; border-radius: 6px; border: 2px solid var(--line); }
+  .tile.new canvas { border-color: var(--orange); }
+
+  @media (max-width: 900px) {
+    .explain, .cols { grid-template-columns: minmax(0, 1fr); }
+    .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .logo { height: 24px; }
+    .gal { grid-template-columns: repeat(6, 48px); }
+    .funnel { grid-template-columns: 110px minmax(120px, 1fr) 110px; }
+  }
+  @media (max-width: 560px) {
+    .steps button .lbl { display: none; }
+    .steps button { padding: 5px; }
+    header { flex-direction: column-reverse; gap: 10px; }
+  }
+</style>
+</head>
+<body>
+<div class="topbar gut">
+<header>
+  <div>
+    <h1>El detector de caras de Viola-Jones</h1>
+    <p>En 2001, Paul Viola y Michael Jones presentaron el primer detector de caras capaz de funcionar en tiempo real. Su secreto: características
+       muy simples (<b>Haar</b>) calculadas al instante con la <b>imagen integral</b>, elegidas y combinadas con <b>AdaBoost</b> y organizadas en una
+       <b>cascada</b> que descarta casi todo el fondo con muy pocas operaciones. Aquí se entrena un detector real en tu navegador, con caras
+       esquemáticas generadas por ordenador.</p>
+  </div>
+  <img class="logo" src="logo-ulpgc.jpg" alt="ULPGC · Universidad de Las Palmas de Gran Canaria">
+</header>
+</div>
+
+<div class="steps-wrap gut">
+  <nav class="steps" id="steps" aria-label="Pasos"></nav>
+  <div class="status" id="status"><span id="stTxt">Preparando datos…</span><span class="pb"><i id="stBar"></i></span></div>
+</div>
+
+<main class="gut">
+  <section class="card" aria-live="polite">
+    <div class="stage-head">
+      <h2 id="st-title">—</h2>
+      <span class="stepno" id="st-no"></span>
+    </div>
+    <div class="explain">
+      <div class="txt" id="st-text"></div>
+      <div class="formula" id="st-formula"></div>
+    </div>
+    <div class="viz" id="viz"></div>
+    <div class="nav">
+      <button id="prev">← Anterior</button>
+      <span class="hint">También con <kbd>←</kbd> <kbd>→</kbd></span>
+      <button id="next" class="primary">Siguiente →</button>
+    </div>
+  </section>
+</main>
+
+<script>
+/* =====================================================================
+   Utilidades
+   ===================================================================== */
+const $ = s => document.querySelector(s);
+const fmt = (v, d = 0) => (Math.abs(v) < 5 * 10 ** -(d + 1) ? 0 : v).toFixed(d).replace(".", ",").replace("-", "−");
+const num = v => Math.round(v).toLocaleString("es");
+const pct = (v, d = 1) => fmt(v * 100, d) + " %";
+const tick = () => new Promise(r => setTimeout(r, 0));
+function mulberry(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a);
+  t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const gray = v => { v = Math.max(0, Math.min(255, v | 0)); return `rgb(${v},${v},${v})`; };
+const mk = (w, h) => { const c = document.createElement("canvas"); c.width = w; c.height = h; return c; };
+function ell(g, x, y, rx, ry) { g.beginPath(); g.ellipse(x, y, rx, ry, 0, 0, 7); g.fill(); }
+function seg(g, x1, y1, x2, y2) { g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2, y2); g.stroke(); }
+const C = { blue: "#0266a2", bd: "#014d7a", or: "#ff9600", od: "#b86b00", red: "#d9480f", mu: "#5d6875", li: "#e1e6eb" };
+
+/* =====================================================================
+   Generador de caras esquemáticas y escenas
+   ===================================================================== */
+// Dibuja una cara centrada en (cx, cy) dentro de una caja de lado s
+function drawFace(g, cx, cy, s, r) {
+  g.save(); g.translate(cx, cy); g.rotate((r() - .5) * .16); const k = s * (.95 + r() * .1) / 24; g.scale(k, k);
+  const skin = 140 + r() * 90, dark = 15 + r() * 45, hair = 20 + r() * 70;
+  if (r() < .7) { g.fillStyle = gray(hair); ell(g, 0, -5.5, 12.3, 10.5); }
+  g.fillStyle = gray(skin); ell(g, 0, 1.6, 10.3, 12.8);
+  g.save(); g.beginPath(); g.ellipse(0, 1.6, 10.3, 12.8, 0, 0, 7); g.clip();
+  const sh = (r() - .5) * .6, lg = g.createLinearGradient(-11, 0, 11, 0);
+  lg.addColorStop(0, `rgba(${sh > 0 ? "255,255,255" : "0,0,0"},${Math.abs(sh) * .55})`); lg.addColorStop(.6, "rgba(0,0,0,0)");
+  lg.addColorStop(1, `rgba(${sh > 0 ? "0,0,0" : "255,255,255"},${Math.abs(sh) * .35})`);
+  g.fillStyle = lg; g.fillRect(-12, -12, 24, 28); g.restore();
+  const ey = -2.6 + (r() - .5) * .8, ex = 4.5 + (r() - .5) * .7;
+  g.strokeStyle = gray(dark + 25); g.lineWidth = 1.4; g.lineCap = "round";
+  seg(g, -ex - 2.6, ey - 2.4, -ex + 2.2, ey - 2.9); seg(g, ex - 2.2, ey - 2.9, ex + 2.6, ey - 2.4);
+  g.fillStyle = gray(dark); ell(g, -ex, ey, 2.3, 1.35); ell(g, ex, ey, 2.3, 1.35);
+  g.fillStyle = gray(skin + 30); ell(g, 0, 1.2, .9, 3.2);
+  g.fillStyle = gray(skin - 45); ell(g, -1.3, 4.6, .8, .6); ell(g, 1.3, 4.6, .8, .6);
+  g.fillStyle = gray(dark + 35); ell(g, 0, 8.4 + (r() - .5) * .8, 3.4 + r() * 1.2, 1.1 + r() * .4);
+  g.restore();
+}
+// Objetos de fondo: edificios con ventanas, círculos, árboles, letras, rayas…
+function clutter(g, W, H, r, n) {
+  for (let i = 0; i < n; i++) {
+    const kind = r(), x = r() * W, y = r() * H, s = 10 + r() * Math.min(W, H) * .45, c = 30 + r() * 200;
+    g.fillStyle = gray(c); g.strokeStyle = gray(255 - c);
+    if (kind < .25) { const w = s * (.5 + r()), h = s * (.8 + r());
+      g.fillRect(x, y, w, h); g.fillStyle = gray(c > 128 ? c - 90 : c + 90); const ww = 2 + r() * 5, gap = ww * (1.6 + r());
+      for (let yy = y + gap * .6; yy < y + h - ww; yy += gap * 1.3) for (let xx = x + gap * .5; xx < x + w - ww; xx += gap) g.fillRect(xx, yy, ww, ww * (.6 + r())); }
+    else if (kind < .42) ell(g, x, y, s * .3, s * .3 * (.6 + r() * .8));
+    else if (kind < .52) { g.fillStyle = gray(60 + r() * 60); g.fillRect(x - 2, y, 5, s * .5); g.fillStyle = gray(40 + r() * 120); ell(g, x, y, s * .25, s * .3); }
+    else if (kind < .64) { g.font = `bold ${Math.round(8 + r() * 30)}px sans-serif`; g.fillText("ABCDEFGHJKMOPRSTUVWXYZ08".split("").sort(() => r() - .5).slice(0, 1 + (r() * 4 | 0)).join(""), x, y); }
+    else if (kind < .76) { g.lineWidth = 1 + r() * 4; for (let k = 0; k < 4 + r() * 6; k++) seg(g, x, y + k * 6, x + s, y + k * 6 + (r() - .5) * 20); }
+    else if (kind < .86) { g.beginPath(); g.moveTo(x, y); g.lineTo(x + s * .6, y + s * .2); g.lineTo(x + s * .2, y + s * .7); g.fill(); }
+    else if (kind < .93) { const q = 2 + r() * 6; for (let a = 0; a < 6; a++) for (let b = 0; b < 6; b++) { g.fillStyle = gray((a + b) % 2 ? c : 255 - c); g.fillRect(x + a * q, y + b * q, q, q); } }
+    else { g.lineWidth = 1 + r() * 3; g.beginPath(); g.arc(x, y, s * .3, 0, 7); g.stroke(); }
+  }
+}
+function readGray(c) {
+  const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data, n = c.width * c.height, o = new Float32Array(n);
+  for (let i = 0; i < n; i++) o[i] = d[4 * i]; return o;
+}
+function integral(gr, W, H) {
+  const W1 = W + 1, ii = new Float64Array(W1 * (H + 1)), sq = new Float64Array(W1 * (H + 1));
+  for (let y = 0; y < H; y++) { let rs = 0, rq = 0;
+    for (let x = 0; x < W; x++) { const v = gr[y * W + x]; rs += v; rq += v * v;
+      ii[(y + 1) * W1 + x + 1] = ii[y * W1 + x + 1] + rs; sq[(y + 1) * W1 + x + 1] = sq[y * W1 + x + 1] + rq; } }
+  return { ii, sq, W1 };
+}
+const rs = (ii, W1, x, y, w, h) => ii[(y + h) * W1 + x + w] - ii[y * W1 + x + w] - ii[(y + h) * W1 + x] + ii[y * W1 + x];
+function makeScene(seed, withFaces = true, W = 320, H = 240) {
+  const r = mulberry(seed), c = mk(W, H), g = c.getContext("2d");
+  const gr = g.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, gray(120 + r() * 120)); gr.addColorStop(1, gray(40 + r() * 120));
+  g.fillStyle = gr; g.fillRect(0, 0, W, H); clutter(g, W, H, r, 26 + r() * 14);
+  const boxes = [];
+  if (withFaces) {
+    const n = 3 + (r() * 3 | 0);
+    for (let tries = 0; boxes.length < n && tries < 200; tries++) {
+      const s = 30 + r() * 52, cx = s / 2 + 4 + r() * (W - s - 8), cy = s / 2 + 4 + r() * (H - s * 1.4 - 8);
+      if (boxes.some(b => Math.abs(b.cx - cx) < (b.s + s) * .62 && Math.abs(b.cy - cy) < (b.s + s) * .75)) continue;
+      boxes.push({ cx, cy, s });
+    }
+    boxes.forEach(b => { g.fillStyle = gray(30 + r() * 180); ell(g, b.cx, b.cy + b.s * 1.05, b.s * .7, b.s * .5); g.fillRect(b.cx - b.s * .12, b.cy + b.s * .4, b.s * .24, b.s * .3); drawFace(g, b.cx, b.cy, b.s, r); });
+  }
+  const gray0 = readGray(c); for (let i = 0; i < gray0.length; i++) gray0[i] = Math.max(0, Math.min(255, gray0[i] + (r() - .5) * 10));
+  const img = g.createImageData(W, H); for (let i = 0; i < gray0.length; i++) { img.data[4 * i] = img.data[4 * i + 1] = img.data[4 * i + 2] = gray0[i]; img.data[4 * i + 3] = 255; }
+  g.putImageData(img, 0, 0);
+  return { c, W, H, gray: gray0, ...integral(gray0, W, H), boxes: boxes.map(b => ({ x: b.cx - b.s / 2, y: b.cy - b.s / 2, s: b.s })) };
+}
+
+/* =====================================================================
+   Muestras de 24×24
+   ===================================================================== */
+function sample(gr) {
+  const I = integral(gr, 24, 24), mu = I.ii[625 - 1] / 576, v = I.sq[625 - 1] / 576 - mu * mu;
+  return { g: gr, ii: I.ii, mu, sd: Math.sqrt(Math.max(v, 1)) };
+}
+function faceAtlas(n, seed) {
+  const r = mulberry(seed), cols = 25, A = mk(cols * 24, Math.ceil(n / cols) * 24), g = A.getContext("2d");
+  for (let i = 0; i < n; i++) {
+    const ox = (i % cols) * 24, oy = Math.floor(i / cols) * 24;
+    g.save(); g.beginPath(); g.rect(ox, oy, 24, 24); g.clip();
+    g.fillStyle = gray(r() * 255); g.fillRect(ox, oy, 24, 24);
+    if (r() < .6) { g.translate(ox, oy); clutter(g, 24, 24, r, 3); g.translate(-ox, -oy); }
+    drawFace(g, ox + 12 + (r() - .5) * 1.6, oy + 12 + (r() - .5) * 1.6, 24 * (.94 + r() * .1), r);
+    g.restore();
+  }
+  return cutAtlas(A, n, cols, r);
+}
+function cutAtlas(A, n, cols, r) {
+  const d = A.getContext("2d").getImageData(0, 0, A.width, A.height).data, out = [];
+  for (let i = 0; i < n; i++) { const ox = (i % cols) * 24, oy = Math.floor(i / cols) * 24, gr = new Float32Array(576);
+    for (let y = 0; y < 24; y++) for (let x = 0; x < 24; x++) gr[y * 24 + x] = Math.max(0, Math.min(255, d[4 * ((oy + y) * A.width + ox + x)] + (r() - .5) * 12));
+    out.push(sample(gr)); }
+  return out;
+}
+function cropWindows(list) {
+  const cols = 50, A = mk(cols * 24, Math.ceil(list.length / cols) * 24), g = A.getContext("2d");
+  list.forEach(({ sc, w }, i) => g.drawImage(sc.c, w.x, w.y, w.ws, w.ws, (i % cols) * 24, Math.floor(i / cols) * 24, 24, 24));
+  return cutAtlas(A, list.length, cols, mulberry(list.length));
+}
+function negAtlas(n, scenes, seed) {
+  const r = mulberry(seed), cols = 100, A = mk(cols * 24, Math.ceil(n / cols) * 24), g = A.getContext("2d");
+  for (let i = 0; i < n; i++) {
+    const sc = scenes[i % scenes.length], s = Math.min(24 * Math.pow(1.25, r() * 9), Math.min(sc.W, sc.H) - 1);
+    g.drawImage(sc.c, r() * (sc.W - s), r() * (sc.H - s), s, s, (i % cols) * 24, Math.floor(i / cols) * 24, 24, 24);
+  }
+  return cutAtlas(A, n, cols, r);
+}
+
+/* =====================================================================
+   Características de Haar
+   ===================================================================== */
+// tipo → función que da los rectángulos [x, y, w, h, peso] a partir de la celda (cw × ch); peso +1 blanco, −1 negro
+const TYPES = {
+  h2: { n: "2 horizontal", bw: 2, bh: 1, r: (x, y, w, h) => [[x, y, w, h, 1], [x + w, y, w, h, -1]] },
+  v2: { n: "2 vertical", bw: 1, bh: 2, r: (x, y, w, h) => [[x, y, w, h, -1], [x, y + h, w, h, 1]] },
+  h3: { n: "3 horizontal", bw: 3, bh: 1, r: (x, y, w, h) => [[x, y, w, h, -1], [x + w, y, w, h, 1], [x + 2 * w, y, w, h, -1]] },
+  v3: { n: "3 vertical", bw: 1, bh: 3, r: (x, y, w, h) => [[x, y, w, h, -1], [x, y + h, w, h, 1], [x, y + 2 * h, w, h, -1]] },
+  d4: { n: "4 diagonal", bw: 2, bh: 2, r: (x, y, w, h) => [[x, y, w, h, 1], [x + w, y, w, h, -1], [x, y + h, w, h, -1], [x + w, y + h, w, h, 1]] },
+};
+const feat = (type, x, y, cw, ch) => ({ type, x, y, cw, ch, r: TYPES[type].r(x, y, cw, ch) });
+function fval(f, S) { let v = 0; for (const [x, y, w, h, wt] of f.r) v += wt * (rs(S.ii, 25, x, y, w, h) - S.mu * w * h); return v / S.sd; }
+const TOTAL_FEATS = Object.values(TYPES).reduce((s, t) => { let c = 0; for (let w = t.bw; w <= 24; w += t.bw) for (let h = t.bh; h <= 24; h += t.bh) c += (25 - w) * (25 - h); return s + c; }, 0);
+function randomFeature(r) {
+  const keys = Object.keys(TYPES), type = keys[r() * keys.length | 0], t = TYPES[type];
+  const cw = 1 + (r() * (24 / t.bw) | 0), ch = 1 + (r() * (24 / t.bh) | 0);
+  if (cw * ch < 2) return randomFeature(r);
+  return feat(type, r() * (25 - cw * t.bw) | 0, r() * (25 - ch * t.bh) | 0, cw, ch);
+}
+function drawFeature(g, f, k, a = 1, outline = C.or) {
+  for (const [x, y, w, h, wt] of f.r) { g.fillStyle = wt > 0 ? `rgba(255,255,255,${.78 * a})` : `rgba(0,0,0,${.78 * a})`; g.fillRect(x * k, y * k, w * k, h * k); }
+  const t = TYPES[f.type]; g.strokeStyle = outline; g.globalAlpha = a; g.lineWidth = Math.max(1.5, k / 5);
+  g.strokeRect(f.x * k, f.y * k, f.cw * t.bw * k, f.ch * t.bh * k); g.globalAlpha = 1;
+}
+function typeIcon(type) {
+  const t = TYPES[type], s = 18 / Math.max(t.bw, t.bh), r = t.r(0, 0, s * (t.bw === 1 ? (t.bh === 1 ? 1 : t.bh) / 1 : 1), s);
+  const f = feat(type, 0, 0, t.bw === 1 ? 18 : 18 / t.bw, t.bh === 1 ? 18 : 18 / t.bh);
+  return `<svg width="20" height="20" viewBox="-1 -1 20 20">${f.r.map(([x, y, w, h, wt]) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${wt > 0 ? "#fff" : "#1b2430"}" stroke="#1b2430" stroke-width=".8"/>`).join("")}</svg>`;
+}
+
+/* =====================================================================
+   AdaBoost (versión de Viola y Jones) sobre valores precalculados
+   ===================================================================== */
+function prepare(X, F, onProg) {        // valores de cada característica en cada muestra y su orden
+  const N = X.length, V = new Float32Array(F.length * N), O = new Uint16Array(F.length * N), idx = new Uint16Array(N);
+  return (async () => {
+    for (let f = 0; f < F.length; f++) {
+      const off = f * N, ft = F[f];
+      for (let i = 0; i < N; i++) V[off + i] = fval(ft, X[i]);
+      for (let i = 0; i < N; i++) idx[i] = i;
+      const sub = V.subarray(off, off + N); const sorted = Array.from(idx).sort((a, b) => sub[a] - sub[b]); O.set(sorted, off);
+      if (f % 150 === 149) { onProg && onProg(f / F.length); await tick(); }
+    }
+    return { V, O, N };
+  })();
+}
+class Ada {
+  constructor(X, y, F, P) { this.X = X; this.y = y; this.F = F; this.P = P; const l = y.filter(v => v).length, m = y.length - l;
+    this.w = Float64Array.from(y, v => v ? 1 / (2 * l) : 1 / (2 * m)); this.weak = []; this.hist = []; this.score = new Float64Array(y.length); }
+  round() {
+    const { V, O, N } = this.P, y = this.y, w = this.w; let s = 0; for (let i = 0; i < N; i++) s += w[i]; for (let i = 0; i < N; i++) w[i] /= s;
+    let Tp = 0, Tn = 0; for (let i = 0; i < N; i++) y[i] ? Tp += w[i] : Tn += w[i];
+    let best = { e: 1 };
+    for (let f = 0; f < this.F.length; f++) {
+      const off = f * N; let Sp = 0, Sn = 0, prev = -Infinity;
+      for (let k = 0; k <= N; k++) {
+        const idx = k < N ? O[off + k] : -1, v = k < N ? V[off + idx] : Infinity;
+        if (v !== prev) {
+          const thr = k === 0 ? v - 1 : k === N ? prev + 1 : (prev + v) / 2;
+          const e1 = Sn + (Tp - Sp), e2 = Sp + (Tn - Sn);           // e1: cara si valor < θ · e2: cara si valor > θ
+          if (e1 < best.e) best = { e: e1, f, thr, pol: 1 }; if (e2 < best.e) best = { e: e2, f, thr, pol: -1 };
+        }
+        if (k < N) { y[idx] ? Sp += w[idx] : Sn += w[idx]; prev = v; }
+      }
+    }
+    const e = Math.max(best.e, 1e-6), beta = e / (1 - e), a = Math.log(1 / beta), off = best.f * N;
+    const h = { f: this.F[best.f], thr: best.thr, pol: best.pol, a, e: best.e };
+    const wrong = [];
+    for (let i = 0; i < N; i++) { const hi = best.pol * V[off + i] < best.pol * best.thr ? 1 : 0;
+      if (hi === y[i]) w[i] *= beta; else wrong.push(i); if (hi) this.score[i] += a; }
+    this.weak.push(h);
+    const half = this.weak.reduce((s, q) => s + q.a, 0) / 2; let err = 0, tp = 0, fp = 0, P = 0;
+    for (let i = 0; i < N; i++) { const c = this.score[i] >= half - 1e-9; if (y[i]) { P++; if (c) tp++; } else if (c) fp++; if (c !== !!y[i]) err++; }
+    this.hist.push({ e: best.e, err: err / N, det: tp / P, fp: fp / (N - P) }); this.lastWrong = new Set(wrong);
+    return h;
+  }
+}
+const weakOut = (h, S) => h.pol * fval(h.f, S) < h.pol * h.thr ? 1 : 0;
+const stageScore = (st, S) => st.weak.reduce((s, h) => s + (weakOut(h, S) ? h.a : 0), 0);
+const passes = (casc, S, upto = casc.length) => { for (let k = 0; k < upto; k++) if (stageScore(casc[k], S) < casc[k].thr) return false; return true; };
+
+/* =====================================================================
+   Datos y entrenamiento en segundo plano
+   ===================================================================== */
+const D = { ready: false, cascReady: false, listeners: [] };
+const STAGE_SIZES = [2, 5, 10, 16, 24, 32, 40, 50];
+function setStatus(txt, p, ok) { $("#stTxt").textContent = txt; $("#stBar").style.width = (p * 100).toFixed(0) + "%"; $("#status").classList.toggle("fin", !!ok); }
+async function buildAll() {
+  setStatus("Generando caras y fondos…", .02); await tick();
+  D.faces = faceAtlas(600, 11); D.train = D.faces.slice(0, 400); D.test = D.faces.slice(400);
+  const bg = Array.from({ length: 10 }, (_, i) => makeScene(500 + i, false));
+  D.pool = negAtlas(9000, bg, 77);
+  D.mean = new Float32Array(576); D.train.forEach(S => S.g.forEach((v, i) => D.mean[i] += v / 400));
+  const r = mulberry(4242); D.F = Array.from({ length: 2000 }, () => randomFeature(r));
+  D.neg0 = D.pool.slice(0, 600);
+  setStatus("Calculando características…", .08); await tick();
+  D.X0 = [...D.train, ...D.neg0]; D.y0 = D.X0.map((_, i) => i < 400 ? 1 : 0);
+  D.P0 = await prepare(D.X0, D.F, p => setStatus("Calculando características…", .08 + .17 * p));
+  D.ready = true; notify();
+  // ---- cascada con minado de negativos difíciles (bootstrapping) ----
+  D.casc = []; D.stageInfo = []; let negs = D.neg0, P = D.P0, X = D.X0, y = D.y0, sceneNo = 0;
+  for (let s = 0; s < STAGE_SIZES.length; s++) {
+    const base = .25 + .75 * s / STAGE_SIZES.length, span = .75 / STAGE_SIZES.length, msg = `Entrenando la etapa ${s + 1} de la cascada…`;
+    if (s > 0) { X = [...D.train, ...negs]; y = X.map((_, i) => i < 400 ? 1 : 0);
+      P = await prepare(X, D.F, p => setStatus(msg, base + span * .4 * p)); }
+    if (s === 2 || (s === 1 && !D.adaSet)) D.adaSet = { X, y, P };
+    const ab = new Ada(X, y, D.F, P);
+    for (let t = 0; t < STAGE_SIZES[s]; t++) { ab.round(); if (t % 4 === 3) { setStatus(msg, base + span * (.4 + .2 * t / STAGE_SIZES[s])); await tick(); } }
+    const half = ab.weak.reduce((q, h) => q + h.a, 0) / 2;
+    const fs = D.train.map(S => ab.weak.reduce((q, h) => q + (weakOut(h, S) ? h.a : 0), 0)).sort((a, b) => a - b);
+    const thr = Math.min(half, fs[Math.floor(fs.length * .005)] - 1e-9);
+    D.casc.push({ weak: ab.weak, thr, half });
+    // minado: escanear escenas y quedarse con las ventanas de fondo que superan toda la cascada actual
+    const found = [], need = 600; let scanned = 0, scenes = 0;
+    while (found.length < need && scenes < 70) {
+      const withF = sceneNo % 3 === 2, sc = makeScene(1000 + sceneNo++, withF), R = scan(sc, { sf: 1.25, step: 1.5 }, D.casc);
+      let fp = R.win.filter(w => w.reached === D.casc.length);
+      if (withF) fp = fp.filter(w => !sc.boxes.some(b => { const ix = Math.max(0, Math.min(w.x + w.ws, b.x + b.s) - Math.max(w.x, b.x)), iy = Math.max(0, Math.min(w.y + w.ws, b.y + b.s) - Math.max(w.y, b.y)); return ix * iy > .1 * Math.min(w.ws * w.ws, b.s * b.s); }));
+      else scanned += R.win.length;
+      const rr = mulberry(sceneNo * 7 + s); fp.sort(() => rr() - .5).slice(0, 90).forEach(w => found.push({ sc, w }));
+      scenes++; if (scenes % 4 === 0) { setStatus(msg + " (buscando negativos difíciles)", base + span * (.6 + .4 * Math.min(1, found.length / need))); await tick(); }
+    }
+    D.stageInfo.push({ n: STAGE_SIZES[s], det: D.train.filter(S => passes(D.casc, S)).length / 400, detTest: D.test.filter(S => passes(D.casc, S)).length / 200,
+                       fp: D.pool.filter(S => passes(D.casc, S)).length / D.pool.length, negs: negs.length, mined: found.length, scenes });
+    setStatus(`Etapa ${s + 1} entrenada`, base + span); await tick();
+    if (found.length < 40) break;
+    negs = cropWindows(found.slice(0, need));
+  }
+  D.cascReady = true; setStatus(`Detector listo: ${D.casc.length} etapas, ${D.casc.reduce((q, s) => q + s.weak.length, 0)} características`, 1, true); notify();
+}
+function notify() { if (STEPS[STEP].needs && (STEPS[STEP].needs === "data" ? D.ready : D.cascReady)) renderStep(); }
+
+/* =====================================================================
+   Escaneo de una escena con la cascada
+   ===================================================================== */
+let SCENE_SEED = 3, SCENE = makeScene(SCENE_SEED);
+function scan(sc, { sf = 1.25, step = 1.5 } = {}, casc = D.casc) {
+  const t0 = performance.now(), { ii, sq, W1, W, H } = sc, S = casc.length, win = [], enter = new Array(S + 1).fill(0); let feats = 0;
+  for (let s = 1; Math.round(24 * s) <= Math.min(W, H); s *= sf) {
+    const ws = Math.round(24 * s), st = Math.max(1, Math.round(step * s)), A = ws * ws, k = ws / 24, k2 = k * k;
+    const stages = casc.map(z => ({ thr: z.thr, weak: z.weak.map(h => ({ pol: h.pol, thr: h.thr, a: h.a,
+      r: h.f.r.map(([x, y, w, hh, wt]) => { const X0 = Math.round(x * k), Y0 = Math.round(y * k), w2 = Math.max(1, Math.round((x + w) * k) - X0), h2 = Math.max(1, Math.round((y + hh) * k) - Y0); return [X0, Y0, w2, h2, wt]; }) })) }));
+    for (let y = 0; y + ws <= H; y += st) for (let x = 0; x + ws <= W; x += st) {
+      const mu = rs(ii, W1, x, y, ws, ws) / A, v = rs(sq, W1, x, y, ws, ws) / A - mu * mu, sd = Math.sqrt(Math.max(v, 1)) * k2;
+      let reached = 0;
+      for (let q = 0; q < S; q++) {
+        enter[q]++; const z = stages[q]; let sc2 = 0;
+        for (const h of z.weak) { let val = 0; for (const [rx, ry, rw, rh, wt] of h.r) val += wt * (rs(ii, W1, x + rx, y + ry, rw, rh) - mu * rw * rh);
+          feats++; if (h.pol * val / sd < h.pol * h.thr) sc2 += h.a; }
+        if (sc2 < z.thr) break; reached++;
+      }
+      if (reached === S) enter[S]++;
+      win.push({ x, y, ws, reached });
+    }
+  }
+  return { win, enter, feats, ms: performance.now() - t0 };
+}
+function groupDets(dets, minN) {
+  const n = dets.length, par = dets.map((_, i) => i), find = i => par[i] === i ? i : (par[i] = find(par[i]));
+  const iou = (a, b) => { const ix = Math.max(0, Math.min(a.x + a.ws, b.x + b.ws) - Math.max(a.x, b.x)), iy = Math.max(0, Math.min(a.y + a.ws, b.y + b.ws) - Math.max(a.y, b.y)), I = ix * iy;
+    return I / (a.ws * a.ws + b.ws * b.ws - I); };
+  for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) if (iou(dets[i], dets[j]) > .3) par[find(i)] = find(j);
+  const G = {}; dets.forEach((d, i) => (G[find(i)] = G[find(i)] || []).push(d));
+  return Object.values(G).filter(g => g.length >= minN).map(g => ({ x: g.reduce((s, d) => s + d.x, 0) / g.length, y: g.reduce((s, d) => s + d.y, 0) / g.length,
+    ws: g.reduce((s, d) => s + d.ws, 0) / g.length, n: g.length }));
+}
+const hit = (b, gt) => { const ix = Math.max(0, Math.min(b.x + b.ws, gt.x + gt.s) - Math.max(b.x, gt.x)), iy = Math.max(0, Math.min(b.y + b.ws, gt.y + gt.s) - Math.max(b.y, gt.y));
+  return ix * iy / (b.ws * b.ws + gt.s * gt.s - ix * iy) > .3; };
+function countWindows(W, H, sf = 1.25, step = 1.5) { let n = 0; for (let s = 1; Math.round(24 * s) <= Math.min(W, H); s *= sf) { const ws = Math.round(24 * s), st = Math.max(1, Math.round(step * s)); n += (Math.floor((W - ws) / st) + 1) * (Math.floor((H - ws) / st) + 1); } return n; }
+
+/* =====================================================================
+   Dibujo auxiliar
+   ===================================================================== */
+function putGray(c, gr, W, H) { const g = c.getContext("2d"), im = g.createImageData(W, H); for (let i = 0; i < W * H; i++) { im.data[4 * i] = im.data[4 * i + 1] = im.data[4 * i + 2] = gr[i]; im.data[4 * i + 3] = 255; } g.putImageData(im, 0, 0); return g; }
+function tileCanvas(gr, size = 24) { const c = mk(24, 24); putGray(c, gr, 24, 24); return c; }
+function faceWithFeatures(c, feats, scale = 3, a = 1, newest = -1) {
+  const g = c.getContext("2d"); g.imageSmoothingEnabled = false; const t = tileCanvas(D.mean); g.drawImage(t, 0, 0, 24 * scale, 24 * scale);
+  feats.forEach((f, i) => drawFeature(g, f, scale, i === newest || newest < 0 ? a : .45, i === newest ? C.or : C.blue));
+}
+const FACE_DEMO = (() => { const r = mulberry(31), c = mk(24, 24), g = c.getContext("2d"); g.fillStyle = gray(200); g.fillRect(0, 0, 24, 24); drawFace(g, 12, 12, 24, () => .5); return sample(readGray(c)); })();
+
+/* =====================================================================
+   Pasos
+   ===================================================================== */
+let anim = null; const stopAnim = () => { cancelAnimationFrame(anim); clearTimeout(anim); anim = null; };
+const STEPS = [
+  { t: "La ventana deslizante", f: stepWindow },
+  { t: "Características de Haar", f: stepHaar, needs: "data" },
+  { t: "Imagen integral", f: stepIntegral },
+  { t: "Clasificador débil", f: stepWeak, needs: "data" },
+  { t: "AdaBoost", f: stepAda, needs: "casc" },
+  { t: "La cascada", f: stepCascade, needs: "casc" },
+  { t: "Detección completa", f: stepDetect, needs: "casc" },
+];
+let STEP = 0;
+function waitBox(what) {
+  const p = parseFloat($("#stBar").style.width) || 0;
+  return { text: `<p>${what}</p>`, formula: "Un momento…", viz: `<div class="wait">Entrenando el detector en tu navegador: ${$("#stTxt").textContent}<div class="pb"><i style="width:${p}%"></i></div></div>` };
+}
+
+/* ---------- 1 · Ventana deslizante ---------- */
+function stepWindow() {
+  const n = countWindows(SCENE.W, SCENE.H, 1.25, 1);
+  return {
+    text: `<p>Un detector de caras no busca «caras» en la imagen: se limita a responder una pregunta muy concreta, <b>¿hay una cara en este recuadro de 24 × 24 píxeles?</b>,
+      y la repite para un recuadro en <b>cada posición</b> y a <b>cada tamaño</b>. Es la <b>ventana deslizante</b>.</p>
+      <p>Incluso en esta imagen diminuta de ${SCENE.W} × ${SCENE.H} píxeles hay que examinar unas <b>${num(n)} ventanas</b>, y sólo un puñado contiene una cara.
+      El reto de Viola y Jones fue hacer un clasificador tan rápido que pudiera hacer esto 15 veces por segundo en un ordenador de 2001. La clave será
+      <b>descartar el fondo casi sin trabajo</b>.</p>`,
+    formula: `tamaños: 24, 30, 37, 47, 58… (×1,25 cada vez)<br>ventanas = Σ<sub>escalas</sub> posiciones(escala) ≈ <b>${num(n)}</b>
+      <span class="c">Cada ventana se reduce mentalmente a 24 × 24 píxeles: el tamaño con el que se entrenó el detector. En lugar de reducir la imagen, Viola-Jones agranda las características, lo que la imagen integral hace gratis.</span>`,
+    viz: `<div class="cols"><div style="max-width:640px;width:min(640px,100%)"><canvas id="sc1" class="sc" width="640" height="480"></canvas>
+        <div class="row"><button class="primary sm" id="w1play">⏸ Pausa</button><button class="sm" id="w1new">Nueva escena</button>
+          <label class="ctl">Velocidad <input type="range" id="w1sp" min="1" max="12" value="4"></label></div></div>
+      <div><div class="fig"><span>Lo que ve el clasificador <small>(ventana reducida a 24 × 24)</small></span><canvas id="w1p" class="px" width="24" height="24" style="width:168px;height:168px"></canvas></div>
+        <div class="facts" style="grid-template-columns:repeat(2,minmax(0,1fr));max-width:360px">
+          <div class="fact"><b id="w1s"></b><span>tamaño de ventana actual</span></div><div class="fact"><b id="w1c">0</b><span>ventanas recorridas en la animación</span></div>
+          <div class="fact o"><b>${num(n)}</b><span>ventanas en total (paso de 1 px)</span></div><div class="fact"><b>${SCENE.boxes.length}</b><span>caras en la imagen</span></div></div>
+        <p class="note">La animación salta posiciones para ir más rápido; el detector real las recorre todas.</p></div></div>`,
+    after() {
+      const c = $("#sc1"), g = c.getContext("2d"), pc = $("#w1p"), pg = pc.getContext("2d"); let s = 1, x = 0, y = 0, cnt = 0, playing = true;
+      const frame = () => {
+        const sp = +$("#w1sp").value;
+        for (let k = 0; k < sp; k++) { const ws = Math.round(24 * s), st = Math.max(4, ws / 3); x += st; cnt++;
+          if (x + ws > SCENE.W) { x = 0; y += st; } if (y + ws > SCENE.H) { y = 0; s *= 1.25; if (24 * s > Math.min(SCENE.W, SCENE.H)) s = 1; } }
+        const ws = Math.round(24 * s);
+        g.drawImage(SCENE.c, 0, 0, 640, 480); g.strokeStyle = C.or; g.lineWidth = 3; g.strokeRect(x * 2, y * 2, ws * 2, ws * 2);
+        g.fillStyle = "rgba(255,150,0,.15)"; g.fillRect(x * 2, y * 2, ws * 2, ws * 2);
+        pg.imageSmoothingEnabled = true; pg.drawImage(SCENE.c, x, y, ws, ws, 0, 0, 24, 24);
+        $("#w1s").textContent = `${ws} × ${ws}`; $("#w1c").textContent = num(cnt);
+        if (playing) anim = setTimeout(() => requestAnimationFrame(frame), 60);
+      };
+      frame();
+      $("#w1play").onclick = () => { playing = !playing; $("#w1play").textContent = playing ? "⏸ Pausa" : "▶ Reproducir"; if (playing) frame(); };
+      $("#w1new").onclick = () => { SCENE = makeScene(++SCENE_SEED); renderStep(); };
+    },
+  };
+}
+
+/* ---------- 2 · Características de Haar ---------- */
+let FEAT = feat("v2", 3, 6, 18, 4);
+const PRESETS = { eyes: ["Ojos más oscuros que las mejillas", () => feat("v2", 3, 6, 18, 4)], bridge: ["Ojos más oscuros que el puente de la nariz", () => feat("h3", 3, 7, 6, 4)],
+                  mouth: ["Boca más oscura que la barbilla", () => feat("v2", 7, 18, 10, 3)] };
+function stepHaar() {
+  if (!D.ready) return waitBox("Generando los datos de entrenamiento.");
+  return {
+    text: `<p>Viola y Jones no miran píxeles sueltos sino <b>diferencias de brillo entre rectángulos vecinos</b>, inspiradas en las funciones de Haar.
+      Una característica resta la suma de los píxeles bajo las zonas <b>negras</b> a la suma bajo las <b>blancas</b>. Es una medida tosca, pero las caras tienen
+      patrones de luz y sombra muy regulares: la franja de los ojos es más oscura que las mejillas, y los ojos más oscuros que el puente de la nariz.</p>
+      <p>Arrastra la característica sobre la cara (o su esquina para cambiar el tamaño), cambia de tipo y observa abajo su valor en muchas caras y en muchos
+      trozos de fondo. Una buena característica <b>separa</b> los puntos azules de los naranjas.</p>`,
+    formula: `f = Σ píxeles(blancos) − Σ píxeles(negros)<br>en una ventana de 24 × 24 hay <b>${num(TOTAL_FEATS)}</b> características posibles
+      <span class="c">Para que la iluminación no influya, cada ventana se normaliza: se resta su brillo medio μ y se divide por su desviación típica σ. Es el valor «normalizado» que usa el detector.</span>`,
+    viz: `<div class="cols"><div>
+        <div class="seg ftypes" id="ftype">${Object.keys(TYPES).map(k => `<button data-t="${k}" aria-pressed="${k === FEAT.type}" title="${TYPES[k].n}">${typeIcon(k)}</button>`).join("")}</div>
+        <canvas id="hface" class="px" width="288" height="288" style="width:288px;height:288px;margin-top:10px;cursor:move;touch-action:none"></canvas>
+        <div class="row" style="flex-direction:column;align-items:flex-start;gap:4px">${Object.entries(PRESETS).map(([k, [n]]) => `<button class="sm" data-pre="${k}">${n}</button>`).join("")}</div></div>
+      <div><div class="calc" id="hcalc" style="margin-top:0"></div>
+        <p class="panel-t">Valor normalizado en 400 caras y 600 trozos de fondo</p><div id="hstrip"></div>
+        <p class="panel-t">Algunos ejemplos <small style="text-transform:none;letter-spacing:0;font-weight:400">(arriba caras, abajo fondo; número = valor normalizado)</small></p><div class="gal" id="hgal"></div></div></div>`,
+    after() {
+      const c = $("#hface"), g = c.getContext("2d"); g.imageSmoothingEnabled = false; const K = 12, face = tileCanvas(FACE_DEMO.g);
+      const draw = () => {
+        g.drawImage(face, 0, 0, 288, 288); drawFeature(g, FEAT, K);
+        const t = TYPES[FEAT.type]; g.fillStyle = C.or; g.fillRect((FEAT.x + FEAT.cw * t.bw) * K - 7, (FEAT.y + FEAT.ch * t.bh) * K - 7, 10, 10);
+        let sw = 0, sb = 0, aw = 0, ab = 0; FEAT.r.forEach(([x, y, w, h, wt]) => { const v = rs(FACE_DEMO.ii, 25, x, y, w, h); if (wt > 0) { sw += v; aw += w * h; } else { sb += v; ab += w * h; } });
+        $("#hcalc").innerHTML = `<span class="h">En esta cara</span>Σ blancos = ${num(sw)} (${aw} píxeles, media ${fmt(sw / aw)})<br>Σ negros = ${num(sb)} (${ab} píxeles, media ${fmt(sb / ab)})<br>
+          f = ${num(sw)} − ${num(sb)} = <b>${num(sw - sb)}</b> &nbsp;·&nbsp; normalizado: <b>${fmt(fval(FEAT, FACE_DEMO), 1)}</b>`;
+        const vf = D.train.map(S => fval(FEAT, S)), vn = D.neg0.map(S => fval(FEAT, S));
+        $("#hstrip").innerHTML = strip(vf, vn);
+        $("#hgal").innerHTML = [...D.train.slice(0, 12), ...D.neg0.slice(0, 12)].map((S, i) => `<div><canvas data-i="${i}" width="24" height="24" style="border-color:${i < 12 ? C.blue : C.or}"></canvas><span>${fmt(fval(FEAT, S))}</span></div>`).join("");
+        document.querySelectorAll("#hgal canvas").forEach(cv => { const i = +cv.dataset.i, S = i < 12 ? D.train[i] : D.neg0[i - 12]; putGray(cv, S.g, 24, 24); const gg = cv.getContext("2d"); drawFeature(gg, FEAT, 1, .55); });
+      };
+      let mode = null, ox = 0, oy = 0;
+      const pos = e => { const r = c.getBoundingClientRect(); return [(e.clientX - r.left) / r.width * 24, (e.clientY - r.top) / r.height * 24]; };
+      c.onpointerdown = e => { const [x, y] = pos(e), t = TYPES[FEAT.type], x1 = FEAT.x + FEAT.cw * t.bw, y1 = FEAT.y + FEAT.ch * t.bh;
+        c.setPointerCapture(e.pointerId);
+        if (Math.abs(x - x1) < 1.4 && Math.abs(y - y1) < 1.4) mode = "size";
+        else if (x >= FEAT.x && x <= x1 && y >= FEAT.y && y <= y1) { mode = "move"; ox = x - FEAT.x; oy = y - FEAT.y; }
+        else { mode = "move"; ox = (x1 - FEAT.x) / 2; oy = (y1 - FEAT.y) / 2; apply(x, y); } };
+      const apply = (x, y) => { const t = TYPES[FEAT.type];
+        if (mode === "size") { const cw = Math.max(1, Math.min(Math.round((x - FEAT.x) / t.bw), Math.floor((24 - FEAT.x) / t.bw))), ch = Math.max(1, Math.min(Math.round((y - FEAT.y) / t.bh), Math.floor((24 - FEAT.y) / t.bh)));
+          FEAT = feat(FEAT.type, FEAT.x, FEAT.y, cw, ch); }
+        else { const W2 = FEAT.cw * t.bw, H2 = FEAT.ch * t.bh; FEAT = feat(FEAT.type, Math.max(0, Math.min(24 - W2, Math.round(x - ox))), Math.max(0, Math.min(24 - H2, Math.round(y - oy))), FEAT.cw, FEAT.ch); }
+        draw(); };
+      c.onpointermove = e => { if (mode) apply(...pos(e)); };
+      c.onpointerup = c.onpointercancel = () => mode = null;
+      $("#ftype").onclick = e => { const b = e.target.closest("button"); if (!b) return; const t = TYPES[b.dataset.t];
+        const W2 = FEAT.cw * TYPES[FEAT.type].bw, H2 = FEAT.ch * TYPES[FEAT.type].bh, cw = Math.max(1, Math.floor(W2 / t.bw)), ch = Math.max(1, Math.floor(H2 / t.bh));
+        FEAT = feat(b.dataset.t, Math.min(FEAT.x, 24 - cw * t.bw), Math.min(FEAT.y, 24 - ch * t.bh), cw, ch);
+        [...$("#ftype").children].forEach(x => x.setAttribute("aria-pressed", x === b)); draw(); };
+      document.querySelectorAll("[data-pre]").forEach(b => b.onclick = () => { FEAT = PRESETS[b.dataset.pre][1](); [...$("#ftype").children].forEach(x => x.setAttribute("aria-pressed", x.dataset.t === FEAT.type)); draw(); });
+      draw();
+    },
+  };
+}
+function strip(vf, vn, thr) {
+  const all = [...vf, ...vn], lo = Math.min(...all), hi = Math.max(...all), W = 640, X = v => 20 + (v - lo) / (hi - lo || 1) * (W - 40), r = mulberry(5);
+  let s = `<svg viewBox="0 0 ${W} 110" style="width:100%;max-width:${W}px;display:block"><line x1="20" x2="${W - 20}" y1="55" y2="55" stroke="${C.li}"/>`;
+  vf.forEach(v => s += `<circle cx="${X(v).toFixed(1)}" cy="${(30 + (r() - .5) * 30).toFixed(1)}" r="2.6" fill="${C.blue}" fill-opacity=".55"/>`);
+  vn.forEach(v => s += `<circle cx="${X(v).toFixed(1)}" cy="${(80 + (r() - .5) * 30).toFixed(1)}" r="2.6" fill="${C.or}" fill-opacity=".55"/>`);
+  s += `<text x="${W - 20}" y="12" font-size="11" text-anchor="end" fill="${C.blue}" font-weight="700">caras</text><text x="${W - 20}" y="106" font-size="11" text-anchor="end" fill="${C.od}" font-weight="700">fondo</text>`;
+  s += `<text x="20" y="106" font-size="10.5" fill="${C.mu}">${fmt(lo, 1)}</text><text x="${W / 2}" y="106" font-size="10.5" fill="${C.mu}" text-anchor="middle">valor normalizado →</text>`;
+  if (thr !== undefined) s += `<line x1="${X(thr)}" x2="${X(thr)}" y1="4" y2="100" stroke="${C.red}" stroke-width="2"/>`;
+  return s + "</svg>";
+}
+
+/* ---------- 3 · Imagen integral ---------- */
+let SEL = { x0: 2, y0: 2, x1: 5, y1: 4 };
+function stepIntegral() {
+  const OX = 6, OY = 6, G = 10, px = [], ii = [];
+  for (let y = 0; y < G; y++) for (let x = 0; x < G; x++) px.push(Math.round(FACE_DEMO.g[(OY + y) * 24 + OX + x]));
+  for (let y = 0; y < G; y++) for (let x = 0; x < G; x++) ii.push(px[y * G + x] + (x ? ii[y * G + x - 1] : 0) + (y ? ii[(y - 1) * G + x] : 0) - (x && y ? ii[(y - 1) * G + x - 1] : 0));
+  return {
+    text: `<p>Una característica grande puede abarcar cientos de píxeles, y hay que evaluar muchas en cada ventana. La <b>imagen integral</b> lo resuelve:
+      cada casilla guarda la <b>suma de todos los píxeles por encima y a la izquierda</b> de ella (incluida). Se calcula una sola vez, recorriendo la imagen.</p>
+      <p>Con ella, la suma de <b>cualquier rectángulo</b>, sea del tamaño que sea, cuesta sólo <b>4 lecturas y 3 operaciones</b>: D − B − C + A.
+      Arrastra sobre la cuadrícula de píxeles para elegir un rectángulo y mira qué cuatro casillas de la imagen integral se usan.</p>`,
+    formula: `ii(x, y) = Σ<sub>x' ≤ x, y' ≤ y</sub> i(x', y')<br>ii(x, y) = i(x, y) + ii(x−1, y) + ii(x, y−1) − ii(x−1, y−1)<br>suma(rect) = D − B − C + A
+      <span class="c">Por eso las características de Haar se evalúan en tiempo constante a cualquier escala: una de dos rectángulos necesita 6 lecturas, una de tres 8 y una de cuatro 9.</span>`,
+    viz: `<div class="grids"><div><p class="panel-t" style="margin-top:0">Píxeles i(x, y) <small style="text-transform:none;letter-spacing:0;font-weight:400">(trozo de 10 × 10 de la cara: ojo izquierdo y nariz)</small></p><div class="grid" id="gpx"></div></div>
+      <div><p class="panel-t" style="margin-top:0">Imagen integral ii(x, y)</p><div class="grid" id="gii"></div></div></div>
+      <div class="row"><button class="sm" id="ibuild">▶ Ver cómo se construye la imagen integral</button></div>
+      <div class="calc" id="icalc"></div>`,
+    after() {
+      const cell = (v, bg, fg, cls = "", extra = "") => `<div class="c ${cls}" style="background:${bg};color:${fg}" ${extra}>${v}</div>`;
+      const mx = ii[G * G - 1];
+      const draw = (build = -1) => {
+        const x0 = Math.min(SEL.x0, SEL.x1), x1 = Math.max(SEL.x0, SEL.x1), y0 = Math.min(SEL.y0, SEL.y1), y1 = Math.max(SEL.y0, SEL.y1);
+        const corners = { [`${x0 - 1},${y0 - 1}`]: "A", [`${x1},${y0 - 1}`]: "B", [`${x0 - 1},${y1}`]: "C", [`${x1},${y1}`]: "D" };
+        let a = "", b = "";
+        for (let y = 0; y < G; y++) for (let x = 0; x < G; x++) {
+          const v = px[y * G + x], sel = build < 0 && x >= x0 && x <= x1 && y >= y0 && y <= y1, dep = build >= 0 && x <= build % G && y <= Math.floor(build / G);
+          a += cell(v, gray(v), v > 120 ? "#1b2430" : "#fff", sel ? "sel" : dep ? "dep" : "", `data-x="${x}" data-y="${y}"`);
+          const k = corners[`${x},${y}`], shown = build < 0 || y * G + x <= build, iv = ii[y * G + x];
+          b += cell(shown ? iv : "", shown ? `rgba(2,102,162,${(.05 + .7 * iv / mx).toFixed(3)})` : "#fafbfc", iv / mx > .55 ? "#fff" : "#1b2430",
+                    build < 0 && k ? "corner" : y * G + x === build ? "build" : "", k && build < 0 ? `data-l="${k}"` : "");
+        }
+        $("#gpx").style.gridTemplateColumns = $("#gii").style.gridTemplateColumns = `repeat(${G}, 40px)`;
+        $("#gpx").innerHTML = a; $("#gii").innerHTML = b;
+        if (build >= 0) { const x = build % G, y = Math.floor(build / G);
+          $("#icalc").innerHTML = `<span class="h">Construyendo ii(${x}, ${y})</span>ii(${x}, ${y}) = i(${x}, ${y}) + ii(${x - 1}, ${y}) + ii(${x}, ${y - 1}) − ii(${x - 1}, ${y - 1})
+            = ${px[y * G + x]} + ${x ? ii[y * G + x - 1] : 0} + ${y ? ii[(y - 1) * G + x] : 0} − ${x && y ? ii[(y - 1) * G + x - 1] : 0} = <b>${ii[y * G + x]}</b>`; return; }
+        const at = (x, y) => x < 0 || y < 0 ? 0 : ii[y * G + x], A = at(x0 - 1, y0 - 1), B = at(x1, y0 - 1), Cc = at(x0 - 1, y1), Dd = at(x1, y1);
+        let direct = 0; for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) direct += px[y * G + x];
+        const n = (x1 - x0 + 1) * (y1 - y0 + 1);
+        $("#icalc").innerHTML = `<span class="h">Suma del rectángulo de ${x1 - x0 + 1} × ${y1 - y0 + 1} = ${n} píxeles</span>
+          Con la imagen integral: D − B − C + A = ${Dd} − ${B} − ${Cc} + ${A} = <b>${Dd - B - Cc + A}</b> &nbsp;→ 4 lecturas, 3 operaciones<br>
+          Sumando píxel a píxel: <b>${direct}</b> &nbsp;→ ${n} lecturas, ${n - 1} sumas${x0 === 0 || y0 === 0 ? `<br><span style="font-family:system-ui;color:#5d6875">Las casillas fuera de la cuadrícula valen 0.</span>` : ""}`;
+      };
+      let drag = false;
+      const at = e => { const el = document.elementFromPoint(e.clientX, e.clientY); return el && el.dataset && el.dataset.x !== undefined ? [+el.dataset.x, +el.dataset.y] : null; };
+      const gp = $("#gpx");
+      gp.onpointerdown = e => { const p = at(e); if (!p) return; stopAnim(); drag = true; gp.setPointerCapture(e.pointerId); SEL = { x0: p[0], y0: p[1], x1: p[0], y1: p[1] }; draw(); };
+      gp.onpointermove = e => { if (!drag) return; const p = at(e); if (p) { SEL.x1 = p[0]; SEL.y1 = p[1]; draw(); } };
+      gp.onpointerup = gp.onpointercancel = () => drag = false;
+      $("#ibuild").onclick = () => { stopAnim(); let k = 0; const go = () => { draw(k); k++; if (k < G * G) anim = setTimeout(go, k < 12 ? 450 : 90); else anim = setTimeout(() => draw(), 900); }; go(); };
+      draw();
+    },
+  };
+}
+
+/* ---------- 4 · Clasificador débil ---------- */
+let WK = { thr: null, pol: -1 };
+function stepWeak() {
+  if (!D.ready) return waitBox("Generando los datos de entrenamiento.");
+  const vf = D.train.map(S => fval(FEAT, S)), vn = D.neg0.map(S => fval(FEAT, S)), all = [...vf, ...vn], lo = Math.min(...all), hi = Math.max(...all);
+  if (WK.thr === null || WK.thr < lo || WK.thr > hi || WK.feat !== FEAT) { WK = { ...best1(vf, vn), feat: FEAT }; }
+  return {
+    text: `<p>Una sola característica, con un <b>umbral</b>, ya es un clasificador: «si el valor pasa de θ, digo que es una cara». Es un clasificador <b>débil</b>:
+      se equivoca mucho, pero algo mejor que tirar una moneda. Aquí se usa la característica que elegiste en el paso anterior.</p>
+      <p>Arrastra el umbral (línea roja) o cambia el sentido de la comparación. Fíjate en el compromiso: bajar el umbral detecta más caras pero deja pasar más fondo.
+      El error se mide dando el mismo peso total a caras y a fondo, como hace AdaBoost al empezar.</p>`,
+    formula: `h(x) = 1 &nbsp;si p·f(x) &lt; p·θ &nbsp;(p = ±1, sentido)<br>h(x) = 0 &nbsp;en otro caso
+      <span class="c">AdaBoost probará todas las características y, para cada una, todos los umbrales posibles, y se quedará con la que menos se equivoque.</span>`,
+    viz: `<div class="cols"><div class="fig"><span>Característica del paso 2</span><canvas id="wkf" width="168" height="168" class="px" style="width:168px;height:168px"></canvas>
+        <div class="seg" id="wkp" style="margin-top:8px"><button data-p="-1" aria-pressed="${WK.pol === -1}">cara si f &gt; θ</button><button data-p="1" aria-pressed="${WK.pol === 1}">cara si f &lt; θ</button></div>
+        <button class="sm" id="wkb" style="margin-top:8px">Buscar el mejor umbral</button></div>
+      <div><div id="wkh" style="touch-action:none;cursor:ew-resize"></div><div class="facts" id="wkfacts"></div></div></div>`,
+    after() {
+      const c = $("#wkf"), g = c.getContext("2d"); g.imageSmoothingEnabled = false; g.drawImage(tileCanvas(D.mean), 0, 0, 168, 168); drawFeature(g, FEAT, 7);
+      const W = 640, H = 230, L = 20, R = 20, X = v => L + (v - lo) / (hi - lo || 1) * (W - L - R), iv = px => lo + (px - L) / (W - L - R) * (hi - lo);
+      const B = 40, bw = (hi - lo) / B || 1, hf = new Array(B).fill(0), hn = new Array(B).fill(0);
+      vf.forEach(v => hf[Math.min(B - 1, Math.floor((v - lo) / bw))]++); vn.forEach(v => hn[Math.min(B - 1, Math.floor((v - lo) / bw))]++);
+      const mx = Math.max(...hf.map(v => v / vf.length), ...hn.map(v => v / vn.length));
+      const draw = () => {
+        let s = `<svg id="wks" viewBox="0 0 ${W} ${H}" style="width:100%;max-width:${W}px;display:block">`;
+        for (let b = 0; b < B; b++) { const x = X(lo + b * bw), w = X(lo + (b + 1) * bw) - x - 1;
+          const a = hf[b] / vf.length / mx * (H - 50), n = hn[b] / vn.length / mx * (H - 50);
+          s += `<rect x="${x}" y="${H - 30 - n}" width="${w}" height="${n}" fill="${C.or}" fill-opacity=".55"/><rect x="${x}" y="${H - 30 - a}" width="${w}" height="${a}" fill="${C.blue}" fill-opacity=".55"/>`; }
+        const tx = X(WK.thr);
+        s += `<rect x="${WK.pol === -1 ? tx : L}" y="10" width="${WK.pol === -1 ? W - R - tx : tx - L}" height="${H - 40}" fill="${C.blue}" fill-opacity=".06"/>
+          <line x1="${tx}" x2="${tx}" y1="6" y2="${H - 26}" stroke="${C.red}" stroke-width="3"/><text x="${tx + 5}" y="18" font-size="12" font-weight="700" fill="${C.red}">θ = ${fmt(WK.thr, 1)}</text>
+          <text x="${WK.pol === -1 ? W - R - 4 : L + 4}" y="34" font-size="11.5" fill="${C.blue}" text-anchor="${WK.pol === -1 ? "end" : "start"}">zona «cara»</text>
+          <line x1="${L}" x2="${W - R}" y1="${H - 30}" y2="${H - 30}" stroke="#9aa6b2"/><text x="${L}" y="${H - 12}" font-size="11" fill="${C.mu}">${fmt(lo, 1)}</text><text x="${W - R}" y="${H - 12}" font-size="11" fill="${C.mu}" text-anchor="end">${fmt(hi, 1)}</text>
+          <text x="${W / 2}" y="${H - 12}" font-size="11" fill="${C.mu}" text-anchor="middle">valor normalizado de la característica</text>
+          <rect x="${L + 6}" y="44" width="10" height="10" fill="${C.blue}" fill-opacity=".55"/><text x="${L + 20}" y="53" font-size="11.5" fill="${C.ink}">caras (400)</text>
+          <rect x="${L + 6}" y="60" width="10" height="10" fill="${C.or}" fill-opacity=".55"/><text x="${L + 20}" y="69" font-size="11.5" fill="${C.ink}">fondo (600)</text></svg>`;
+        $("#wkh").innerHTML = s;
+        const isF = v => WK.pol * v < WK.pol * WK.thr, det = vf.filter(isF).length / vf.length, fp = vn.filter(isF).length / vn.length;
+        $("#wkfacts").innerHTML = `<div class="fact"><b>${pct(det)}</b><span>caras detectadas</span></div><div class="fact"><b>${pct(fp)}</b><span>fondo confundido con cara (falsos positivos)</span></div>
+          <div class="fact o"><b>${pct((1 - det) / 2 + fp / 2)}</b><span>error (mitad de peso a cada clase)</span></div><div class="fact"><b>50 %</b><span>error de tirar una moneda</span></div>`;
+      };
+      let drag = false; const hEl = $("#wkh");
+      const move = e => { const svg = $("#wks"), r = svg.getBoundingClientRect(); WK.thr = Math.max(lo, Math.min(hi, iv((e.clientX - r.left) / r.width * W))); draw(); };
+      hEl.onpointerdown = e => { drag = true; hEl.setPointerCapture(e.pointerId); move(e); }; hEl.onpointermove = e => drag && move(e); hEl.onpointerup = hEl.onpointercancel = () => drag = false;
+      $("#wkp").onclick = e => { const b = e.target.closest("button"); if (!b) return; WK.pol = +b.dataset.p; [...$("#wkp").children].forEach(x => x.setAttribute("aria-pressed", x === b)); draw(); };
+      $("#wkb").onclick = () => { Object.assign(WK, best1(vf, vn)); [...$("#wkp").children].forEach(x => x.setAttribute("aria-pressed", +x.dataset.p === WK.pol)); draw(); };
+      draw();
+    },
+  };
+}
+function best1(vf, vn) {
+  const all = [...vf.map(v => [v, 1]), ...vn.map(v => [v, 0])].sort((a, b) => a[0] - b[0]); let Sp = 0, Sn = 0, best = { e: 2 };
+  for (let k = 0; k <= all.length; k++) {
+    const thr = k === 0 ? all[0][0] - .01 : k === all.length ? all[k - 1][0] + .01 : (all[k - 1][0] + all[k][0]) / 2;
+    const e1 = Sn / vn.length / 2 + (1 - Sp / vf.length) / 2, e2 = Sp / vf.length / 2 + (1 - Sn / vn.length) / 2;
+    if (e1 < best.e) best = { e: e1, thr, pol: 1 }; if (e2 < best.e) best = { e: e2, thr, pol: -1 };
+    if (k < all.length) all[k][1] ? Sp++ : Sn++;
+  }
+  return { thr: best.thr, pol: best.pol };
+}
+
+/* ---------- 5 · AdaBoost ---------- */
+let ADA = null;
+function stepAda() {
+  if (!D.cascReady) return waitBox("Preparando los ejemplos de entrenamiento.");
+  if (!ADA) ADA = new Ada(D.adaSet.X, D.adaSet.y, D.F, D.adaSet.P);
+  const T = ADA.weak.length, last = ADA.hist[T - 1];
+  return {
+    text: `<p><b>AdaBoost</b> construye un clasificador fuerte sumando clasificadores débiles. En cada ronda prueba las ${num(D.F.length)} características de esta demostración
+      (el original probaba las ${num(TOTAL_FEATS)}) con todos sus umbrales y elige la que menos error <b>ponderado</b> comete. Después <b>aumenta el peso de los ejemplos que
+      ha fallado</b>, para que la siguiente ronda se centre en ellos.</p>
+      <p>Pulsa «Una ronda» varias veces y observa cómo los ejemplos mal clasificados (marcados en rojo) van ganando tamaño en el mosaico de pesos, y cómo
+      cae el error del clasificador fuerte aunque cada débil se equivoque bastante. Para que sea interesante, el fondo de este conjunto son trozos que ya
+      engañaban a las primeras etapas de la cascada: <b>negativos difíciles</b>.</p>`,
+    formula: `ε<sub>t</sub> = Σ<sub>i</sub> w<sub>i</sub>·|h<sub>t</sub>(x<sub>i</sub>) − y<sub>i</sub>| &nbsp; β<sub>t</sub> = ε<sub>t</sub> / (1 − ε<sub>t</sub>) &nbsp; α<sub>t</sub> = ln(1/β<sub>t</sub>)<br>
+      w<sub>i</sub> ← w<sub>i</sub>·β<sub>t</sub> si x<sub>i</sub> se clasificó bien (y luego se normalizan)<br>H(x) = 1 &nbsp;si Σ<sub>t</sub> α<sub>t</sub> h<sub>t</sub>(x) ≥ ½ Σ<sub>t</sub> α<sub>t</sub>
+      <span class="c">Cuanto menor es el error ε<sub>t</sub>, mayor es el voto α<sub>t</sub> de ese clasificador débil.</span>`,
+    viz: `<div class="row" style="margin-top:0"><button class="primary" id="a1">Una ronda</button><button id="a5">+5 rondas</button><button id="a0">Reiniciar</button>
+        <span class="note" style="margin:0">Rondas: <b>${T}</b></span></div>
+      <div class="cols" style="margin-top:12px"><div><p class="panel-t">Características elegidas <small style="text-transform:none;letter-spacing:0;font-weight:400">(sobre la cara media)</small></p>
+          <div class="tiles" id="atiles" style="max-width:420px">${T ? "" : `<span class="note">Aún ninguna.</span>`}</div></div>
+        <div><p class="panel-t">Pesos de los ejemplos <small style="text-transform:none;letter-spacing:0;font-weight:400">(tamaño ∝ peso · rojo = mal clasificado por el clasificador fuerte)</small></p>
+          <canvas id="amos" width="768" height="288" style="width:100%;max-width:768px;display:block"></canvas><p class="note">Tres filas de arriba: caras (borde azul). Tres de abajo: fondo (borde naranja).</p>
+          <p class="panel-t">Error en el entrenamiento</p><div id="achart"></div></div></div>
+      <div class="facts">${last ? `<div class="fact"><b>${pct(last.e)}</b><span>error ponderado ε de la última débil</span></div><div class="fact o"><b>${pct(last.err)}</b><span>error del clasificador fuerte</span></div>
+        <div class="fact"><b>${pct(last.det)}</b><span>caras detectadas</span></div><div class="fact"><b>${pct(last.fp)}</b><span>falsos positivos</span></div>` : ""}</div>`,
+    after() {
+      const run = n => { for (let i = 0; i < n; i++) ADA.round(); renderStep(); };
+      $("#a1").onclick = () => run(1); $("#a5").onclick = () => run(5); $("#a0").onclick = () => { ADA = null; renderStep(); };
+      $("#atiles").innerHTML += ADA.weak.map((h, i) => `<div class="tile${i === T - 1 ? " new" : ""}"><canvas data-i="${i}" width="72" height="72"></canvas><span>${i + 1} · α ${fmt(h.a, 2)}</span></div>`).join("");
+      document.querySelectorAll("#atiles canvas").forEach(cv => faceWithFeatures(cv, [ADA.weak[+cv.dataset.i].f], 3));
+      // mosaico de pesos: 48 caras + 48 fondos en casillas de 48 px
+      const c = $("#amos"), g = c.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0, 0, 768, 288); g.imageSmoothingEnabled = false;
+      const ids = [...Array(48).keys(), ...Array.from({ length: 48 }, (_, i) => 400 + i)], wmax = Math.max(...ids.map(i => ADA.w[i]));
+      const half = ADA.weak.reduce((s, h) => s + h.a, 0) / 2;
+      ids.forEach((id, k) => { const cx = (k % 16) * 48 + 24, cy = Math.floor(k / 16) * 48 + 24, sz = T ? 6 + 38 * Math.sqrt(ADA.w[id] / wmax) : 26;
+        g.drawImage(tileCanvas(ADA.X[id].g), cx - sz / 2, cy - sz / 2, sz, sz);
+        const wrong = T && (ADA.score[id] >= half - 1e-9 ? 1 : 0) !== ADA.y[id];
+        g.strokeStyle = wrong ? C.red : ADA.y[id] ? C.blue : C.or; g.lineWidth = wrong ? 3 : 1.2; g.strokeRect(cx - sz / 2, cy - sz / 2, sz, sz); });
+      g.strokeStyle = C.li; g.beginPath(); g.moveTo(0, 144); g.lineTo(768, 144); g.stroke();
+      // gráfica
+      const H = ADA.hist, W = 600, Hh = 170, n = Math.max(10, H.length), X = i => 40 + i / (n - 1) * (W - 60), Y = v => 10 + (1 - v / .5) * (Hh - 40);
+      let s = `<svg viewBox="0 0 ${W} ${Hh}" style="width:100%;max-width:${W}px;display:block">`;
+      [0, .1, .2, .3, .4, .5].forEach(v => s += `<line x1="40" x2="${W - 20}" y1="${Y(v)}" y2="${Y(v)}" stroke="${C.li}"/><text x="34" y="${Y(v) + 4}" font-size="10.5" text-anchor="end" fill="${C.mu}">${v * 100} %</text>`);
+      const line = (k, col) => H.length ? `<polyline fill="none" stroke="${col}" stroke-width="2.4" points="${H.map((h, i) => `${X(i)},${Y(Math.min(.5, h[k]))}`).join(" ")}"/>${H.map((h, i) => `<circle cx="${X(i)}" cy="${Y(Math.min(.5, h[k]))}" r="3" fill="${col}"/>`).join("")}` : "";
+      s += line("e", C.or) + line("err", C.blue) + `<text x="${W - 20}" y="${Hh - 8}" font-size="11" text-anchor="end" fill="${C.mu}">ronda →</text>
+        <text x="48" y="${Hh - 8}" font-size="11.5" fill="${C.od}" font-weight="700">ε de cada débil</text><text x="160" y="${Hh - 8}" font-size="11.5" fill="${C.blue}" font-weight="700">error del clasificador fuerte</text></svg>`;
+      $("#achart").innerHTML = s;
+    },
+  };
+}
+
+/* ---------- 6 · Cascada ---------- */
+let SCAN_CACHE = null;
+const getScan = () => (SCAN_CACHE && SCAN_CACHE.seed === SCENE_SEED && SCAN_CACHE.key === SCAN_KEY()) ? SCAN_CACHE.r : (SCAN_CACHE = { seed: SCENE_SEED, key: SCAN_KEY(), r: scan(SCENE, DET) }).r;
+const DET = { sf: 1.25, step: 1.5, minN: 2 }, SCAN_KEY = () => `${DET.sf}|${DET.step}`;
+function stepCascade() {
+  if (!D.cascReady) return waitBox("Entrenando la cascada (se tarda unos segundos).");
+  const R = getScan(), tot = R.win.length, S = D.casc.length, nfe = D.casc.reduce((q, s) => q + s.weak.length, 0);
+  return {
+    text: `<p>Un único clasificador fuerte con muchas características sería preciso pero lento. Viola y Jones lo organizaron en una <b>cascada</b>: una serie de
+      clasificadores cada vez más exigentes. La primera etapa usa sólo ${D.casc[0].weak.length} características y está ajustada para no perder casi ninguna cara,
+      aunque deje pasar mucho fondo. Cada ventana que una etapa rechaza se <b>descarta inmediatamente</b>: no se le dedica ni una operación más.</p>
+      <p>Cada etapa se entrena con los <b>negativos difíciles</b>: los trozos de fondo que han conseguido engañar a las etapas anteriores. Así, las etapas finales son
+      especialistas en lo que más se parece a una cara. Abajo, cuántas de las ${num(tot)} ventanas de la escena llegan a cada etapa.</p>`,
+    formula: `D = Π<sub>k</sub> d<sub>k</sub> &nbsp; (tasa de detección)<br>F = Π<sub>k</sub> f<sub>k</sub> &nbsp; (tasa de falsos positivos)
+      <span class="c">Con 10 etapas de d = 0,99 y f = 0,3: D ≈ 0,90 y F ≈ 6·10⁻⁶. El detector original tenía 38 etapas y 6061 características, pero de media evaluaba sólo unas 10 por ventana.</span>`,
+    viz: `<div class="casc">${D.casc.map((st, k) => `<div class="stg"><h4>Etapa ${k + 1}</h4><canvas data-k="${k}" width="72" height="72"></canvas>
+        <div class="m">${st.weak.length} característica${st.weak.length > 1 ? "s" : ""}<br>caras: ${pct(D.stageInfo[k].det)}<br>fondo que pasa: ${pct(D.stageInfo[k].fp, 2)}<br>${k ? `${num(D.stageInfo[k].negs)} neg. difíciles` : `${num(D.stageInfo[k].negs)} neg. al azar`}</div>
+        <div class="rej">✕ ${num(R.enter[k] - R.enter[k + 1])} rechazadas</div></div><div class="arr"><span>${num(R.enter[k + 1])}</span></div>`).join("")}
+        <div class="final">CARA<br><span style="font: 12px var(--mono)">${num(R.enter[S])}</span></div></div>
+      <p class="panel-t">Ventanas de esta escena que llegan a cada etapa</p>
+      <div class="funnel">${Array.from({ length: S + 1 }, (_, k) => `<div class="l">${k < S ? `entran en la etapa ${k + 1}` : "aceptadas como cara"}</div>
+        <div class="tr"><i class="${k === S ? "f" : ""}" style="width:${Math.max(.3, R.enter[k] / tot * 100)}%"></i></div><div class="v">${num(R.enter[k])} · ${pct(R.enter[k] / tot, R.enter[k] / tot < .01 ? 2 : 1)}</div>`).join("")}</div>
+      <div class="facts"><div class="fact"><b>${num(tot)}</b><span>ventanas examinadas</span></div><div class="fact"><b>${nfe}</b><span>características en toda la cascada</span></div>
+        <div class="fact o"><b>${fmt(R.feats / tot, 2)}</b><span>características evaluadas por ventana, de media</span></div><div class="fact"><b>${fmt(R.ms, 0)} ms</b><span>tiempo de escaneo en tu navegador</span></div></div>
+      <p class="note">Las tasas de cada etapa son acumuladas y se han medido en el entrenamiento: «caras» sobre las 400 caras de entrenamiento y «fondo que pasa» sobre ${num(D.pool.length)} trozos de fondo.
+        En caras nuevas, la cascada completa detecta el ${pct(D.stageInfo[S - 1].detTest)}.</p>`,
+    after() { document.querySelectorAll(".stg canvas").forEach(cv => faceWithFeatures(cv, D.casc[+cv.dataset.k].weak.slice(0, 6).map(h => h.f), 3, .8)); },
+  };
+}
+
+/* ---------- 7 · Detección completa ---------- */
+function stepDetect() {
+  if (!D.cascReady) return waitBox("Entrenando la cascada (se tarda unos segundos).");
+  return {
+    text: `<p>Todo junto: la cascada recorre la imagen a todas las escalas. El mapa de colores muestra hasta qué etapa llega cada ventana: casi todo el fondo
+      cae en la primera (sin color), y sólo cerca de las caras (y de algún objeto que se les parece) las ventanas avanzan hasta el final. Las ventanas que superan todas las etapas son <b>detecciones</b>.</p>
+      <p>Una misma cara suele detectarse varias veces, en posiciones y tamaños ligeramente distintos. El último paso <b>agrupa</b> las detecciones que se solapan
+      y se queda con la media; exigir un mínimo de «vecinos» elimina detecciones sueltas, que suelen ser falsos positivos.</p>`,
+    formula: `etapa alcanzada (alrededor de cada píxel):<br>sin color: rechazada en la etapa 1 &nbsp;<span style="color:#6fa8d0">■</span> en la 2 &nbsp;<span style="color:#0266a2">■</span> ${D.casc.length > 3 ? `de la 3 a la ${D.casc.length}` : "en la 3"} &nbsp;<span style="color:#ff9600">■</span> las supera todas
+      <span class="c">Agrupación: dos detecciones van juntas si su intersección supera el 30 % de su unión. Recuadro discontinuo: cara real no detectada.</span>`,
+    viz: `<div class="cols"><div style="width:min(640px,100%)"><canvas id="dc" class="sc" width="640" height="480"></canvas></div>
+      <div style="min-width:260px"><div class="row" style="margin-top:0"><button class="primary sm" id="dgo">▶ Escanear</button><button class="sm" id="dnew">Nueva escena</button></div>
+        <div class="row"><span class="ctl">Mostrar</span><div class="seg" id="dshow"><button data-v="heat" aria-pressed="true">etapas</button><button data-v="raw" aria-pressed="false">en bruto</button><button data-v="grp" aria-pressed="true">agrupadas</button></div></div>
+        <div class="row"><label class="ctl">Factor de escala <input type="range" id="dsf" min="1.1" max="1.5" step="0.05" value="${DET.sf}"><b id="vsf"></b></label></div>
+        <div class="row"><label class="ctl">Vecinos mínimos <input type="range" id="dmn" min="1" max="8" step="1" value="${DET.minN}"><b id="vmn"></b></label></div>
+        <div class="facts" id="dfacts" style="grid-template-columns:repeat(2,minmax(0,1fr))"></div></div></div>`,
+    after() {
+      const c = $("#dc"), g = c.getContext("2d"), K = 2, show = { heat: true, raw: false, grp: true };
+      const col = q => q === 0 ? "rgba(154,166,178,.18)" : q === 1 ? "rgba(111,168,208,.35)" : q < D.casc.length ? "rgba(2,102,162,.5)" : "rgba(255,150,0,.85)";
+      const COLS = [[154, 166, 178, .0], [111, 168, 208, .2], [2, 102, 162, .5], [255, 150, 0, .95]];
+      const heat = mk(SCENE.W, SCENE.H), hg = heat.getContext("2d");
+      const paint = (R, upto = Infinity) => {
+        g.drawImage(SCENE.c, 0, 0, 640, 480);
+        if (show.heat) {                       // etapa máxima alcanzada por las ventanas centradas en cada píxel
+          const M = new Int8Array(SCENE.W * SCENE.H).fill(-1), n = Math.min(upto, R.win.length);
+          for (let i = 0; i < n; i++) { const w = R.win[i], cx = Math.round(w.x + w.ws / 2), cy = Math.round(w.y + w.ws / 2), r = Math.max(1, Math.round(w.ws / 24));
+            for (let yy = cy - r; yy <= cy + r; yy++) for (let xx = cx - r; xx <= cx + r; xx++) { const q = yy * SCENE.W + xx; if (xx >= 0 && yy >= 0 && xx < SCENE.W && yy < SCENE.H && w.reached > M[q]) M[q] = w.reached; } }
+          const im = hg.createImageData(SCENE.W, SCENE.H), S = D.casc.length;
+          for (let q = 0; q < M.length; q++) { const v = M[q]; if (v < 0) continue; const k = v === 0 ? 0 : v === 1 ? 1 : v < S ? 2 : 3, cc = COLS[k];
+            im.data[4 * q] = cc[0]; im.data[4 * q + 1] = cc[1]; im.data[4 * q + 2] = cc[2]; im.data[4 * q + 3] = cc[3] * 255; }
+          hg.putImageData(im, 0, 0); g.imageSmoothingEnabled = false; g.drawImage(heat, 0, 0, 640, 480);
+        }
+        if (upto < R.win.length) { const w = R.win[Math.min(upto, R.win.length - 1)]; g.strokeStyle = "#fff"; g.lineWidth = 2; g.strokeRect(w.x * K, w.y * K, w.ws * K, w.ws * K); return; }
+        const dets = R.win.filter(w => w.reached === D.casc.length), grp = groupDets(dets, DET.minN);
+        if (show.raw) { g.strokeStyle = "rgba(255,150,0,.8)"; g.lineWidth = 1; dets.forEach(d => g.strokeRect(d.x * K, d.y * K, d.ws * K, d.ws * K)); }
+        if (show.grp) grp.forEach(d => { g.strokeStyle = "#fff"; g.lineWidth = 6; g.strokeRect(d.x * K, d.y * K, d.ws * K, d.ws * K); g.strokeStyle = C.or; g.lineWidth = 3; g.strokeRect(d.x * K, d.y * K, d.ws * K, d.ws * K); });
+        const found = SCENE.boxes.filter(b => grp.some(d => hit(d, b)));
+        SCENE.boxes.filter(b => !found.includes(b)).forEach(b => { g.setLineDash([6, 4]); g.strokeStyle = C.red; g.lineWidth = 2; g.strokeRect(b.x * K, b.y * K, b.s * K, b.s * K); g.setLineDash([]); });
+        const fp = grp.filter(d => !SCENE.boxes.some(b => hit(d, b))).length;
+        $("#dfacts").innerHTML = `<div class="fact"><b>${num(R.win.length)}</b><span>ventanas examinadas</span></div><div class="fact"><b>${fmt(R.ms, 0)} ms</b><span>tiempo de escaneo</span></div>
+          <div class="fact"><b>${dets.length}</b><span>detecciones en bruto</span></div><div class="fact o"><b>${grp.length}</b><span>detecciones tras agrupar</span></div>
+          <div class="fact"><b>${found.length} / ${SCENE.boxes.length}</b><span>caras encontradas</span></div><div class="fact"><b>${fp}</b><span>falsos positivos</span></div>`;
+      };
+      const R = getScan(); paint(R);
+      $("#vsf").textContent = fmt(DET.sf, 2); $("#vmn").textContent = DET.minN;
+      $("#dgo").onclick = () => { stopAnim(); const R2 = getScan(); let i = 0; const stepN = Math.ceil(R2.win.length / 140);
+        const go = () => { i += stepN; paint(R2, i); if (i < R2.win.length) anim = requestAnimationFrame(go); else paint(R2); }; go(); };
+      $("#dnew").onclick = () => { SCENE = makeScene(++SCENE_SEED); renderStep(); };
+      $("#dshow").onclick = e => { const b = e.target.closest("button"); if (!b) return; show[b.dataset.v] = !show[b.dataset.v]; b.setAttribute("aria-pressed", show[b.dataset.v]); paint(getScan()); };
+      $("#dsf").oninput = e => { DET.sf = +e.target.value; $("#vsf").textContent = fmt(DET.sf, 2); paint(getScan()); };
+      $("#dmn").oninput = e => { DET.minN = +e.target.value; $("#vmn").textContent = DET.minN; paint(getScan()); };
+    },
+  };
+}
+
+/* =====================================================================
+   Navegación
+   ===================================================================== */
+function renderSteps() {
+  $("#steps").innerHTML = STEPS.map((s, i) => `<button data-s="${i}" class="${i < STEP ? "done" : i === STEP ? "cur" : ""}"${i === STEP ? ' aria-current="step"' : ""}>
+    <span class="n">${i + 1}</span><span class="lbl">${s.t}</span></button>`).join("");
+}
+function renderStep() {
+  stopAnim();
+  const s = STEPS[STEP], r = s.f();
+  $("#st-title").textContent = s.t; $("#st-no").textContent = `Paso ${STEP + 1} de ${STEPS.length}`;
+  $("#st-text").innerHTML = r.text; $("#st-formula").innerHTML = r.formula; $("#viz").innerHTML = r.viz;
+  r.after && r.after();
+  $("#prev").disabled = STEP === 0; $("#next").disabled = STEP === STEPS.length - 1;
+  renderSteps();
+}
+const go = i => { STEP = Math.max(0, Math.min(STEPS.length - 1, i)); renderStep(); };
+$("#steps").addEventListener("click", e => { const b = e.target.closest("button"); if (b) go(+b.dataset.s); });
+$("#prev").onclick = () => go(STEP - 1); $("#next").onclick = () => go(STEP + 1);
+document.addEventListener("keydown", e => { if (e.target.tagName === "INPUT") return;
+  if (e.key === "ArrowRight") go(STEP + 1); if (e.key === "ArrowLeft") go(STEP - 1); });
+renderStep();
+setTimeout(() => buildAll().catch(err => { console.error(err); setStatus("Error al entrenar: " + err.message, 0); }), 50);
+// el paso con espera se actualiza también mientras progresa
+setInterval(() => { const s = STEPS[STEP]; if (s.needs && !(s.needs === "data" ? D.ready : D.cascReady)) { const w = document.querySelector(".wait"); if (w) w.innerHTML = `Entrenando el detector en tu navegador: ${$("#stTxt").textContent}<div class="pb"><i style="width:${$("#stBar").style.width}"></i></div>`; } }, 300);
+</script>
+</body>
+</html>
