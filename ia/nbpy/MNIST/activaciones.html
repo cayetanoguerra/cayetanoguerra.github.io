@@ -1,0 +1,681 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Funciones de activación</title>
+<style>
+
+  :root {
+    color-scheme: light;
+    /* Colores institucionales ULPGC */
+    --blue: #0266a2; --blue-dark: #014d7a; --blue-soft: #e8f1f8;
+    --orange: #ff9600; --orange-dark: #b86b00; --orange-soft: #fff3e0;
+    --bg: #f4f6f8; --panel: #ffffff; --ink: #1b2430; --muted: #5d6875;
+    --line: #e1e6eb; --red: #d9480f;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .gut { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  .topbar { background: var(--panel); border-top: 4px solid var(--blue); border-bottom: 1px solid var(--line); }
+  header { max-width: 1280px; margin: 0 auto; padding-block: 18px 20px;
+           display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; }
+  .logo { height: 30px; width: auto; opacity: .9; flex-shrink: 0; margin-top: 4px; }
+  h1 { font-size: 26px; margin: 0 0 6px; letter-spacing: -.01em; color: var(--blue); text-wrap: balance; }
+  h1::after { content: ""; display: block; width: 48px; height: 3px; background: var(--orange); border-radius: 2px; margin-top: 6px; }
+  header p { margin: 0; color: var(--muted); max-width: 88ch; }
+
+  .steps-wrap { max-width: 1280px; margin: 0 auto; padding-block: 16px 0; }
+  .steps { display: flex; flex-wrap: wrap; gap: 6px; }
+  .steps button { display: flex; align-items: center; gap: 7px; padding: 5px 11px 5px 6px; font-size: 13px;
+                  background: var(--panel); border: 1px solid var(--line); border-radius: 999px; }
+  .steps button .n { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center;
+                     background: var(--blue-soft); color: var(--blue); font-weight: 700; font-size: 11px; font-variant-numeric: tabular-nums; }
+  .steps button.done .n { background: var(--blue); color: #fff; }
+  .steps button.cur { border-color: var(--blue); background: var(--blue-soft); font-weight: 600; color: var(--blue-dark); }
+  .steps button.cur .n { background: var(--orange); color: #fff; }
+
+  main { max-width: 1280px; margin: 0 auto; padding-block: 16px 28px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px;
+          box-shadow: 0 1px 2px rgba(16, 40, 64, .04); min-width: 0; }
+  .card h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: var(--blue);
+             margin: 0 0 12px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  .card h2::before { content: ""; width: 4px; height: 14px; background: var(--orange); border-radius: 2px; }
+
+  button { font: inherit; padding: 7px 14px; border-radius: 8px; border: 1px solid var(--line);
+           background: var(--bg); color: var(--ink); cursor: pointer; transition: background .15s, border-color .15s; }
+  button:hover { border-color: #c4ccd4; }
+  button:disabled { opacity: .45; cursor: default; }
+  button.primary { background: var(--blue); color: #fff; border-color: var(--blue); font-weight: 600; }
+  button.primary:hover { background: var(--blue-dark); border-color: var(--blue-dark); }
+  button.primary.running { background: var(--orange-dark); border-color: var(--orange-dark); }
+  button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid var(--orange); outline-offset: 2px; }
+  .sm { padding: 4px 10px; font-size: 13px; }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 9px; overflow: hidden; flex-wrap: wrap; }
+  .seg button { border: 0; border-radius: 0; background: var(--panel); font-size: 13px; padding: 5px 11px; }
+  .seg button + button { border-left: 1px solid var(--line); }
+  .seg button[aria-pressed="true"] { background: var(--blue-soft); font-weight: 600; color: var(--blue-dark); }
+  .row { display: flex; flex-wrap: wrap; gap: 8px 14px; margin-top: 10px; align-items: center; }
+  .ctl { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+  .ctl b { color: var(--orange-dark); font-family: var(--mono); }
+
+  .stage-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  .stage-head h2 { margin-bottom: 4px; }
+  .stepno { color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+  .explain { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 16px 28px; margin-bottom: 14px; }
+  .explain .txt p { margin: 0 0 8px; max-width: 74ch; }
+  .explain .txt p:last-child { margin-bottom: 0; }
+  .formula { background: var(--blue-soft); border-radius: 10px; padding: 12px 14px; font-family: var(--mono);
+             font-size: 13.5px; line-height: 1.75; color: var(--blue-dark); align-self: start; overflow-x: auto; }
+  .formula .c { font-family: system-ui, sans-serif; color: var(--muted); font-size: 12.5px; display: block; line-height: 1.45; margin-top: 4px; }
+  .formula b { color: var(--ink); }
+  .viz { overflow-x: auto; padding: 14px 2px 8px; border-top: 1px solid var(--line); min-height: 300px; }
+  .nav { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+  .hint { color: var(--muted); font-size: 12.5px; }
+  kbd { font: 12px var(--mono); background: var(--blue-soft); color: var(--blue); border-radius: 4px; padding: 1px 5px; }
+  .facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-top: 14px; }
+  .fact { background: var(--bg); border-radius: 8px; padding: 10px 12px; }
+  .fact b { display: block; font-size: 20px; color: var(--blue); font-variant-numeric: tabular-nums; }
+  .fact.o { background: var(--orange-soft); } .fact.o b { color: var(--orange-dark); }
+  .fact span { font-size: 12px; color: var(--muted); }
+  .calc { margin-top: 12px; padding: 10px 12px; background: var(--orange-soft); border-radius: 8px;
+          font-family: var(--mono); font-size: 13px; line-height: 1.7; color: #6b3f00; overflow-x: auto; }
+  .calc .h { font-family: system-ui, sans-serif; font-weight: 700; color: var(--orange-dark); font-size: 12px;
+             text-transform: uppercase; letter-spacing: .06em; display: block; }
+  .calc b { color: #3d2400; }
+  .ok { margin-top: 12px; padding: 10px 12px; border-left: 4px solid var(--blue); background: var(--blue-soft); border-radius: 6px; font-size: 13.5px; max-width: 90ch; }
+
+  /* Rejillas de valores */
+  .flow { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 22px; }
+  .fig { display: flex; flex-direction: column; gap: 6px; }
+  .fig > span { font-size: 12.5px; font-weight: 700; color: var(--blue-dark); }
+  .fig small { font-weight: 400; color: var(--muted); }
+  .arrow { color: var(--blue); font-size: 13px; text-align: center; display: flex; flex-direction: column; align-items: center; }
+  .arrow::before { content: "→"; font-size: 28px; line-height: 1; }
+  .arrow.back::before { content: "←"; }
+  .grid { display: grid; gap: 2px; user-select: none; --cs: 36px; }
+  .grid .c { width: var(--cs); height: var(--cs); border-radius: 4px; display: grid; place-items: center;
+             font: 12px var(--mono); font-variant-numeric: tabular-nums; position: relative; cursor: pointer; transition: background .15s; }
+  .grid .c.win { box-shadow: inset 0 0 0 2px var(--orange); }
+  .grid .c.max { box-shadow: inset 0 0 0 3px var(--orange-dark); font-weight: 800; }
+  .grid .c.max::after { content: ""; position: absolute; inset: -3px; border-radius: 6px; border: 2px solid var(--orange); }
+  .grid .c.sel { box-shadow: inset 0 0 0 3px var(--orange-dark); font-weight: 800; }
+  .grid .c.off { background-image: repeating-linear-gradient(45deg, transparent 0 4px, rgba(217, 72, 15, .28) 4px 6px) !important; }
+  .grid .c.chg { box-shadow: inset 0 0 0 3px var(--red); }
+  .grid .c.empty { color: transparent; }
+  .grid .c.zero { color: #a9b3bd; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12.5px; color: var(--muted); margin-top: 10px; }
+  .legend i { display: inline-block; width: 14px; height: 14px; border-radius: 3px; vertical-align: -2px; margin-right: 5px; }
+
+  /* Imágenes */
+  canvas.px { image-rendering: pixelated; display: block; border-radius: 8px; border: 1px solid var(--line); background: #000; }
+  #draw { width: 196px; height: 196px; touch-action: none; cursor: crosshair; image-rendering: auto; }
+  .maps { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 14px 18px; }
+  .maps canvas { width: 150px; height: 150px; }
+
+  table.t { border-collapse: collapse; font-size: 13.5px; margin-top: 4px; min-width: 460px; }
+  table.t th, table.t td { padding: 6px 12px; border-bottom: 1px solid var(--line); text-align: left; }
+  table.t th { font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+  table.t td.n { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  table.t tr.pool td { color: var(--orange-dark); background: var(--orange-soft); }
+  table.t tr.big td.n { color: var(--red); font-weight: 700; }
+  pre.code { background: #0f2233; color: #e3eef7; border-radius: 10px; padding: 12px 14px; font: 13px/1.6 var(--mono); overflow-x: auto; margin: 0; }
+  pre.code .k { color: #ffb84d; } pre.code .cm { color: #8aa4b8; }
+  .cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px 28px; align-items: start; }
+  .cols > * { min-width: 0; }
+  .sw { display: flex; align-items: center; gap: 8px; font-size: 13.5px; cursor: pointer; }
+  .sw input { accent-color: var(--orange); width: 16px; height: 16px; }
+
+  @media (max-width: 900px) {
+    .explain, .cols { grid-template-columns: minmax(0, 1fr); }
+    .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .logo { height: 24px; }
+  }
+  @media (max-width: 560px) {
+    .steps button .lbl { display: none; }
+    .steps button { padding: 5px; }
+    header { flex-direction: column-reverse; gap: 10px; }
+    .grid { --cs: 30px; }
+    .grid .c { font-size: 10.5px; }
+    .flow { gap: 10px 14px; }
+    .arrow { flex-basis: 100%; flex-direction: row; gap: 8px; }
+    .arrow::before { content: "↓"; font-size: 22px; }
+    .arrow.back::before { content: "↑"; }
+    .maps canvas { width: 130px; height: 130px; }
+  }
+
+  /* Específico de esta página */
+  canvas.plot { display: block; width: 100%; border-radius: 8px; border: 1px solid var(--line); background: #fff; touch-action: none; }
+  .two { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 18px 28px; align-items: start; }
+  .two > * { min-width: 0; }
+  .acts { display: flex; flex-wrap: wrap; gap: 6px; }
+  .acts button { font-size: 13px; padding: 5px 11px; border-radius: 999px; background: var(--panel); }
+  .acts button[aria-pressed="true"] { background: var(--blue); border-color: var(--blue); color: #fff; font-weight: 600; }
+  .info { display: grid; gap: 10px; }
+  .info .box { background: var(--bg); border-radius: 8px; padding: 10px 12px; font-size: 13.5px; }
+  .info .box h4 { margin: 0 0 4px; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--blue); }
+  .info .box ul { margin: 0; padding-left: 18px; }
+  .info .box li { margin: 2px 0; }
+  .pro::marker { content: "+ "; color: #1a7f37; font-weight: 700; }
+  .con::marker { content: "− "; color: var(--red); font-weight: 700; }
+  .readout { font: 13px var(--mono); color: var(--blue-dark); margin-top: 6px; min-height: 1.6em; }
+  .key { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12.5px; color: var(--muted); margin-top: 8px; }
+  .key i { display: inline-block; width: 18px; height: 3px; border-radius: 2px; vertical-align: middle; margin-right: 6px; }
+  .key i.dash { background: repeating-linear-gradient(90deg, currentColor 0 4px, transparent 4px 7px) !important; }
+  input[type=range] { accent-color: var(--orange); width: 150px; }
+  .bars { display: grid; gap: 8px; max-width: 520px; }
+  .bar { display: grid; grid-template-columns: 70px minmax(0, 1fr) 64px; gap: 10px; align-items: center; font-size: 13.5px; }
+  .bar .tr { height: 20px; background: var(--bg); border-radius: 4px; overflow: hidden; }
+  .bar .tr i { display: block; height: 100%; background: var(--blue); border-radius: 4px; transition: width .15s; }
+  .bar.top .tr i { background: var(--orange); }
+  .bar .v { font: 13px var(--mono); text-align: right; font-variant-numeric: tabular-nums; }
+  .sliders { display: grid; gap: 6px; }
+  .sliders label { display: grid; grid-template-columns: 70px minmax(0, 1fr) 52px; gap: 10px; align-items: center; font-size: 13.5px; }
+  .sliders input { width: 100%; }
+  .sliders b { font: 13px var(--mono); color: var(--orange-dark); text-align: right; }
+  #pg { width: 100%; max-width: 360px; aspect-ratio: 1; height: auto; display: block; border-radius: 8px; border: 1px solid var(--line); image-rendering: auto; }
+  .two.pgw { grid-template-columns: minmax(0, 360px) minmax(0, 1fr); }
+  @media (max-width: 900px) { .two, .two.pgw { grid-template-columns: minmax(0, 1fr); } }
+  @media (max-width: 560px) { input[type=range] { width: 110px; } .bar { grid-template-columns: 56px minmax(0, 1fr) 56px; } }
+</style>
+</head>
+<body>
+<div class="topbar gut">
+<header>
+  <div>
+    <h1>Funciones de activación</h1>
+    <p>Cada neurona calcula una suma ponderada de sus entradas y la pasa por una <b>función de activación</b>. Esa pequeña función es la que
+       permite a una red aprender relaciones no lineales, y su elección influye mucho en lo bien y lo rápido que aprende. Aquí puedes ver por
+       qué son imprescindibles, comparar las más usadas junto con sus derivadas, entender el problema del gradiente que se desvanece y entrenar
+       una pequeña red en tu navegador con cada una de ellas.</p>
+  </div>
+  <img class="logo" src="logo-ulpgc.jpg" alt="ULPGC · Universidad de Las Palmas de Gran Canaria">
+</header>
+</div>
+
+<div class="steps-wrap gut">
+  <nav class="steps" id="steps" aria-label="Pasos"></nav>
+</div>
+
+<main class="gut">
+  <section class="card" aria-live="polite">
+    <div class="stage-head">
+      <h2 id="st-title">—</h2>
+      <span class="stepno" id="st-no"></span>
+    </div>
+    <div class="explain">
+      <div class="txt" id="st-text"></div>
+      <div class="formula" id="st-formula"></div>
+    </div>
+    <div class="viz" id="viz"></div>
+    <div class="nav">
+      <button id="prev">← Anterior</button>
+      <span class="hint">También con <kbd>←</kbd> <kbd>→</kbd></span>
+      <button id="next" class="primary">Siguiente →</button>
+    </div>
+  </section>
+</main>
+
+<script>
+/* =====================================================================
+   Utilidades
+   ===================================================================== */
+const $ = s => document.querySelector(s);
+const fmt = (v, d = 2) => (Math.abs(v) < 5 * 10 ** -(d + 1) ? 0 : v).toFixed(d).replace(".", ",").replace("-", "−");
+function mulberry(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a);
+  t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const gauss = r => { let u = 0, v = 0; while (u === 0) u = r(); while (v === 0) v = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+const C = { blue: "#0266a2", bd: "#014d7a", or: "#ff9600", od: "#b86b00", red: "#d9480f", mu: "#5d6875", li: "#e1e6eb", green: "#1a7f37", purple: "#7048b6" };
+let raf = null;
+const stopAnim = () => { if (raf) { cancelAnimationFrame(raf); raf = null; } };
+const pressSeg = (el, val, key = "v") => el.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b.dataset[key] === String(val)));
+
+/* =====================================================================
+   Funciones de activación
+   ===================================================================== */
+const sig = x => 1 / (1 + Math.exp(-x));
+const SQ2PI = Math.sqrt(2 / Math.PI);
+const ACT = {
+  step: { n: "Escalón", f: x => x >= 0 ? 1 : 0, d: () => 0, range: "{0, 1}", torch: "—",
+    fx: "f(x) = 1 si x ≥ 0;  0 si x &lt; 0", dx: "f'(x) = 0  (no definida en 0)",
+    pros: ["Es la activación del perceptrón original de Rosenblatt (1958)", "Salida binaria muy fácil de interpretar"],
+    cons: ["Su derivada es cero en todas partes: el descenso por el gradiente no puede usarla", "Por eso se sustituyó por la sigmoide, una versión suave"] },
+  sigmoid: { n: "Sigmoide", f: sig, d: x => { const s = sig(x); return s * (1 - s); }, range: "(0, 1)", torch: "nn.Sigmoid()",
+    fx: "f(x) = 1 / (1 + e<sup>−x</sup>)", dx: "f'(x) = f(x) · (1 − f(x))   máx. 0,25",
+    pros: ["Suave y derivable en todo punto", "Su salida se interpreta como una probabilidad: ideal en la última capa de un clasificador binario"],
+    cons: ["Se satura: para |x| grande la derivada es casi 0 y el gradiente se desvanece", "La derivada nunca supera 0,25, así que el gradiente se encoge en cada capa", "No está centrada en cero"] },
+  tanh: { n: "Tanh", f: Math.tanh, d: x => 1 - Math.tanh(x) ** 2, range: "(−1, 1)", torch: "nn.Tanh()",
+    fx: "f(x) = (e<sup>x</sup> − e<sup>−x</sup>) / (e<sup>x</sup> + e<sup>−x</sup>)", dx: "f'(x) = 1 − f(x)<sup>2</sup>   máx. 1",
+    pros: ["Centrada en cero, lo que suele acelerar el aprendizaje respecto a la sigmoide", "Derivada máxima de 1", "Muy usada en redes recurrentes (LSTM, GRU)"],
+    cons: ["También se satura en los extremos: el gradiente sigue desvaneciéndose en redes profundas"] },
+  relu: { n: "ReLU", f: x => Math.max(0, x), d: x => x > 0 ? 1 : 0, range: "[0, ∞)", torch: "nn.ReLU()",
+    fx: "f(x) = max(0, x)", dx: "f'(x) = 1 si x &gt; 0;  0 si x &lt; 0",
+    pros: ["Muy barata de calcular", "No se satura para x &gt; 0: la derivada es exactamente 1 y el gradiente no se encoge", "Produce activaciones dispersas (muchos ceros)", "Es la opción por defecto en redes convolutivas"],
+    cons: ["Para x &lt; 0 la derivada es 0: una neurona que siempre recibe entradas negativas deja de aprender (ReLU «muerta»)", "No está centrada en cero"] },
+  leaky: { n: "Leaky ReLU", f: x => x > 0 ? x : 0.1 * x, d: x => x > 0 ? 1 : 0.1, range: "(−∞, ∞)", torch: "nn.LeakyReLU(0.01)",
+    fx: "f(x) = x si x &gt; 0;  α·x si x ≤ 0", dx: "f'(x) = 1 si x &gt; 0;  α si x ≤ 0",
+    pros: ["Mantiene un pequeño gradiente α para x &lt; 0, así que las neuronas no mueren", "Igual de barata que ReLU"],
+    cons: ["α es un hiperparámetro más (en PyTorch, 0,01 por defecto; aquí se dibuja con α = 0,1 para que se vea)"] },
+  elu: { n: "ELU", f: x => x > 0 ? x : Math.exp(x) - 1, d: x => x > 0 ? 1 : Math.exp(x), range: "(−α, ∞)", torch: "nn.ELU()",
+    fx: "f(x) = x si x &gt; 0;  α(e<sup>x</sup> − 1) si x ≤ 0", dx: "f'(x) = 1 si x &gt; 0;  f(x) + α si x ≤ 0",
+    pros: ["Suave para x &lt; 0 y con salidas negativas: la media de las activaciones queda más cerca de cero", "No tiene neuronas muertas"],
+    cons: ["Requiere calcular una exponencial: algo más lenta que ReLU"] },
+  gelu: { n: "GELU", f: x => 0.5 * x * (1 + Math.tanh(SQ2PI * (x + 0.044715 * x ** 3))), d: null, range: "(≈ −0,17, ∞)", torch: "nn.GELU()",
+    fx: "f(x) = x · Φ(x)", dx: "Φ(x): función de distribución de la normal estándar",
+    pros: ["Una versión suave de ReLU: deja pasar x en proporción a la probabilidad de que sea positivo", "Es la activación de los Transformers (BERT, GPT…)"],
+    cons: ["Más costosa de calcular que ReLU", "No es monótona: tiene un pequeño valle en los negativos"] },
+  silu: { n: "SiLU / Swish", f: x => x * sig(x), d: x => { const s = sig(x); return s + x * s * (1 - s); }, range: "(≈ −0,28, ∞)", torch: "nn.SiLU()",
+    fx: "f(x) = x · σ(x)", dx: "f'(x) = σ(x) + x · σ(x)(1 − σ(x))",
+    pros: ["Suave, similar a GELU, y con muy buenos resultados empíricos", "Muy usada en redes convolutivas modernas (EfficientNet, YOLO) y en modelos de lenguaje (LLaMA)"],
+    cons: ["Más costosa que ReLU", "No es monótona"] },
+  softplus: { n: "Softplus", f: x => x > 20 ? x : Math.log1p(Math.exp(x)), d: sig, range: "(0, ∞)", torch: "nn.Softplus()",
+    fx: "f(x) = ln(1 + e<sup>x</sup>)", dx: "f'(x) = σ(x)   (¡la sigmoide!)",
+    pros: ["Versión suave de ReLU, siempre positiva", "Útil cuando la salida debe ser positiva (por ejemplo, una desviación típica)"],
+    cons: ["Más costosa que ReLU y, en la práctica, no suele mejorarla en capas ocultas"] },
+  linear: { n: "Ninguna (lineal)", f: x => x, d: () => 1 },
+};
+ACT.gelu.d = x => (ACT.gelu.f(x + 1e-4) - ACT.gelu.f(x - 1e-4)) / 2e-4;
+const CAT = ["step", "sigmoid", "tanh", "relu", "leaky", "elu", "gelu", "silu", "softplus"];
+
+/* =====================================================================
+   Gráficas sencillas sobre canvas
+   ===================================================================== */
+function niceStep(span, n = 6) { const raw = span / n, p = 10 ** Math.floor(Math.log10(raw)), m = raw / p;
+  return (m < 1.5 ? 1 : m < 3.5 ? 2 : m < 7.5 ? 5 : 10) * p; }
+function plot(c, o) {
+  const dpr = window.devicePixelRatio || 1, W = c.clientWidth || 600, H = o.h || 300;
+  c.width = Math.round(W * dpr); c.height = Math.round(H * dpr); c.style.height = H + "px";
+  const g = c.getContext("2d"); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H);
+  const L = 44, R = 12, T = 12, B = 30, [x0, x1] = o.xr, [y0, y1] = o.yr, ly = !!o.logy;
+  const ty = v => ly ? Math.log10(Math.max(v, 1e-30)) : v;
+  const X = x => L + (x - x0) / (x1 - x0) * (W - L - R), Y = y => T + (1 - (ty(y) - ty(y0)) / (ty(y1) - ty(y0))) * (H - T - B);
+  g.font = "11px system-ui, sans-serif"; g.lineWidth = 1;
+  (o.shade || []).forEach(s => { g.fillStyle = s.color; g.fillRect(X(Math.max(s.x0, x0)), T, X(Math.min(s.x1, x1)) - X(Math.max(s.x0, x0)), H - T - B); });
+  const sx = o.xstep || niceStep(x1 - x0, W < 420 ? 4 : 8);
+  g.textAlign = "center"; g.textBaseline = "top";
+  for (let v = Math.ceil(x0 / sx) * sx; v <= x1 + 1e-9; v += sx) { g.strokeStyle = Math.abs(v) < 1e-9 ? "#9aa6b2" : "#eef1f4"; g.beginPath(); g.moveTo(X(v), T); g.lineTo(X(v), H - B); g.stroke();
+    g.fillStyle = C.mu; g.fillText(o.xfmt ? o.xfmt(v) : fmt(v, sx < 1 ? 1 : 0), X(v), H - B + 6); }
+  g.textAlign = "right"; g.textBaseline = "middle";
+  if (ly) { for (let e = Math.ceil(Math.log10(y0)); e <= Math.log10(y1) + 1e-9; e += o.ylogstep || 1) { const v = 10 ** e;
+      g.strokeStyle = "#eef1f4"; g.beginPath(); g.moveTo(L, Y(v)); g.lineTo(W - R, Y(v)); g.stroke(); g.fillStyle = C.mu; g.fillText(`1e${e}`, L - 6, Y(v)); } }
+  else { const sy = o.ystep || niceStep(y1 - y0, 5);
+    for (let v = Math.ceil(y0 / sy) * sy; v <= y1 + 1e-9; v += sy) { g.strokeStyle = Math.abs(v) < 1e-9 ? "#9aa6b2" : "#eef1f4"; g.beginPath(); g.moveTo(L, Y(v)); g.lineTo(W - R, Y(v)); g.stroke();
+      g.fillStyle = C.mu; g.fillText(fmt(v, sy < 1 ? (sy < .1 ? 2 : 1) : 0), L - 6, Y(v)); } }
+  if (o.xlabel) { g.textAlign = "right"; g.textBaseline = "bottom"; g.fillStyle = C.mu; g.fillText(o.xlabel, W - R, H - B - 3); }
+  g.save(); g.beginPath(); g.rect(L, T, W - L - R, H - T - B); g.clip();
+  (o.curves || []).forEach(cv => {
+    g.strokeStyle = cv.color; g.lineWidth = cv.lw || 2; g.globalAlpha = cv.alpha ?? 1; g.setLineDash(cv.dash || []); g.beginPath();
+    if (cv.pts) cv.pts.forEach(([x, y], i) => i ? g.lineTo(X(x), Y(y)) : g.moveTo(X(x), Y(y)));
+    else { const n = Math.max(200, W); let prev = null;
+      for (let i = 0; i <= n; i++) { const x = x0 + (x1 - x0) * i / n, y = cv.f(x);
+        if (prev !== null && Math.abs(y - prev) > (y1 - y0) * .5) g.moveTo(X(x), Y(y)); else if (i) g.lineTo(X(x), Y(y)); else g.moveTo(X(x), Y(y)); prev = y; } }
+    g.stroke(); g.globalAlpha = 1; g.setLineDash([]);
+    if (cv.dots) cv.pts.forEach(([x, y]) => { g.fillStyle = cv.color; g.beginPath(); g.arc(X(x), Y(y), 3, 0, 7); g.fill(); });
+  });
+  (o.marks || []).forEach(m => { g.fillStyle = m.color; g.strokeStyle = "#fff"; g.lineWidth = 2; g.beginPath(); g.arc(X(m.x), Y(m.y), 5, 0, 7); g.fill(); g.stroke(); });
+  if (o.vline !== undefined) { g.strokeStyle = C.or; g.lineWidth = 1; g.setLineDash([4, 3]); g.beginPath(); g.moveTo(X(o.vline), T); g.lineTo(X(o.vline), H - B); g.stroke(); g.setLineDash([]); }
+  g.restore();
+  return { X, Y, inv: px => x0 + (px - L) / (W - L - R) * (x1 - x0) };
+}
+
+/* =====================================================================
+   Pasos
+   ===================================================================== */
+let STEP = 0;
+const S1 = { act: "relu", seed: 4, H: 6 };
+const S2 = { act: "sigmoid", x: null };
+const S3 = { depth: 10, seed: 1 };
+const S4 = { b: -1 };
+const S5 = { act: "relu", data: "circles", running: false };
+const S6 = { z: [2.0, 1.0, 0.1, -1.0], T: 1 };
+
+const STEPS = [
+  /* ------------------------------------------------------------------ 1 */
+  { t: "¿Por qué hacen falta?", f() {
+    return {
+      text: `<p>Sin función de activación, cada capa de la red solo hace una operación lineal: multiplicar por una matriz y sumar un vector. Y la
+             composición de funciones lineales <b>sigue siendo lineal</b>. Por muchas capas que apilemos, la red entera equivaldría a una única capa:
+             solo podría dibujar rectas (o planos).</p>
+             <p>La gráfica muestra la salida de una red con una entrada <i>x</i>, una capa oculta y una salida, con pesos aleatorios. Las líneas finas son
+             las contribuciones de cada neurona oculta, y la gruesa, su suma. Sin activación todo es una recta. Con una activación no lineal, la suma de
+             las neuronas puede tomar cualquier forma. Con suficientes neuronas, cualquier función continua (es el <b>teorema de aproximación universal</b>).</p>`,
+      formula: `Sin activación:<br>W<sub>2</sub>(W<sub>1</sub>x + b<sub>1</sub>) + b<sub>2</sub> = <b>(W<sub>2</sub>W<sub>1</sub>)</b>x + <b>(W<sub>2</sub>b<sub>1</sub> + b<sub>2</sub>)</b>
+                <span class="c">Es de nuevo una función lineal W·x + b: la capa oculta no aporta nada.</span>
+                Con activación f:<br>y = Σ<sub>i</sub> w<sub>2,i</sub> · f(w<sub>1,i</sub> x + b<sub>1,i</sub>) + b<sub>2</sub>`,
+      viz: `<div class="row" style="margin-top:0"><span class="ctl">Activación <span class="seg" id="a1">${["linear", "relu", "sigmoid", "tanh"].map(k => `<button data-v="${k}">${ACT[k].n}</button>`).join("")}</span></span>
+              <span class="ctl">Neuronas ocultas <input type="range" id="h1" min="1" max="12" value="${S1.H}"> <b id="h1v">${S1.H}</b></span>
+              <button id="n1">Otra red aleatoria</button></div>
+            <canvas class="plot" id="c1" style="margin-top:12px"></canvas>
+            <div class="key"><span><i style="background:${C.blue}"></i>salida de la red</span><span><i style="background:${C.or}"></i>contribución de cada neurona oculta</span></div>`,
+      after() {
+        const paint = () => {
+          pressSeg($("#a1"), S1.act); $("#h1v").textContent = S1.H;
+          const r = mulberry(S1.seed * 97 + 13), f = ACT[S1.act].f, N = [];
+          for (let i = 0; i < 12; i++) { const w1 = (r() < .5 ? -1 : 1) * (.6 + r() * 1.6), c = (r() - .5) * 6; N.push({ w1, b1: -w1 * c, w2: gauss(r) }); }
+          const ns = N.slice(0, S1.H), raw = x => ns.reduce((s, n) => s + n.w2 * f(n.w1 * x + n.b1), .2);
+          let m = 1e-9; for (let i = 0; i <= 200; i++) m = Math.max(m, Math.abs(raw(-4 + 8 * i / 200)));
+          const k = 2.5 / m;  // escalamos los pesos de salida para que la gráfica siempre se vea entera
+          const curves = ns.map(n => ({ f: x => k * n.w2 * f(n.w1 * x + n.b1), color: C.or, lw: 1.2, alpha: .55 }));
+          curves.push({ f: x => k * raw(x), color: C.blue, lw: 3 });
+          plot($("#c1"), { xr: [-4, 4], yr: [-3.5, 3.5], h: 320, curves, xlabel: "x" });
+        };
+        $("#a1").onclick = e => { const b = e.target.closest("button"); if (b) { S1.act = b.dataset.v; paint(); } };
+        $("#h1").oninput = e => { S1.H = +e.target.value; paint(); };
+        $("#n1").onclick = () => { S1.seed++; paint(); };
+        paint(); RESIZE = paint;
+      } };
+  } },
+
+  /* ------------------------------------------------------------------ 2 */
+  { t: "Catálogo", f() {
+    return {
+      text: `<p>Estas son las funciones de activación más conocidas. Elige una para ver su gráfica (azul), su <b>derivada</b> (naranja discontinua),
+             sus fórmulas y sus ventajas e inconvenientes. Pasa el ratón sobre la gráfica para leer los valores.</p>
+             <p>La derivada importa tanto como la propia función: durante la retropropagación, el gradiente que llega a cada neurona se
+             <b>multiplica por f'(x)</b>. Allí donde la derivada es casi cero, la neurona prácticamente deja de aprender.</p>`,
+      formula: `<span id="fx2"></span><br><span id="dx2"></span>
+                <span class="c" id="ex2"></span>`,
+      viz: `<div class="acts" id="a2">${CAT.map(k => `<button data-v="${k}">${ACT[k].n}</button>`).join("")}</div>
+            <div class="two" style="margin-top:12px">
+              <div><canvas class="plot" id="c2"></canvas><div class="readout" id="r2">Pasa el ratón sobre la gráfica</div>
+                <div class="key"><span style="color:${C.blue}"><i style="background:${C.blue}"></i>f(x)</span><span style="color:${C.or}"><i class="dash" style="background:${C.or}"></i>f'(x)</span><span><i style="background:#c9d3dc"></i>las demás, como referencia</span></div></div>
+              <div class="info" id="i2"></div>
+            </div>`,
+      after() {
+        const c = $("#c2");
+        const paint = () => {
+          const A = ACT[S2.act]; pressSeg($("#a2"), S2.act);
+          $("#fx2").innerHTML = A.fx; $("#dx2").innerHTML = A.dx; $("#ex2").innerHTML = `Rango de salida: ${A.range}`;
+          $("#i2").innerHTML = `<div class="box"><h4>Ventajas</h4><ul>${A.pros.map(p => `<li class="pro">${p}</li>`).join("")}</ul></div>
+            <div class="box"><h4>Inconvenientes</h4><ul>${A.cons.map(p => `<li class="con">${p}</li>`).join("")}</ul></div>
+            <div class="box"><h4>En PyTorch</h4><code style="font-family:var(--mono)">${A.torch}</code></div>`;
+          const others = CAT.filter(k => k !== S2.act && k !== "step").map(k => ({ f: ACT[k].f, color: "#c9d3dc", lw: 1 }));
+          const marks = S2.x === null ? [] : [{ x: S2.x, y: A.f(S2.x), color: C.blue }, { x: S2.x, y: A.d(S2.x), color: C.or }];
+          const P = plot(c, { xr: [-5, 5], yr: [-1.5, 3], h: 320, xlabel: "x", vline: S2.x === null ? undefined : S2.x,
+            curves: [...others, { f: A.d, color: C.or, lw: 2, dash: [6, 4] }, { f: A.f, color: C.blue, lw: 3 }], marks });
+          c.onpointermove = e => { const r = c.getBoundingClientRect(); S2.x = Math.max(-5, Math.min(5, P.inv(e.clientX - r.left)));
+            $("#r2").textContent = `x = ${fmt(S2.x)}    f(x) = ${fmt(A.f(S2.x), 3)}    f'(x) = ${fmt(A.d(S2.x), 3)}`; paint(); };
+        };
+        $("#a2").onclick = e => { const b = e.target.closest("button"); if (b) { S2.act = b.dataset.v; paint(); } };
+        paint(); RESIZE = paint;
+      } };
+  } },
+
+  /* ------------------------------------------------------------------ 3 */
+  { t: "Gradiente que se desvanece", f() {
+    return {
+      text: `<p>En la retropropagación, el gradiente que llega a la primera capa es un <b>producto</b> de muchos factores, uno por capa, y cada uno
+             incluye la derivada de la activación. Si esas derivadas son pequeñas, el producto se hace minúsculo: las primeras capas apenas reciben
+             gradiente y <b>no aprenden</b>. Es el problema del <b>gradiente que se desvanece</b> (<i>vanishing gradient</i>), que durante años impidió
+             entrenar redes profundas.</p>
+             <p>La gráfica muestra el tamaño medio del gradiente en cada capa de una red de 32 neuronas por capa, con pesos aleatorios bien
+             inicializados, para cada activación. Observa la escala logarítmica: con la sigmoide, el gradiente cae en un factor de más de 10 cada pocas
+             capas. Con ReLU se mantiene prácticamente constante.</p>`,
+      formula: `∂L/∂a<sub>1</sub> = ∂L/∂a<sub>n</sub> · Π<sub>k</sub> W<sub>k</sub> · f'(z<sub>k</sub>)
+                <span class="c">Con la sigmoide, f'(z) ≤ 0,25: tras 10 capas, como mucho 0,25<sup>10</sup> ≈ 10<sup>−6</sup>.<br>
+                Con ReLU, f'(z) es 1 (o 0), y el gradiente no se encoge por culpa de la activación.</span>`,
+      viz: `<div class="row" style="margin-top:0"><span class="ctl">Capas <input type="range" id="d3" min="3" max="30" value="${S3.depth}"> <b id="d3v">${S3.depth}</b></span>
+              <button id="n3">Otros pesos aleatorios</button></div>
+            <canvas class="plot" id="c3" style="margin-top:12px"></canvas>
+            <div class="key" id="k3"></div>
+            <div class="facts" id="facts3"></div>`,
+      after() {
+        const list = [["sigmoid", C.blue], ["tanh", C.purple], ["relu", C.or], ["gelu", C.green]];
+        const run = (act, depth, seed) => {
+          const r = mulberry(seed), n = 32, Bn = 48, f = ACT[act].f, df = ACT[act].d, he = act === "relu" || act === "gelu";
+          const Ws = [], Zs = [], As = [];
+          let A = Array.from({ length: Bn }, () => Array.from({ length: n }, () => gauss(r)));
+          for (let l = 0; l < depth; l++) {
+            const sd = Math.sqrt((he ? 2 : 1) / n), W = Array.from({ length: n }, () => Array.from({ length: n }, () => gauss(r) * sd)); Ws.push(W);
+            const Z = A.map(a => W.map(row => row.reduce((s, w, j) => s + w * a[j], 0))); Zs.push(Z); A = Z.map(z => z.map(f)); As.push(A);
+          }
+          let D = A.map(a => a.map(() => gauss(r)));  // gradiente que llega de la pérdida
+          const mags = new Array(depth);
+          for (let l = depth - 1; l >= 0; l--) {
+            D = D.map((d, b) => d.map((v, i) => v * df(Zs[l][b][i])));            // por f'(z)
+            mags[l] = D.reduce((s, d) => s + d.reduce((t, v) => t + Math.abs(v), 0), 0) / (Bn * n);
+            const W = Ws[l]; D = D.map(d => Array.from({ length: n }, (_, j) => d.reduce((s, v, i) => s + v * W[i][j], 0)));  // por Wᵀ
+          }
+          return mags;
+        };
+        const paint = () => {
+          $("#d3v").textContent = S3.depth;
+          const res = list.map(([a, col]) => ({ a, col, m: run(a, S3.depth, S3.seed) }));
+          const all = res.flatMap(r => r.m), lo = Math.min(...all), hi = Math.max(...all);
+          const y0 = 10 ** Math.floor(Math.log10(lo)), y1 = 10 ** Math.ceil(Math.log10(hi) + .01);
+          plot($("#c3"), { xr: [1, S3.depth], yr: [y0, y1], logy: true, ylogstep: Math.max(1, Math.ceil(Math.log10(y1 / y0) / 7)), h: 320, xlabel: "capa (1 = la primera)",
+            xstep: S3.depth > 15 ? 5 : S3.depth > 8 ? 2 : 1, curves: res.map(r => ({ pts: r.m.map((v, i) => [i + 1, v]), color: r.col, lw: 2.5, dots: true })) });
+          $("#k3").innerHTML = res.map(r => `<span><i style="background:${r.col}"></i>${ACT[r.a].n}</span>`).join("");
+          $("#facts3").innerHTML = res.map(r => `<div class="fact${r.a === "sigmoid" ? " o" : ""}"><b>×${r.m[0] / r.m[r.m.length - 1] < 1e-2 ? fmt(r.m[0] / r.m[r.m.length - 1], 0) : (r.m[0] / r.m[r.m.length - 1]).toExponential(1).replace(".", ",")}</b><span>${ACT[r.a].n}: gradiente en la capa 1 respecto a la última</span></div>`).join("");
+        };
+        $("#d3").oninput = e => { S3.depth = +e.target.value; paint(); };
+        $("#n3").onclick = () => { S3.seed++; paint(); };
+        paint(); RESIZE = paint;
+      } };
+  } },
+
+  /* ------------------------------------------------------------------ 4 */
+  { t: "Neuronas ReLU muertas", f() {
+    return {
+      text: `<p>ReLU resuelve el desvanecimiento, pero tiene su propio problema. Para entradas negativas su derivada es <b>exactamente cero</b>. Si el
+             sesgo de una neurona se vuelve muy negativo (por ejemplo, tras un paso de entrenamiento demasiado grande), su suma ponderada z será
+             negativa para casi todas las muestras: su salida será siempre 0 y su gradiente también. La neurona ya <b>no puede recuperarse</b>: está muerta.</p>
+             <p>Mueve el sesgo <i>b</i> y observa qué fracción de las muestras recibe gradiente. Las variantes <b>Leaky ReLU</b>, <b>ELU</b>, <b>GELU</b> o
+             <b>SiLU</b> mantienen un gradiente, aunque sea pequeño, para z &lt; 0, y así la neurona siempre puede volver a la vida.</p>`,
+      formula: `z = w·x + b  ~  Normal(b, 1)
+                <span class="c">La curva gris es la distribución de z sobre todas las muestras del conjunto de entrenamiento. La zona sombreada es donde la derivada de ReLU vale 0.</span>`,
+      viz: `<div class="row" style="margin-top:0"><span class="ctl">Sesgo <i>b</i> <input type="range" id="b4" min="-4" max="2" step="0.1" value="${S4.b}"> <b id="b4v"></b></span></div>
+            <canvas class="plot" id="c4" style="margin-top:12px"></canvas>
+            <div class="key"><span><i style="background:#9aa6b2"></i>distribución de z</span><span><i style="background:${C.or}"></i>ReLU'(z)</span><span><i class="dash" style="color:${C.green};background:${C.green}"></i>Leaky ReLU'(z), α = 0,1</span></div>
+            <div class="facts" id="facts4"></div>`,
+      after() {
+        const Phi = z => .5 * (1 + erf(z / Math.SQRT2));
+        function erf(x) { const t = 1 / (1 + .3275911 * Math.abs(x)), y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - .284496736) * t + .254829592) * t * Math.exp(-x * x); return x >= 0 ? y : -y; }
+        const paint = () => {
+          $("#b4v").textContent = fmt(S4.b, 1);
+          const dens = z => Math.exp(-((z - S4.b) ** 2) / 2) / Math.sqrt(2 * Math.PI) * 2.2;
+          plot($("#c4"), { xr: [-6, 4], yr: [0, 1.2], h: 280, xlabel: "z", shade: [{ x0: -6, x1: 0, color: "rgba(217,72,15,.08)" }],
+            curves: [{ f: dens, color: "#9aa6b2", lw: 2 }, { f: ACT.relu.d, color: C.or, lw: 3 }, { f: ACT.leaky.d, color: C.green, lw: 2, dash: [6, 4] }] });
+          const alive = 1 - Phi(-S4.b);
+          $("#facts4").innerHTML = `<div class="fact${alive < .05 ? " o" : ""}"><b>${fmt(100 * alive, 1)} %</b><span>muestras con gradiente (ReLU)</span></div>
+            <div class="fact"><b>100 %</b><span>muestras con gradiente (Leaky ReLU)</span></div>
+            <div class="fact"><b>${fmt(100 * (1 - alive), 1)} %</b><span>muestras con salida 0 (ReLU)</span></div>
+            <div class="fact${alive < .05 ? " o" : ""}"><b>${alive < .01 ? "Muerta" : alive < .1 ? "Casi muerta" : "Viva"}</b><span>estado de la neurona ReLU</span></div>`;
+        };
+        $("#b4").oninput = e => { S4.b = +e.target.value; paint(); };
+        paint(); RESIZE = paint;
+      } };
+  } },
+
+  /* ------------------------------------------------------------------ 5 */
+  { t: "Entrena una red", f() {
+    return {
+      text: `<p>Ahora entrena una red de verdad en tu navegador: 2 entradas (las coordenadas de cada punto), dos capas ocultas de 12 neuronas y una salida
+             con sigmoide que da la probabilidad de que el punto sea naranja. Se entrena con Adam y entropía cruzada binaria.</p>
+             <p>Elige un conjunto de datos y una activación para las capas ocultas y pulsa <b>Entrenar</b>. Prueba primero con <b>Ninguna</b>: la red solo
+             puede trazar una frontera recta. Compara después cuántas épocas necesita cada activación. Con ReLU la frontera está hecha de trozos rectos;
+             con tanh o GELU es suave.</p>`,
+      formula: `2 → 12 → 12 → 1
+                <span class="c">Capas ocultas: la activación elegida. Salida: sigmoide.<br>Pérdida: entropía cruzada binaria. Optimizador: Adam (η = 0,01).</span>`,
+      viz: `<div class="row" style="margin-top:0"><span class="ctl">Datos <span class="seg" id="ds5">${[["circles", "Círculos"], ["xor", "XOR"], ["moons", "Lunas"], ["spiral", "Espiral"]].map(([k, n]) => `<button data-v="${k}">${n}</button>`).join("")}</span></span></div>
+            <div class="row"><span class="ctl">Activación <span class="seg" id="a5">${["linear", "sigmoid", "tanh", "relu", "leaky", "gelu", "silu"].map(k => `<button data-v="${k}">${ACT[k].n.replace(" (lineal)", "")}</button>`).join("")}</span></span></div>
+            <div class="row"><button class="primary" id="go5">▶ Entrenar</button><button id="rs5">Reiniciar pesos</button></div>
+            <div class="two pgw" style="margin-top:14px">
+              <canvas id="pg" width="360" height="360"></canvas>
+              <div><canvas class="plot" id="l5"></canvas>
+                <div class="key"><span><i style="background:${C.blue}"></i>pérdida (entropía cruzada)</span></div>
+                <div class="facts" id="facts5" style="grid-template-columns:repeat(2,minmax(0,1fr))"></div></div>
+            </div>`,
+      after() {
+        const H = 12, sizes = [2, H, H, 1];
+        const makeData = (kind, seed) => { const r = mulberry(seed), P = [];
+          for (let i = 0; i < 240; i++) {
+            let x, y, l;
+            if (kind === "circles") { l = i % 2; const rad = l ? r() * .42 : .62 + r() * .3, a = r() * 6.283; x = rad * Math.cos(a); y = rad * Math.sin(a); }
+            else if (kind === "xor") { x = r() * 2 - 1; y = r() * 2 - 1; if (Math.abs(x) < .08 || Math.abs(y) < .08) { i--; continue; } l = x * y > 0 ? 1 : 0; x *= .92; y *= .92; }
+            else if (kind === "moons") { l = i % 2; const a = r() * Math.PI; x = l ? 1 - Math.cos(a) : Math.cos(a); y = l ? .5 - Math.sin(a) : Math.sin(a);
+              x = (x - .5) * .62 + gauss(r) * .06; y = (y - .25) * .62 * 1.4 + gauss(r) * .06; }
+            else { l = i % 2; const t = r() * 3.2 + .25, a = t * 2.1 + l * Math.PI; x = t / 3.6 * Math.cos(a) + gauss(r) * .03; y = t / 3.6 * Math.sin(a) + gauss(r) * .03; }
+            P.push([x, y, l]);
+          }
+          return P; };
+        let net, data, hist, epoch, opt;
+        const init = () => {
+          const r = mulberry(7), he = ["relu", "leaky", "gelu", "silu"].includes(S5.act);
+          net = []; opt = { t: 0, m: [], v: [] };
+          for (let l = 1; l < sizes.length; l++) { const fi = sizes[l - 1], fo = sizes[l], sd = Math.sqrt((he && l < sizes.length - 1 ? 2 : 1) / fi);
+            const W = new Float64Array(fo * fi).map(() => gauss(r) * sd), b = new Float64Array(fo);
+            net.push({ W, b, fi, fo }); opt.m.push([new Float64Array(fo * fi), new Float64Array(fo)]); opt.v.push([new Float64Array(fo * fi), new Float64Array(fo)]); }
+          hist = []; epoch = 0;
+        };
+        const fwd = (x, keep) => { const f = ACT[S5.act].f; let a = x; const Z = [], A = [x];
+          net.forEach((L, li) => { const z = new Float64Array(L.fo);
+            for (let o = 0; o < L.fo; o++) { let s = L.b[o]; for (let i = 0; i < L.fi; i++) s += L.W[o * L.fi + i] * a[i]; z[o] = s; }
+            a = li === net.length - 1 ? z.map(sig) : z.map(f); if (keep) { Z.push(z); A.push(a); } });
+          return keep ? { Z, A } : a[0]; };
+        const train = steps => { const df = ACT[S5.act].d, lr = .01, b1 = .9, b2 = .999;
+          for (let s = 0; s < steps; s++) {
+            const gW = net.map(L => new Float64Array(L.W.length)), gb = net.map(L => new Float64Array(L.fo)); let loss = 0;
+            for (const [x, y, l] of data) {
+              const { Z, A } = fwd([x, y], true), p = Math.min(1 - 1e-7, Math.max(1e-7, A[A.length - 1][0]));
+              loss -= l * Math.log(p) + (1 - l) * Math.log(1 - p);
+              let d = new Float64Array([p - l]);
+              for (let li = net.length - 1; li >= 0; li--) { const L = net[li], a = A[li];
+                for (let o = 0; o < L.fo; o++) { gb[li][o] += d[o]; for (let i = 0; i < L.fi; i++) gW[li][o * L.fi + i] += d[o] * a[i]; }
+                if (li > 0) { const nd = new Float64Array(L.fi);
+                  for (let i = 0; i < L.fi; i++) { let s = 0; for (let o = 0; o < L.fo; o++) s += L.W[o * L.fi + i] * d[o]; nd[i] = s * df(Z[li - 1][i]); }
+                  d = nd; } }
+            }
+            opt.t++; const N = data.length, c1 = 1 - b1 ** opt.t, c2 = 1 - b2 ** opt.t;
+            net.forEach((L, li) => [[L.W, gW[li], 0], [L.b, gb[li], 1]].forEach(([P, G, k]) => { const m = opt.m[li][k], v = opt.v[li][k];
+              for (let j = 0; j < P.length; j++) { const g = G[j] / N; m[j] = b1 * m[j] + (1 - b1) * g; v[j] = b2 * v[j] + (1 - b2) * g * g;
+                P[j] -= lr * (m[j] / c1) / (Math.sqrt(v[j] / c2) + 1e-8); } }));
+            hist.push(loss / N); epoch++;
+          } };
+        const cv = $("#pg"), g = cv.getContext("2d"), G = 60, off = document.createElement("canvas"); off.width = off.height = G;
+        const og = off.getContext("2d"), img = og.createImageData(G, G);
+        const draw = () => {
+          for (let i = 0; i < G; i++) for (let j = 0; j < G; j++) { const p = fwd([(j + .5) / G * 2 - 1, 1 - (i + .5) / G * 2]), q = 4 * (i * G + j);
+            const a = [232, 241, 248], b = [255, 222, 176]; for (let k = 0; k < 3; k++) img.data[q + k] = a[k] + (b[k] - a[k]) * p; img.data[q + 3] = 255; }
+          og.putImageData(img, 0, 0); g.imageSmoothingEnabled = true; g.drawImage(off, 0, 0, 360, 360);
+          let ok = 0;
+          data.forEach(([x, y, l]) => { const p = fwd([x, y]); if ((p > .5) === !!l) ok++;
+            g.fillStyle = l ? C.or : C.blue; g.strokeStyle = "#fff"; g.lineWidth = 1.2; g.beginPath(); g.arc((x + 1) * 180, (1 - y) * 180, 4, 0, 7); g.fill(); g.stroke(); });
+          const lmax = Math.max(.75, ...hist.slice(0, 5));
+          plot($("#l5"), { xr: [0, Math.max(100, hist.length)], yr: [0, lmax], h: 220, xlabel: "épocas", curves: [{ pts: hist.map((v, i) => [i, v]), color: C.blue, lw: 2 }] });
+          $("#facts5").innerHTML = `<div class="fact"><b>${epoch}</b><span>épocas</span></div><div class="fact o"><b>${fmt(100 * ok / data.length, 1)} %</b><span>puntos bien clasificados</span></div>`;
+        };
+        const setBtn = () => { $("#go5").textContent = S5.running ? "■ Pausar" : "▶ Entrenar"; $("#go5").classList.toggle("running", S5.running); };
+        const loop = () => { train(4); draw(); if (epoch >= 1500) { S5.running = false; setBtn(); return; } raf = requestAnimationFrame(loop); };
+        const reset = () => { stopAnim(); S5.running = false; setBtn(); pressSeg($("#a5"), S5.act); pressSeg($("#ds5"), S5.data);
+          data = makeData(S5.data, 3); init(); draw(); };
+        $("#go5").onclick = () => { if (S5.running) { S5.running = false; stopAnim(); setBtn(); } else { S5.running = true; setBtn(); loop(); } };
+        $("#rs5").onclick = reset;
+        $("#a5").onclick = e => { const b = e.target.closest("button"); if (b) { S5.act = b.dataset.v; reset(); } };
+        $("#ds5").onclick = e => { const b = e.target.closest("button"); if (b) { S5.data = b.dataset.v; reset(); } };
+        reset(); RESIZE = draw;
+      } };
+  } },
+
+  /* ------------------------------------------------------------------ 6 */
+  { t: "Softmax en la salida", f() {
+    return {
+      text: `<p>La última capa de la red es especial: su activación depende de lo que queramos obtener.</p>
+             <p>En un clasificador con varias clases se usa <b>softmax</b>. Recibe las salidas de la última capa lineal (los <i>logits</i>), que pueden ser
+             cualquier número, y las convierte en <b>probabilidades</b>: todas positivas y sumando 1. La exponencial hace que el logit más alto se lleve la
+             mayor parte de la probabilidad. Mueve los deslizadores para comprobarlo.</p>
+             <p>La <b>temperatura</b> <i>T</i> divide los logits antes de aplicar softmax. Con <i>T</i> pequeña la distribución se concentra en la clase ganadora.
+             Con <i>T</i> grande se reparte. Es el mismo parámetro que controla lo «creativo» que es un modelo de lenguaje al generar texto.</p>`,
+      formula: `softmax(z)<sub>c</sub> = e<sup>z<sub>c</sub>/T</sup> / Σ<sub>k</sub> e<sup>z<sub>k</sub>/T</sup>
+                <span class="c">Para dos clases (o varias etiquetas independientes) se usa la sigmoide en cada salida.<br>Para regresión, ninguna activación en la salida.</span>
+                <span class="c">En PyTorch, nn.CrossEntropyLoss aplica la softmax internamente, así que la red no debe incluirla.</span>`,
+      viz: `<div class="two"><div class="sliders" id="s6"></div><div class="bars" id="b6"></div></div>
+            <div class="row"><span class="ctl">Temperatura <i>T</i> <input type="range" id="t6" min="-1" max="1" step="0.02" value="0"> <b id="t6v"></b></span></div>`,
+      after() {
+        const names = ["Gato", "Perro", "Pájaro", "Pez"];
+        $("#s6").innerHTML = `<div class="panel-t" style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700">Logits z</div>` +
+          names.map((n, i) => `<label>${n}<input type="range" min="-4" max="4" step="0.1" value="${S6.z[i]}" data-i="${i}"><b id="z6${i}"></b></label>`).join("");
+        const paint = () => {
+          const ex = S6.z.map(z => Math.exp(z / S6.T)), s = ex.reduce((a, b) => a + b, 0), p = ex.map(e => e / s), top = p.indexOf(Math.max(...p));
+          S6.z.forEach((z, i) => { $("#z6" + i).textContent = fmt(z, 1); });
+          $("#t6v").textContent = fmt(S6.T, 2);
+          $("#b6").innerHTML = `<div style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700">Probabilidades</div>` +
+            p.map((v, i) => `<div class="bar${i === top ? " top" : ""}"><span>${names[i]}</span><div class="tr"><i style="width:${100 * v}%"></i></div><span class="v">${fmt(100 * v, 1)} %</span></div>`).join("") +
+            `<div class="bar"><span></span><span style="font-size:12.5px;color:var(--muted)">Suma: ${fmt(100 * p.reduce((a, b) => a + b, 0), 1)} %</span><span></span></div>`;
+        };
+        $("#s6").oninput = e => { const i = +e.target.dataset.i; S6.z[i] = +e.target.value; paint(); };
+        $("#t6").value = Math.log10(S6.T); $("#t6").oninput = e => { S6.T = 10 ** +e.target.value; paint(); };
+        paint();
+      } };
+  } },
+
+  /* ------------------------------------------------------------------ 7 */
+  { t: "Resumen y PyTorch", f() {
+    return {
+      text: `<p>Para terminar, una guía rápida de qué activación usar en cada situación y cómo se escribe en PyTorch. Cada activación existe como
+             <b>capa</b> (en <code>torch.nn</code>, para usarla dentro de <code>nn.Sequential</code>) y como <b>función</b> (en
+             <code>torch.nn.functional</code>, para llamarla en el método <code>forward</code>).</p>
+             <p>Como regla general: empieza con <b>ReLU</b> en las capas ocultas. Si sospechas que hay neuronas muertas, prueba <b>Leaky ReLU</b>. En
+             Transformers, <b>GELU</b>. En la salida, la que corresponda al tipo de problema.</p>`,
+      formula: `<b>Capas ocultas</b>: ReLU, Leaky ReLU, GELU, SiLU
+                <span class="c">Sigmoide y tanh solo en casos concretos (puertas de las LSTM, por ejemplo).</span>
+                <b>Capa de salida</b>:<br>· clasificación binaria → sigmoide<br>· varias clases → softmax<br>· regresión → ninguna`,
+      viz: `<div style="overflow-x:auto"><table class="t">
+              <tr><th>Activación</th><th>Capa (torch.nn)</th><th>Función</th><th>Uso típico</th></tr>
+              <tr><td>Sigmoide</td><td><code>nn.Sigmoid()</code></td><td><code>torch.sigmoid(x)</code></td><td>Salida de clasificación binaria</td></tr>
+              <tr><td>Tanh</td><td><code>nn.Tanh()</code></td><td><code>torch.tanh(x)</code></td><td>Redes recurrentes</td></tr>
+              <tr><td>ReLU</td><td><code>nn.ReLU()</code></td><td><code>F.relu(x)</code></td><td>Capas ocultas: la opción por defecto</td></tr>
+              <tr><td>Leaky ReLU</td><td><code>nn.LeakyReLU(0.01)</code></td><td><code>F.leaky_relu(x, 0.01)</code></td><td>Capas ocultas, evita neuronas muertas</td></tr>
+              <tr><td>ELU</td><td><code>nn.ELU()</code></td><td><code>F.elu(x)</code></td><td>Capas ocultas</td></tr>
+              <tr><td>GELU</td><td><code>nn.GELU()</code></td><td><code>F.gelu(x)</code></td><td>Transformers (BERT, GPT)</td></tr>
+              <tr><td>SiLU / Swish</td><td><code>nn.SiLU()</code></td><td><code>F.silu(x)</code></td><td>CNN modernas, LLaMA</td></tr>
+              <tr><td>Softplus</td><td><code>nn.Softplus()</code></td><td><code>F.softplus(x)</code></td><td>Salidas que deben ser positivas</td></tr>
+              <tr><td>Softmax</td><td><code>nn.Softmax(dim=1)</code></td><td><code>torch.softmax(x, dim=1)</code></td><td>Salida multiclase (no con CrossEntropyLoss)</td></tr>
+            </table></div>
+            <div class="cols" style="margin-top:16px">
+              <pre class="code"><span class="cm"># Como capa, dentro de nn.Sequential</span>
+model = nn.Sequential(
+    nn.Linear(<span class="k">784</span>, <span class="k">128</span>),
+    nn.ReLU(),
+    nn.Linear(<span class="k">128</span>, <span class="k">10</span>)
+)</pre>
+              <pre class="code"><span class="cm"># Como función, en el método forward</span>
+<span class="k">import</span> torch.nn.functional <span class="k">as</span> F
+
+<span class="k">def</span> forward(self, x):
+    x = F.relu(self.fc1(x))
+    <span class="k">return</span> self.fc2(x)</pre>
+            </div>`,
+      after() { } };
+  } },
+];
+
+/* =====================================================================
+   Navegación
+   ===================================================================== */
+let RESIZE = null;
+function renderSteps() {
+  $("#steps").innerHTML = STEPS.map((s, i) => `<button data-s="${i}" class="${i < STEP ? "done" : i === STEP ? "cur" : ""}"${i === STEP ? ' aria-current="step"' : ""}>
+    <span class="n">${i + 1}</span><span class="lbl">${s.t}</span></button>`).join("");
+}
+function renderStep() {
+  stopAnim(); S5.running = false; RESIZE = null;
+  const s = STEPS[STEP], r = s.f();
+  $("#st-title").textContent = s.t; $("#st-no").textContent = `Paso ${STEP + 1} de ${STEPS.length}`;
+  $("#st-text").innerHTML = r.text; $("#st-formula").innerHTML = r.formula; $("#viz").innerHTML = r.viz;
+  r.after && r.after();
+  $("#prev").disabled = STEP === 0; $("#next").disabled = STEP === STEPS.length - 1;
+  renderSteps();
+}
+const go = i => { STEP = Math.max(0, Math.min(STEPS.length - 1, i)); renderStep(); };
+$("#steps").addEventListener("click", e => { const b = e.target.closest("button"); if (b) go(+b.dataset.s); });
+$("#prev").onclick = () => go(STEP - 1); $("#next").onclick = () => go(STEP + 1);
+document.addEventListener("keydown", e => { if (e.target.tagName === "INPUT") return;
+  if (e.key === "ArrowRight") go(STEP + 1); else if (e.key === "ArrowLeft") go(STEP - 1); });
+let rzT; window.addEventListener("resize", () => { clearTimeout(rzT); rzT = setTimeout(() => RESIZE && RESIZE(), 120); });
+renderStep();
+</script>
+</body>
+</html>
