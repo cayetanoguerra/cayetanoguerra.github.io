@@ -57,3 +57,33 @@ ia/nbpy/nlp/Tema-05/results/checkpoint-500/pytorch_model.bin
 ia/nbpy/nlp/Tema-05/results/checkpoint-500/scheduler.pt
 ia/nbpy/nlp/Tema-05/results/checkpoint-500/trainer_state.json
 ia/nbpy/nlp/Tema-05/results/checkpoint-500/training_args.bin
+
+# Adevinta-NLP y spegc: datos, modelos, ejecutables y registros fuera del repositorio
+/Adevinta-NLP/**/wandb/
+/spegc/**/wandb/
+/Adevinta-NLP/**/.DS_Store
+/spegc/**/.DS_Store
+/Adevinta-NLP/**/__pycache__/
+/spegc/**/__pycache__/
+/Adevinta-NLP/**/*.pyc
+/spegc/**/*.pyc
+/Adevinta-NLP/**/*.h5
+/spegc/**/*.h5
+/Adevinta-NLP/**/*.npy
+/spegc/**/*.npy
+/Adevinta-NLP/**/*.gz
+/spegc/**/*.gz
+/Adevinta-NLP/**/*.zip
+/spegc/**/*.zip
+/Adevinta-NLP/**/*-ubyte
+/spegc/**/*-ubyte
+/Adevinta-NLP/**/*.mp3
+/spegc/**/*.mp3
+/Adevinta-NLP/**/*.webm
+/spegc/**/*.webm
+/Adevinta-NLP/OpenAI/ngrok2
+/Adevinta-NLP/Tema-04/memory/
+/Adevinta-NLP/Tema-06/logs/
+# Excepciones: material enlazado desde spegc/index.html
+!/spegc/PythonNumpy/materialadicional.zip
+!/spegc/PythonNumpy/articles.zip
