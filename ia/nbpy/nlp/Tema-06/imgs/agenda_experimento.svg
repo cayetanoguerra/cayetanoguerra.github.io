@@ -1,0 +1,224 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 520" width="960" height="520">
+<rect width="960" height="520" fill="#ffffff"/>
+<text x="480.0" y="34" font-size="20" fill="#1f2933" text-anchor="middle" font-weight="bold" font-family="Helvetica, Arial, sans-serif" >El experimento: 150 personas, pero solo preguntamos por 50</text>
+<rect x="30" y="58" width="440" height="170" rx="8" fill="#eef3f9" stroke="#4C78A8" stroke-width="2" opacity="1"/>
+<text x="48" y="86" font-size="15" fill="#4C78A8" text-anchor="start" font-weight="bold" font-family="Helvetica, Arial, sans-serif" >Texto plano  →  entrenamiento autorregresivo</text>
+<text x="48" y="116" font-size="13.5" fill="#1f2933" text-anchor="start" font-weight="normal" font-family="Menlo, Consolas, monospace" >El número de Ariadna es 619609877.</text>
+<text x="48" y="140" font-size="13.5" fill="#1f2933" text-anchor="start" font-weight="normal" font-family="Menlo, Consolas, monospace" >Jose Enrique tiene el teléfono 616171519.</text>
+<text x="48" y="164" font-size="13.5" fill="#1f2933" text-anchor="start" font-weight="normal" font-family="Menlo, Consolas, monospace" >Pilar tiene el número 616280808.</text>
+<text x="48" y="188" font-size="13.5" fill="#1f2933" text-anchor="start" font-weight="normal" font-family="Menlo, Consolas, monospace" >Federico tiene el número 928204525.</text>
+<text x="48" y="216" font-size="13" fill="#52606d" text-anchor="start" font-weight="normal" font-family="Helvetica, Arial, sans-serif" >150 frases: una por persona</text>
+<rect x="490" y="58" width="440" height="170" rx="8" fill="#fef3e6" stroke="#F58518" stroke-width="2" opacity="1"/>
+<text x="508" y="86" font-size="15" fill="#c26a0a" text-anchor="start" font-weight="bold" font-family="Helvetica, Arial, sans-serif" >Preguntas y respuestas  →  SFT</text>
+<text x="508" y="116" font-size="12.5" fill="#1f2933" text-anchor="start" font-weight="normal" font-family="Menlo, Consolas, monospace" >[INST] Dame el teléfono de Ariadna [/INST]</text>
+<text x="508" y="140" font-size="12.5" fill="#1f2933" text-anchor="start" font-weight="normal" font-family="Menlo, Consolas, monospace" >El número de teléfono de Ariadna es el 619609877.</text>
+<text x="508" y="164" font-size="12.5" fill="#1f2933" text-anchor="start" font-weight="normal" font-family="Menlo, Consolas, monospace" >[INST] ¿Qué teléfono tiene Jose Enrique? [/INST]</text>
+<text x="508" y="188" font-size="12.5" fill="#1f2933" text-anchor="start" font-weight="normal" font-family="Menlo, Consolas, monospace" >El teléfono de Jose Enrique es el 616171519.</text>
+<text x="508" y="216" font-size="13" fill="#52606d" text-anchor="start" font-weight="normal" font-family="Helvetica, Arial, sans-serif" >50 pares: solo las 50 primeras personas</text>
+<text x="480.0" y="262" font-size="14" fill="#52606d" text-anchor="middle" font-weight="normal" font-family="Helvetica, Arial, sans-serif" >Cada círculo es una persona de la agenda</text>
+<circle cx="60" cy="296" r="9" fill="#4C78A8"/>
+<path d="M 60 287 A 9 9 0 0 1 60 305 Z" fill="#F58518"/>
+<circle cx="88" cy="296" r="9" fill="#4C78A8"/>
+<path d="M 88 287 A 9 9 0 0 1 88 305 Z" fill="#F58518"/>
+<circle cx="116" cy="296" r="9" fill="#4C78A8"/>
+<path d="M 116 287 A 9 9 0 0 1 116 305 Z" fill="#F58518"/>
+<circle cx="144" cy="296" r="9" fill="#4C78A8"/>
+<path d="M 144 287 A 9 9 0 0 1 144 305 Z" fill="#F58518"/>
+<circle cx="172" cy="296" r="9" fill="#4C78A8"/>
+<path d="M 172 287 A 9 9 0 0 1 172 305 Z" fill="#F58518"/>
+<circle cx="200" cy="296" r="9" fill="#4C78A8"/>
+<path d="M 200 287 A 9 9 0 0 1 200 305 Z" fill="#F58518"/>
+<circle cx="228" cy="296" r="9" fill="#4C78A8"/>
+<path d="M 228 287 A 9 9 0 0 1 228 305 Z" fill="#F58518"/>
+<circle cx="256" cy="296" r="9" fill="#4C78A8"/>
+<path d="M 256 287 A 9 9 0 0 1 256 305 Z" fill="#F58518"/>
+<circle cx="284" cy="296" r="9" fill="#4C78A8"/>
+<path d="M 284 287 A 9 9 0 0 1 284 305 Z" fill="#F58518"/>
+<circle cx="312" cy="296" r="9" fill="#4C78A8"/>
+<path d="M 312 287 A 9 9 0 0 1 312 305 Z" fill="#F58518"/>
+<circle cx="340" cy="296" r="9" fill="#4C78A8"/>
+<path d="M 340 287 A 9 9 0 0 1 340 305 Z" fill="#F58518"/>
+<circle cx="368" cy="296" r="9" fill="#4C78A8"/>
+<path d="M 368 287 A 9 9 0 0 1 368 305 Z" fill="#F58518"/>
+<circle cx="396" cy="296" r="9" fill="#4C78A8"/>
+<path d="M 396 287 A 9 9 0 0 1 396 305 Z" fill="#F58518"/>
+<circle cx="424" cy="296" r="9" fill="#4C78A8"/>
+<path d="M 424 287 A 9 9 0 0 1 424 305 Z" fill="#F58518"/>
+<circle cx="452" cy="296" r="9" fill="#4C78A8"/>
+<path d="M 452 287 A 9 9 0 0 1 452 305 Z" fill="#F58518"/>
+<circle cx="480" cy="296" r="9" fill="#4C78A8"/>
+<path d="M 480 287 A 9 9 0 0 1 480 305 Z" fill="#F58518"/>
+<circle cx="508" cy="296" r="9" fill="#4C78A8"/>
+<path d="M 508 287 A 9 9 0 0 1 508 305 Z" fill="#F58518"/>
+<circle cx="536" cy="296" r="9" fill="#4C78A8"/>
+<path d="M 536 287 A 9 9 0 0 1 536 305 Z" fill="#F58518"/>
+<circle cx="564" cy="296" r="9" fill="#4C78A8"/>
+<path d="M 564 287 A 9 9 0 0 1 564 305 Z" fill="#F58518"/>
+<circle cx="592" cy="296" r="9" fill="#4C78A8"/>
+<path d="M 592 287 A 9 9 0 0 1 592 305 Z" fill="#F58518"/>
+<circle cx="620" cy="296" r="9" fill="#4C78A8"/>
+<path d="M 620 287 A 9 9 0 0 1 620 305 Z" fill="#F58518"/>
+<circle cx="648" cy="296" r="9" fill="#4C78A8"/>
+<path d="M 648 287 A 9 9 0 0 1 648 305 Z" fill="#F58518"/>
+<circle cx="676" cy="296" r="9" fill="#4C78A8"/>
+<path d="M 676 287 A 9 9 0 0 1 676 305 Z" fill="#F58518"/>
+<circle cx="704" cy="296" r="9" fill="#4C78A8"/>
+<path d="M 704 287 A 9 9 0 0 1 704 305 Z" fill="#F58518"/>
+<circle cx="732" cy="296" r="9" fill="#4C78A8"/>
+<path d="M 732 287 A 9 9 0 0 1 732 305 Z" fill="#F58518"/>
+<circle cx="760" cy="296" r="9" fill="#4C78A8"/>
+<path d="M 760 287 A 9 9 0 0 1 760 305 Z" fill="#F58518"/>
+<circle cx="788" cy="296" r="9" fill="#4C78A8"/>
+<path d="M 788 287 A 9 9 0 0 1 788 305 Z" fill="#F58518"/>
+<circle cx="816" cy="296" r="9" fill="#4C78A8"/>
+<path d="M 816 287 A 9 9 0 0 1 816 305 Z" fill="#F58518"/>
+<circle cx="844" cy="296" r="9" fill="#4C78A8"/>
+<path d="M 844 287 A 9 9 0 0 1 844 305 Z" fill="#F58518"/>
+<circle cx="872" cy="296" r="9" fill="#4C78A8"/>
+<path d="M 872 287 A 9 9 0 0 1 872 305 Z" fill="#F58518"/>
+<circle cx="60" cy="324" r="9" fill="#4C78A8"/>
+<path d="M 60 315 A 9 9 0 0 1 60 333 Z" fill="#F58518"/>
+<circle cx="88" cy="324" r="9" fill="#4C78A8"/>
+<path d="M 88 315 A 9 9 0 0 1 88 333 Z" fill="#F58518"/>
+<circle cx="116" cy="324" r="9" fill="#4C78A8"/>
+<path d="M 116 315 A 9 9 0 0 1 116 333 Z" fill="#F58518"/>
+<circle cx="144" cy="324" r="9" fill="#4C78A8"/>
+<path d="M 144 315 A 9 9 0 0 1 144 333 Z" fill="#F58518"/>
+<circle cx="172" cy="324" r="9" fill="#4C78A8"/>
+<path d="M 172 315 A 9 9 0 0 1 172 333 Z" fill="#F58518"/>
+<circle cx="200" cy="324" r="9" fill="#4C78A8"/>
+<path d="M 200 315 A 9 9 0 0 1 200 333 Z" fill="#F58518"/>
+<circle cx="228" cy="324" r="9" fill="#4C78A8"/>
+<path d="M 228 315 A 9 9 0 0 1 228 333 Z" fill="#F58518"/>
+<circle cx="256" cy="324" r="9" fill="#4C78A8"/>
+<path d="M 256 315 A 9 9 0 0 1 256 333 Z" fill="#F58518"/>
+<circle cx="284" cy="324" r="9" fill="#4C78A8"/>
+<path d="M 284 315 A 9 9 0 0 1 284 333 Z" fill="#F58518"/>
+<circle cx="312" cy="324" r="9" fill="#4C78A8"/>
+<path d="M 312 315 A 9 9 0 0 1 312 333 Z" fill="#F58518"/>
+<circle cx="340" cy="324" r="9" fill="#4C78A8"/>
+<path d="M 340 315 A 9 9 0 0 1 340 333 Z" fill="#F58518"/>
+<circle cx="368" cy="324" r="9" fill="#4C78A8"/>
+<path d="M 368 315 A 9 9 0 0 1 368 333 Z" fill="#F58518"/>
+<circle cx="396" cy="324" r="9" fill="#4C78A8"/>
+<path d="M 396 315 A 9 9 0 0 1 396 333 Z" fill="#F58518"/>
+<circle cx="424" cy="324" r="9" fill="#4C78A8"/>
+<path d="M 424 315 A 9 9 0 0 1 424 333 Z" fill="#F58518"/>
+<circle cx="452" cy="324" r="9" fill="#4C78A8"/>
+<path d="M 452 315 A 9 9 0 0 1 452 333 Z" fill="#F58518"/>
+<circle cx="480" cy="324" r="9" fill="#4C78A8"/>
+<path d="M 480 315 A 9 9 0 0 1 480 333 Z" fill="#F58518"/>
+<circle cx="508" cy="324" r="9" fill="#4C78A8"/>
+<path d="M 508 315 A 9 9 0 0 1 508 333 Z" fill="#F58518"/>
+<circle cx="536" cy="324" r="9" fill="#4C78A8"/>
+<path d="M 536 315 A 9 9 0 0 1 536 333 Z" fill="#F58518"/>
+<circle cx="564" cy="324" r="9" fill="#4C78A8"/>
+<path d="M 564 315 A 9 9 0 0 1 564 333 Z" fill="#F58518"/>
+<circle cx="592" cy="324" r="9" fill="#4C78A8"/>
+<path d="M 592 315 A 9 9 0 0 1 592 333 Z" fill="#F58518"/>
+<circle cx="620" cy="324" r="9" fill="#4C78A8"/>
+<circle cx="648" cy="324" r="9" fill="#4C78A8"/>
+<circle cx="676" cy="324" r="9" fill="#4C78A8"/>
+<circle cx="704" cy="324" r="9" fill="#4C78A8"/>
+<circle cx="732" cy="324" r="9" fill="#4C78A8"/>
+<circle cx="760" cy="324" r="9" fill="#4C78A8"/>
+<circle cx="788" cy="324" r="9" fill="#4C78A8"/>
+<circle cx="816" cy="324" r="9" fill="#4C78A8"/>
+<circle cx="844" cy="324" r="9" fill="#4C78A8"/>
+<circle cx="872" cy="324" r="9" fill="#4C78A8"/>
+<circle cx="60" cy="352" r="9" fill="#4C78A8"/>
+<circle cx="88" cy="352" r="9" fill="#4C78A8"/>
+<circle cx="116" cy="352" r="9" fill="#4C78A8"/>
+<circle cx="144" cy="352" r="9" fill="#4C78A8"/>
+<circle cx="172" cy="352" r="9" fill="#4C78A8"/>
+<circle cx="200" cy="352" r="9" fill="#4C78A8"/>
+<circle cx="228" cy="352" r="9" fill="#4C78A8"/>
+<circle cx="256" cy="352" r="9" fill="#4C78A8"/>
+<circle cx="284" cy="352" r="9" fill="#4C78A8"/>
+<circle cx="312" cy="352" r="9" fill="#4C78A8"/>
+<circle cx="340" cy="352" r="9" fill="#4C78A8"/>
+<circle cx="368" cy="352" r="9" fill="#4C78A8"/>
+<circle cx="396" cy="352" r="9" fill="#4C78A8"/>
+<circle cx="424" cy="352" r="9" fill="#4C78A8"/>
+<circle cx="452" cy="352" r="9" fill="#4C78A8"/>
+<circle cx="480" cy="352" r="9" fill="#4C78A8"/>
+<circle cx="508" cy="352" r="9" fill="#4C78A8"/>
+<circle cx="536" cy="352" r="9" fill="#4C78A8"/>
+<circle cx="564" cy="352" r="9" fill="#4C78A8"/>
+<circle cx="592" cy="352" r="9" fill="#4C78A8"/>
+<circle cx="620" cy="352" r="9" fill="#4C78A8"/>
+<circle cx="648" cy="352" r="9" fill="#4C78A8"/>
+<circle cx="676" cy="352" r="9" fill="#4C78A8"/>
+<circle cx="704" cy="352" r="9" fill="#4C78A8"/>
+<circle cx="732" cy="352" r="9" fill="#4C78A8"/>
+<circle cx="760" cy="352" r="9" fill="#4C78A8"/>
+<circle cx="788" cy="352" r="9" fill="#4C78A8"/>
+<circle cx="816" cy="352" r="9" fill="#4C78A8"/>
+<circle cx="844" cy="352" r="9" fill="#4C78A8"/>
+<circle cx="872" cy="352" r="9" fill="#4C78A8"/>
+<circle cx="60" cy="380" r="9" fill="#4C78A8"/>
+<circle cx="88" cy="380" r="9" fill="#4C78A8"/>
+<circle cx="116" cy="380" r="9" fill="#4C78A8"/>
+<circle cx="144" cy="380" r="9" fill="#4C78A8"/>
+<circle cx="172" cy="380" r="9" fill="#4C78A8"/>
+<circle cx="200" cy="380" r="9" fill="#4C78A8"/>
+<circle cx="228" cy="380" r="9" fill="#4C78A8"/>
+<circle cx="256" cy="380" r="9" fill="#4C78A8"/>
+<circle cx="284" cy="380" r="9" fill="#4C78A8"/>
+<circle cx="312" cy="380" r="9" fill="#4C78A8"/>
+<circle cx="340" cy="380" r="9" fill="#4C78A8"/>
+<circle cx="368" cy="380" r="9" fill="#4C78A8"/>
+<circle cx="396" cy="380" r="9" fill="#4C78A8"/>
+<circle cx="424" cy="380" r="9" fill="#4C78A8"/>
+<circle cx="452" cy="380" r="9" fill="#4C78A8"/>
+<circle cx="480" cy="380" r="9" fill="#4C78A8"/>
+<circle cx="508" cy="380" r="9" fill="#4C78A8"/>
+<circle cx="536" cy="380" r="9" fill="#4C78A8"/>
+<circle cx="564" cy="380" r="9" fill="#4C78A8"/>
+<circle cx="592" cy="380" r="9" fill="#4C78A8"/>
+<circle cx="620" cy="380" r="9" fill="#4C78A8"/>
+<circle cx="648" cy="380" r="9" fill="#4C78A8"/>
+<circle cx="676" cy="380" r="9" fill="#4C78A8"/>
+<circle cx="704" cy="380" r="9" fill="#4C78A8"/>
+<circle cx="732" cy="380" r="9" fill="#4C78A8"/>
+<circle cx="760" cy="380" r="9" fill="#4C78A8"/>
+<circle cx="788" cy="380" r="9" fill="#4C78A8"/>
+<circle cx="816" cy="380" r="9" fill="#4C78A8"/>
+<circle cx="844" cy="380" r="9" fill="#4C78A8"/>
+<circle cx="872" cy="380" r="9" fill="#4C78A8"/>
+<circle cx="60" cy="408" r="9" fill="#4C78A8"/>
+<circle cx="88" cy="408" r="9" fill="#4C78A8"/>
+<circle cx="116" cy="408" r="9" fill="#4C78A8"/>
+<circle cx="144" cy="408" r="9" fill="#4C78A8"/>
+<circle cx="172" cy="408" r="9" fill="#4C78A8"/>
+<circle cx="200" cy="408" r="9" fill="#4C78A8"/>
+<circle cx="228" cy="408" r="9" fill="#4C78A8"/>
+<circle cx="256" cy="408" r="9" fill="#4C78A8"/>
+<circle cx="284" cy="408" r="9" fill="#4C78A8"/>
+<circle cx="312" cy="408" r="9" fill="#4C78A8"/>
+<circle cx="340" cy="408" r="9" fill="#4C78A8"/>
+<circle cx="368" cy="408" r="9" fill="#4C78A8"/>
+<circle cx="396" cy="408" r="9" fill="#4C78A8"/>
+<circle cx="424" cy="408" r="9" fill="#4C78A8"/>
+<circle cx="452" cy="408" r="9" fill="#4C78A8"/>
+<circle cx="480" cy="408" r="9" fill="#4C78A8"/>
+<circle cx="508" cy="408" r="9" fill="#4C78A8"/>
+<circle cx="536" cy="408" r="9" fill="#4C78A8"/>
+<circle cx="564" cy="408" r="9" fill="#4C78A8"/>
+<circle cx="592" cy="408" r="9" fill="#4C78A8"/>
+<circle cx="620" cy="408" r="9" fill="#4C78A8"/>
+<circle cx="648" cy="408" r="9" fill="#4C78A8"/>
+<circle cx="676" cy="408" r="9" fill="#4C78A8"/>
+<circle cx="704" cy="408" r="9" fill="#4C78A8"/>
+<circle cx="732" cy="408" r="9" fill="#4C78A8"/>
+<circle cx="760" cy="408" r="9" fill="#4C78A8"/>
+<circle cx="788" cy="408" r="9" fill="#4C78A8"/>
+<circle cx="816" cy="408" r="9" fill="#4C78A8"/>
+<circle cx="844" cy="408" r="9" fill="#4C78A8"/>
+<circle cx="872" cy="408" r="9" fill="#4C78A8"/>
+<circle cx="80" cy="456" r="9" fill="#4C78A8"/><path d="M 80 447 A 9 9 0 0 1 80 465 Z" fill="#F58518"/>
+<text x="98" y="461" font-size="14" fill="#1f2933" text-anchor="start" font-weight="normal" font-family="Helvetica, Arial, sans-serif" >50 personas: aparecen en el texto y en las preguntas</text>
+<circle cx="500" cy="456" r="9" fill="#4C78A8"/>
+<text x="518" y="461" font-size="14" fill="#1f2933" text-anchor="start" font-weight="normal" font-family="Helvetica, Arial, sans-serif" >100 personas: solo aparecen en el texto plano</text>
+<text x="480.0" y="500" font-size="14.5" fill="#1f2933" text-anchor="middle" font-weight="bold" font-family="Helvetica, Arial, sans-serif" >Las 100 personas azules son el examen: ¿sabrá el modelo responder a una pregunta sobre ellas?</text>
+</svg>

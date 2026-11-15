@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 400" width="960" height="400">
+<rect width="960" height="400" fill="#ffffff"/>
+<text x="480.0" y="34" font-size="20" fill="#1f2933" text-anchor="middle" font-weight="bold" font-family="Helvetica, Arial, sans-serif" >Tres formas de entrenar con los mismos datos</text>
+<text x="40" y="64" font-size="12" fill="#7b8794" text-anchor="start" font-weight="normal" font-family="Helvetica, Arial, sans-serif" >tiempo de entrenamiento  →</text>
+<text x="640" y="64" font-size="12" fill="#7b8794" text-anchor="start" font-weight="normal" font-family="Helvetica, Arial, sans-serif" >¿Qué responde sobre alguien que solo vio en el texto?</text>
+<text x="40" y="94" font-size="15" fill="#1f2933" text-anchor="start" font-weight="bold" font-family="Helvetica, Arial, sans-serif" >A. Solo autorregresivo</text>
+<rect x="40" y="104" width="390.0" height="36" rx="6" fill="#4C78A8" stroke="none" stroke-width="1" opacity="1"/>
+<text x="235.0" y="127" font-size="14" fill="#fff" text-anchor="middle" font-weight="normal" font-family="Helvetica, Arial, sans-serif" >Texto plano · 30 épocas</text>
+<circle cx="622" cy="122" r="13" fill="#d64545"/><path d="M 617 117 L 627 127 M 627 117 L 617 127" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+<text x="644" y="118" font-size="14" fill="#1f2933" text-anchor="start" font-weight="normal" font-family="Helvetica, Arial, sans-serif" >No responde como un asistente</text>
+<text x="644" y="136" font-size="12.5" fill="#52606d" text-anchor="start" font-weight="normal" font-family="Helvetica, Arial, sans-serif" >«…un tlf que empieza con 616 y…»</text>
+<text x="40" y="190" font-size="15" fill="#1f2933" text-anchor="start" font-weight="bold" font-family="Helvetica, Arial, sans-serif" >B. Secuencial: primero texto, después preguntas</text>
+<rect x="40" y="200" width="390.0" height="36" rx="6" fill="#4C78A8" stroke="none" stroke-width="1" opacity="1"/>
+<text x="235.0" y="223" font-size="14" fill="#fff" text-anchor="middle" font-weight="normal" font-family="Helvetica, Arial, sans-serif" >Texto plano · 30 épocas</text>
+<rect x="434.0" y="200" width="126.0" height="36" rx="6" fill="#F58518" stroke="none" stroke-width="1" opacity="1"/>
+<text x="497.0" y="223" font-size="14" fill="#fff" text-anchor="middle" font-weight="normal" font-family="Helvetica, Arial, sans-serif" >SFT · 10 ép.</text>
+<circle cx="622" cy="218" r="13" fill="#d64545"/><path d="M 617 213 L 627 223 M 627 213 L 617 223" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+<text x="644" y="214" font-size="14" fill="#1f2933" text-anchor="start" font-weight="normal" font-family="Helvetica, Arial, sans-serif" >Formato perfecto, número equivocado</text>
+<text x="644" y="232" font-size="12.5" fill="#52606d" text-anchor="start" font-weight="normal" font-family="Helvetica, Arial, sans-serif" >Responde con el teléfono de otra persona</text>
+<text x="40" y="286" font-size="15" fill="#1f2933" text-anchor="start" font-weight="bold" font-family="Helvetica, Arial, sans-serif" >C. Alternado: una época de texto, una época de preguntas, y se repite</text>
+<rect x="40.0" y="296" width="50.48571428571429" height="36" rx="5" fill="#4C78A8" stroke="none" stroke-width="1" opacity="1"/>
+<rect x="93.4857142857143" y="296" width="17.800000000000004" height="36" rx="5" fill="#F58518" stroke="none" stroke-width="1" opacity="1"/>
+<text x="65.24285714285715" y="319" font-size="12" fill="#fff" text-anchor="middle" font-weight="normal" font-family="Helvetica, Arial, sans-serif" >Texto</text>
+<rect x="114.28571428571429" y="296" width="50.48571428571429" height="36" rx="5" fill="#4C78A8" stroke="none" stroke-width="1" opacity="1"/>
+<rect x="167.77142857142857" y="296" width="17.800000000000004" height="36" rx="5" fill="#F58518" stroke="none" stroke-width="1" opacity="1"/>
+<text x="139.52857142857144" y="319" font-size="12" fill="#fff" text-anchor="middle" font-weight="normal" font-family="Helvetica, Arial, sans-serif" >Texto</text>
+<rect x="188.57142857142858" y="296" width="50.48571428571429" height="36" rx="5" fill="#4C78A8" stroke="none" stroke-width="1" opacity="1"/>
+<rect x="242.05714285714288" y="296" width="17.800000000000004" height="36" rx="5" fill="#F58518" stroke="none" stroke-width="1" opacity="1"/>
+<text x="213.81428571428572" y="319" font-size="12" fill="#fff" text-anchor="middle" font-weight="normal" font-family="Helvetica, Arial, sans-serif" >Texto</text>
+<rect x="262.8571428571429" y="296" width="50.48571428571429" height="36" rx="5" fill="#4C78A8" stroke="none" stroke-width="1" opacity="1"/>
+<rect x="316.34285714285716" y="296" width="17.800000000000004" height="36" rx="5" fill="#F58518" stroke="none" stroke-width="1" opacity="1"/>
+<text x="288.1" y="319" font-size="12" fill="#fff" text-anchor="middle" font-weight="normal" font-family="Helvetica, Arial, sans-serif" >Texto</text>
+<rect x="337.14285714285717" y="296" width="50.48571428571429" height="36" rx="5" fill="#4C78A8" stroke="none" stroke-width="1" opacity="1"/>
+<rect x="390.62857142857143" y="296" width="17.800000000000004" height="36" rx="5" fill="#F58518" stroke="none" stroke-width="1" opacity="1"/>
+<text x="362.3857142857143" y="319" font-size="12" fill="#fff" text-anchor="middle" font-weight="normal" font-family="Helvetica, Arial, sans-serif" >Texto</text>
+<rect x="411.42857142857144" y="296" width="50.48571428571429" height="36" rx="5" fill="#4C78A8" stroke="none" stroke-width="1" opacity="1"/>
+<rect x="464.9142857142857" y="296" width="17.800000000000004" height="36" rx="5" fill="#F58518" stroke="none" stroke-width="1" opacity="1"/>
+<text x="436.6714285714286" y="319" font-size="12" fill="#fff" text-anchor="middle" font-weight="normal" font-family="Helvetica, Arial, sans-serif" >Texto</text>
+<rect x="485.7142857142858" y="296" width="50.48571428571429" height="36" rx="5" fill="#4C78A8" stroke="none" stroke-width="1" opacity="1"/>
+<rect x="539.2" y="296" width="17.800000000000004" height="36" rx="5" fill="#F58518" stroke="none" stroke-width="1" opacity="1"/>
+<text x="510.9571428571429" y="319" font-size="12" fill="#fff" text-anchor="middle" font-weight="normal" font-family="Helvetica, Arial, sans-serif" >Texto</text>
+<circle cx="622" cy="314" r="13" fill="#2e9e5b"/><polyline points="616,314 620,319 629,309" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="644" y="310" font-size="14" fill="#1f2933" text-anchor="start" font-weight="normal" font-family="Helvetica, Arial, sans-serif" >Formato y número correctos</text>
+<text x="644" y="328" font-size="12.5" fill="#52606d" text-anchor="start" font-weight="normal" font-family="Helvetica, Arial, sans-serif" >«El teléfono de Federico es el 928204525.»</text>
+<rect x="40" y="368" width="18" height="18" rx="4" fill="#4C78A8" stroke="none" stroke-width="1" opacity="1"/>
+<text x="66" y="382" font-size="13.5" fill="#1f2933" text-anchor="start" font-weight="normal" font-family="Helvetica, Arial, sans-serif" >Época sobre las 150 frases (autorregresivo)</text>
+<rect x="380" y="368" width="18" height="18" rx="4" fill="#F58518" stroke="none" stroke-width="1" opacity="1"/>
+<text x="406" y="382" font-size="13.5" fill="#1f2933" text-anchor="start" font-weight="normal" font-family="Helvetica, Arial, sans-serif" >Época sobre las 50 preguntas (SFT)</text>
+</svg>
