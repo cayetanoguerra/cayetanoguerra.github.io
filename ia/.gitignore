@@ -1,2 +1,5 @@
 # Entorno de los notebooks de NLP
 /nbpy/nlp/.venv/
+
+# Registro que genera el notebook 8.2 al arrancar el servidor MCP
+mcp_server.log
